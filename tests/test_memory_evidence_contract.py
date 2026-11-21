@@ -298,3 +298,44 @@ def test_expanded_family_rejections(tmp_path):
     )
     assert result["status"] != "accepted"
     assert "value_too_short" in result["reason"]
+
+
+# ── 2026-11-21 写侧诊断：词内撇号不是引号 ─────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("content", "predicate", "value", "polarity", "statement_kind"),
+    [
+        ("I'm from Osaka", "profile.origin.en", "Osaka", "positive", "self_report"),
+        ("I don't like cilantro", "preference.general", "cilantro", "negative", "explicit_preference"),
+        ("I don’t like cilantro", "preference.general", "cilantro", "negative", "explicit_preference"),
+        ("I have my daughter's old bike", "identity.have.en", "my daughter's old bike", "positive", "identity_state"),
+    ],
+)
+def test_in_word_apostrophe_is_not_a_quote_mark(tmp_path, content, predicate, value, polarity, statement_kind):
+    conn = _database(tmp_path)
+    conn.execute("UPDATE group_messages SET content = ? WHERE id = 1", (content,))
+    candidate = _candidate(content=content, value=value, predicate=predicate,
+                           polarity=polarity, statement_kind=statement_kind)
+    result = _assess(conn, candidate)
+    conn.close()
+    if "’" in content:
+        # 弯撇号不在 _PREFERENCE_PATTERN_EN 的 don't 里，句型本身不命中；
+        # 但拒绝原因只能是句型不符，不能再是「引号/角色扮演」。
+        assert "conditional_quoted_or_roleplay" not in result["reason"]
+    else:
+        assert result["status"] == "accepted", result["reason"]
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["'I live in Osaka'", "He said 'I live in Osaka", "I live in 'Osaka'"],
+)
+def test_real_ascii_quotes_still_block_acceptance(tmp_path, content):
+    conn = _database(tmp_path)
+    conn.execute("UPDATE group_messages SET content = ? WHERE id = 1", (content,))
+    candidate = _candidate(content=content, value="Osaka", predicate="profile.residence.en")
+    result = _assess(conn, candidate)
+    conn.close()
+    assert result["status"] != "accepted"
+    assert "conditional_quoted_or_roleplay" in result["reason"]

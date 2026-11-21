@@ -1,3 +1,10 @@
+## 2026-11-21 — 生产写侧 0 晋升最小修复与复测
+
+- Scope：按 [诊断报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md) 修第 1–3 项：阶段 2 截断按行拆分重试（`_extract_chunk`，≤2 层）、词内撇号不算引号、提取提示词禁止翻译原文。未改阈值/TTL/默认上限/阶段 1 回退语义。
+- Evaluation：同 5 pairs、生产上限、DeepSeek 替身：修复前 0 active → 修复后 5 CONFIRMED / 5 active，positive integration 1/5 → 2/5。15-pair partial（450 calls 到限，28/30 行）：363 候选中 8 CONFIRMED、7 item 有 active memory；positive integration 5/15，negative overuse 7/13。阶段 2 调用放大（222 extract / 140 截断）。
+- Verification：新测 + 相关套件 70 passed；撇号用例修复前 4 failed。全量 4,386 passed / 22 skipped / 11 failed / 1 collection error；drift gate 已重生成 manifest 并 15 passed，其余 10 failed 与 collection error 在 HEAD 同样出现（本机环境）。`ruff check .` PASS。GitNexus impact：`_extract_candidates` CRITICAL（已提示、未豁免），另两符号 UNKNOWN 经文本搜索补证。
+- Next：PR #130 合并后按 follow-up issue 处理：EXTRACT 上限/输出格式、未触发阶段 2 的无合同候选、句型覆盖与合同精度、qwen 生产引擎复测、M6 full72、B06/B08。
+
 ## 2026-11-21 — 生产写侧 0 晋升根因诊断
 
 - Scope：调查 B04/B05 M6 全部候选停在 OBSERVING 的原因；只做诊断，不改生产代码。详见 [诊断报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md)。

@@ -1,3 +1,12 @@
+## Current Handoff — memory write-path fix and PR #130 close-out (2026-11-21)
+
+- Current Objective：写侧最小修复与 M6 复测已完成；用户计划在本提交后合并 PR #130，未闭环项转入 GitHub follow-up issue。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`。
+- Files：`mneme/consolidator.py`、`mneme/evidence_contract.py`、`mneme/extraction_prompt.py`、`core/observability/flows/message-flow.d08ef6688b3f.json`、三份测试、[诊断与修复报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md)、状态文件。
+- Verification Evidence：见报告「修复与复测」；复测报告 SHA `61f6faf8…35d8`（5-pair COMPLETE）、`26431bf4…8dfc`（15-pair PARTIAL_BUDGET）。DeepSeek 累计 2,796/3,000，临时 key 不再使用。
+- Recovery Notes：本机 `python` 为 miniconda 3.14、缺 `nonebot.adapters.qq`；10 个托管进程/driver 测试在 HEAD 也失败，完整门禁需在 Linux/CI 环境复核。改 `mneme/consolidator.py` 等埋点源码后需 `python scripts/generate_message_flow.py`。
+- Blockers：见 follow-up issue。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — proactive / memory benchmark B05 DeepSeek replication (2026-11-21)
 
 - Current Objective：PR #130 B05 joint-full / pairing-full 已用 `deepseek-flash` 完成跨模型复现（2,116/3,000 calls）。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`；完整 B05、B06、B08、产品效果 NOT READY。
