@@ -15,7 +15,7 @@
   },
   "nsis_compression": {
     "online": "lzma",
-    "offline": "lzma"
+    "offline": "none"
   },
   "webview_install_mode": {
     "online": "embedBootstrapper",
@@ -28,7 +28,7 @@
     "tauri_cli": "2.12.4（2026-10-24 核实；tauri-bundler 2.10.4 使用 NSIS 3.13，修复 nsExec::ExecToLog 崩溃）。升级 = 改这里 + 改 tauri_cli_windows_sha256 + 跑完整安装矩阵。",
     "tauri_cli_windows_sha256": "tauri-apps/tauri Release tauri-cli-v{tauri_cli} 的官方预编译 cargo-tauri-x86_64-pc-windows-msvc.zip 的 sha256（2026-11-21 下载核实，解压后 --version = tauri-cli 2.12.4）。CI 用它替代 cargo install 源码编译（每个矩阵腿省约 10 分钟），哈希不符即失败。",
     "installer_budget_mb": "online 以 v5.0.0 实测 220.36MB 为基线给 36% 余量；offline 未实测（含 600MB+ 负载）暂不设限，VM 矩阵实测后补录——不凭猜测设数字。",
-    "nsis_compression": "Tauri bundle.windows.nsis.compression（none / zlib / bzip2 / lzma，Tauri 默认 lzma）。offline 负载约 1GB 时 solid lzma 单线程压缩约 10 分钟；更换前须用 workflow_dispatch 的 offline_nsis_compression 输入实测耗时与体积后再改这里。",
+    "nsis_compression": "Tauri bundle.windows.nsis.compression（none / zlib / bzip2 / lzma，Tauri 默认 lzma）。offline = none：2026-11-21 dispatch 实测 makensis lzma 9m45s（v6.3.0）/ zlib 1m08s / none 8s，安装器 zlib 1117–1118MB vs none 1123–1125MB（仅 +0.5%，负载多为已压缩的 wheel/模型/运行时），离线安装验收 none 更快（1m27s–1m41s vs zlib 1m56s–1m59s）。NSIS CRC 校验与压缩无关，仍生效。再改须用 workflow_dispatch 的 offline_nsis_compression 输入实测。",
     "webview_install_mode": "CI 按 payload 覆盖 tauri.conf.json 的 bundle.windows.webviewInstallMode（base 保持 offlineInstaller）。offline 必须 offlineInstaller（零联网，2026-09 用户反馈无 WebView2 机器起不来前端，CI 硬校验）。online 用 embedBootstrapper：online 安装本就需联网装组件；Tauri 内嵌的离线运行时未钉版本，微软 2026-11-19 版 280.5MB 让 online 安装器从 221MB 涨到 299–301MB、超出 300MB 预算（维护者 2026-11-21 决定）。",
     "maturin": "PyPI 当前稳定版（2026-09-28 核实）。"
   }
