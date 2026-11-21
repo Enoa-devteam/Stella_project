@@ -2466,7 +2466,7 @@
     {
       "id": "RELEASE-CI-SPEEDUP",
       "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）及发布阻断修复",
-      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：代码已在分支实现，等待 workflow_dispatch 实测（外部 CI）；不占用唯一 in_progress 槽位。",
+      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：分支 CI 实测全绿（44911478831，17m29s）；待 PR 审阅合并、合并后 main 预热缓存、下一版发布说明写明 breaking changes，以及 clean VM 验证 online 安装器在缺 WebView2 机器上的引导器路径。",
       "status": "blocked",
       "dependencies": [],
       "scope": [
@@ -2478,7 +2478,8 @@
         "tests/test_install_contract.py",
         "发布文档与 cli/README.md",
         "llama.cpp UI 资产版本钉住（LLAMA_CPP_UI_VERSION）",
-        "停止分发 NapCat（catalog / OneClick profile / 离线验收 / 用户文档）"
+        "停止分发 NapCat（catalog / OneClick profile / 离线验收 / 用户文档）",
+        "online 安装器 WebView2 改 embedBootstrapper；offline NSIS 压缩定为 none"
       ],
       "done_criteria": [
         "workflow_dispatch 实测：tauri-cli 安装步骤 <1 分钟，四条 build-installer 腿与 install-test 全部通过",
@@ -2495,6 +2496,10 @@
         {
           "report": "progress.md 2026-11-21 Release CI 耗时压缩",
           "result": "Dispatch 44905135423 failed in llama backend (HF UI b1 404 -> latest mismatch), fixed by pinning b10941; dispatch 44905862288 backend OK (5m40s) then failed: NapCat 3.2.1 MSI 404 (upstream archived). Maintainer decided to stop distributing NapCat; removed from catalog/profiles. Targeted 175 passed; selection 872 passed / 4 failed (3 env subprocess-interpreter failures reproduced on clean origin/main or with change stashed, 1 order-dependent that passes 13/13 alone). Speed measurements still pending."
+        },
+        {
+          "report": "progress.md 2026-11-21 Release CI 耗时压缩",
+          "result": "Dispatch 44907469739 (cold, zlib) and 44909779625 (warm, none) reached the build job in 20m07s / 16m41s; both failed only the online size gate (WebView2 offline runtime grew to 280.5 MB on 2026-11-19). After online embedBootstrapper + offline none, dispatch 44911478831 succeeded end to end in 17m29s (v6.3.0: 42m03s): installer legs 3m32s-5m20s, online installers 16-18 MB, offline 1123-1125 MB, all 4 install-tests pass."
         }
       ]
     }
