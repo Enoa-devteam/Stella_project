@@ -2466,8 +2466,8 @@
     {
       "id": "RELEASE-CI-SPEEDUP",
       "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）",
-      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。",
-      "status": "in_progress",
+      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：代码已在分支实现，等待 workflow_dispatch 实测（外部 CI）；不占用唯一 in_progress 槽位。",
+      "status": "blocked",
       "dependencies": [],
       "scope": [
         ".github/workflows/release.yml",
