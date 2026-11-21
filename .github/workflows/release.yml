@@ -29,6 +29,12 @@ permissions:
 env:
   # The OneClick catalog must point at a reproducible Windows CPU backend.
   LLAMA_CPP_COMMIT: 4a89937354190cef5a97baf8eeb17336105eb72d
+  # llama-server 内嵌 Web UI 资产的 HF bucket 版本 = 该提交的 release tag
+  # （git ls-remote 核实：4a89937 = b10941）。不钉时 llama.cpp 按 git 提交计数
+  # 推导 b${BUILD_NUMBER}，浅克隆下得到不存在的 b1，随后回退浮动的 latest；
+  # 2026-11 latest 资产布局变化后该提交的资产校验直接失败（run 44905135423）。
+  # 升级 LLAMA_CPP_COMMIT 时必须同步改这里。
+  LLAMA_CPP_UI_VERSION: b10941
   # 版本化布局双轨开关（S11 Phase 2）：'1' = 安装器构建 launcher 并写
   # 版本化搬移标记。切 '1' 的前置条件：VM 矩阵（T01/T03/T11/T14/T18）
   # 全过。默认 '0' = 安装行为与历史版本逐字节一致。
@@ -164,6 +170,8 @@ jobs:
 
       - name: 构建并校验 Windows CPU backend
         shell: pwsh
+        env:
+          HF_UI_VERSION: ${{ env.LLAMA_CPP_UI_VERSION }}
         run: |
           $package = "dist\Stella-llama-v$env:RELEASE_VERSION-windows-x86_64-cpu"
           $archive = "dist\Stella-llama-v$env:RELEASE_VERSION-windows-x86_64-cpu.zip"

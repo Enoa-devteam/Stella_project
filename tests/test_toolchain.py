@@ -52,6 +52,13 @@ def test_toolchain_llama_commit_matches_release_workflow():
     assert match.group(1) == toolchain["llama_cpp_commit"]
 
 
+def test_release_workflow_pins_llama_ui_assets():
+    # 不钉时浅克隆推导出不存在的 b1 并回退浮动 latest（run 44905135423 失败）
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    assert re.search(r"LLAMA_CPP_UI_VERSION: b\d+\n", workflow), "llama.cpp UI 资产版本必须钉住"
+    assert "HF_UI_VERSION: ${{ env.LLAMA_CPP_UI_VERSION }}" in workflow
+
+
 def test_product_profiles_pin_embedding_to_toolchain_commit():
     toolchain = _toolchain()
     commit = toolchain["embedding_commit"]
