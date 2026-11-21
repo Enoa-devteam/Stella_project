@@ -1,3 +1,10 @@
+## 2026-11-21 — 生产写侧 0 晋升根因诊断
+
+- Scope：调查 B04/B05 M6 全部候选停在 OBSERVING 的原因；只做诊断，不改生产代码。详见 [诊断报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md)。
+- Findings：晋升门先要求 evidence accepted，而 accepted 只可能来自阶段 2 合同。DeepSeek 替身、生产上限 1200/1000、`reasoning_effort=none` 下：58 候选全 OBSERVING，阶段 2 8/9 截断并回退阶段 1 → 76 条 evidence 中 72 `contract_missing`；其余 4 条因模型把英文翻成中文句型被 `content_not_exact_support` 拒绝。离线：ASCII 撇号被当作引号，提示词宣称的 `I'm from X` 等句型永远不能 accepted（MemUse 807 句仅因撇号被阻断）。
+- Verification：三份 M6 报告 schema 内置校验 COMPLETE、0 errors；145 calls（会话累计 2,261/3,000）。未跑测试，未改代码。
+- Next：另开产品修复包（阶段 2 输出上限/回退语义、撇号判定、语言逐字约束），编辑前 GitNexus impact，修复后重跑 M6。
+
 ## 2026-11-21 — B05 DeepSeek 跨模型复现
 
 - Scope / Current State：PR #130 B05 的 joint-full 与 pairing-full 以用户授权的 DeepSeek 公共 API `deepseek-flash` 复现（会话上限 3,000，实际 2,116 calls）。本地 8081 不可用；原 qwen `/tmp` workdir 已不在本机。`AOEDE-MNEME-BENCH-IMPL` 仍 `in_progress`，完整 B05、B06、B08 与产品效果 NOT READY。

@@ -4,6 +4,7 @@
 - Files：[B05 报告](docs/reports/2026-11-11-proactive-memory-benchmark-b05.md)「DeepSeek 跨模型复现」节、`progress.md`、`feature_list.json`、`session-handoff.md`。报告：`%TEMP%/stella-pr130-b05-joint-dsflash-full/report/proactive_b05_report.json`（SHA `e7b4a33e…c24e8`），`%TEMP%/stella-pr130-b05-pairing-dsflash-72pairs/report/proactive_b05_report.json`（SHA `253e8189…a5736`）。
 - Verification Evidence：两报告 MEASURED_IN_SCOPE / COMPLETE、schema PASS、0 截断；joint 1 次调用错误→1 条 ChMap 行 unscored。key 未落盘（grep 验证）。只改文档/状态。
 - Recovery Notes：Git Bash `/tmp` = `%TEMP%`，Python 解析 `/tmp` 为 `E:	mp`，两者不同，旧 qwen workdir 均已不存在。DeepSeek 端点 `https://api.deepseek.com/v1`，`reasoning_effort=none` 可用。临时 key 由用户声明任务后失效，不要复用或写入文件。
+- Write-path diagnosis（2026-11-21）：[诊断报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md)。主因为阶段 2 截断后回退到无合同的阶段 1 候选（`contract_missing`）；次因为英文源被译成中文句型、ASCII 撇号被当作引号。诊断 workdir：`%TEMP%/stella-pr130-b05-m6-dsflash-5pairs{,-cap8k,-local}`；离线脚本在 `E:/tmp/pr130-writepath/`（未入库）。DeepSeek 累计 2,261/3,000。
 - Blockers：ChMap 剩余 261/417 需改 `select_chmap_points` 设计；M6 full72 需新 workdir + 新累计上限（DeepSeek 做写侧非生产等价）；独立 judge 需 runner 支持分离 judge endpoint；B06 标注、B08 scope 未就绪。
 - Preserve：同下方既有未跟踪路径。
 
