@@ -274,6 +274,33 @@ def test_deterministic_result_populates_direct_reply(
     _run(activate_capabilities(ctx))
     assert ctx.reply == "weather.query 的结果"
     assert ctx.lines == ["weather.query 的结果"]
+    assert ctx.delivery_source_kind == "capability-direct"
+
+
+def test_deterministic_direct_reply_can_be_sealed_for_delivery(
+    monkeypatch, stub_route, spy_memory, spy_comes, fake_bot, fake_nb_event,
+):
+    """能力直回 → 投递计划封存成功（此前因来源 unknown 被静默拒绝，回复不出现）。"""
+    from core.social.delivery import delivery_draft_from_context, seal_delivery_plan
+    from memory import scope_versions
+
+    monkeypatch.setattr(scope_versions, "current_versions_strict", lambda _keys: {})
+    stub_route(
+        Route(
+            tool=True,
+            requires_generation=False,
+            deterministic=True,
+            capabilities=[CapabilityHit("weather.query", 1.0)],
+        ),
+    )
+    ctx = _ctx(raw_event=fake_nb_event, bot=fake_bot)
+    ctx.trace_id, ctx.turn_id = "cap-trace", "cap-turn"
+    ctx.conversation_key = "qq:10001:group:42"
+    _run(activate_capabilities(ctx))
+    assert ctx.llm_call_count == 0
+    plan = seal_delivery_plan(delivery_draft_from_context(ctx))
+    assert plan["source_kind"] == "capability-direct"
+    assert [segment["text"] for segment in plan["segments"]] == ["weather.query 的结果"]
 
 
 def test_deterministic_missing_input_populates_clarification_reply(
@@ -803,3 +830,38 @@ def test_skills_branch_failure_does_not_block_memory(monkeypatch, stub_route, sp
     assert calls["select"] == 1
     assert spy_memory  # memory 分支照常完成
     assert out.skill_summaries == []
+
+
+def test_direct_reply_uses_the_tool_output_when_the_capability_asks_for_it(monkeypatch):
+    """插件命令的回复本身就是写给用户的：按声明直接发原文，不经小模型转述。
+
+    回归：2026-11-08 QQ 实测中模型把「点数为【2】」（两颗骰子合计 2）转述成了
+    「点数分别为2」。
+    """
+    import capability.hooks as hooks
+    from capability.registry import Capability, CapabilityRegistry
+
+    reg = CapabilityRegistry()
+    reg.register(Capability(id="dice.roll", direct_reply="tool_output"))
+    reg.register(Capability(id="weather.query"))
+    monkeypatch.setattr(hooks, "_default_registry", reg)
+
+    def result(capability, summary, outputs):
+        return Result(task_id="t", status=ResultStatus.SUCCESS, summary=summary,
+                      data=outputs, metadata={"capability": capability})
+
+    ctx = _ctx()
+    hooks._set_direct_reply(ctx, [result("dice.roll", "点数分别为2",
+                                         [("rd", "你掷出了2个6面骰子, 点数为【2】")])])
+    assert ctx.reply == "你掷出了2个6面骰子, 点数为【2】"
+    assert ctx.delivery_source_kind == "capability-direct"
+
+    # 缺省仍用 Comes 摘要（工具原文可能是 JSON 之类不适合直接给用户的内容）
+    ctx = _ctx()
+    hooks._set_direct_reply(ctx, [result("weather.query", "东京明天晴", [("w", '{"t": 22}')])])
+    assert ctx.reply == "东京明天晴"
+
+    # 工具输出全是错误时回落到摘要规则，不把错误文本发给用户
+    ctx = _ctx()
+    hooks._set_direct_reply(ctx, [result("dice.roll", "", [("rd", "error: boom")])])
+    assert not ctx.reply
