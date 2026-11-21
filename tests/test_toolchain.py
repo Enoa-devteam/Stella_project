@@ -116,3 +116,13 @@ def test_nsis_compression_is_pinned_per_payload():
     workflow = RELEASE_YML.read_text(encoding="utf-8")
     assert "$toolchain.nsis_compression" in workflow
     assert "--config $override" in workflow, "压缩算法必须经 --config 传给 tauri build"
+
+
+def test_webview_install_mode_is_offline_safe():
+    # offline 必须零联网（2026-09 用户反馈）；online 用引导器避开 280MB 离线运行时
+    toolchain = _toolchain()
+    modes = toolchain["webview_install_mode"]
+    assert modes == {"online": "embedBootstrapper", "offline": "offlineInstaller"}
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    assert "$toolchain.webview_install_mode" in workflow
+    assert "offline 安装器必须内嵌 WebView2 离线安装包" in workflow, "offline 腿必须硬校验"

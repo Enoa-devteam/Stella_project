@@ -26,7 +26,9 @@ WebView2 运行时不在负载里，而是由 Tauri 的
 安装时先检测注册表，已有 WebView2 则跳过，没有则静默装内嵌的离线安装包，
 同样零联网。默认的 `downloadBootstrapper` 需要联网下载运行时，在无 WebView2
 的离线机器上 GUI 起不来（2026-09 真实用户反馈），`embedBootstrapper` 也仍需
-联网——必须用 `offlineInstaller`。
+联网——Offline 必须用 `offlineInstaller`。
+
+Online 安装器自 2026-11-21 起改用 `embedBootstrapper`（由 CI 按 `release_assets/toolchain.json` 的 `webview_install_mode` 覆盖，`tauri.conf.json` 仍为 `offlineInstaller`）：Online 安装本就需联网装组件；而 Tauri 内嵌的离线运行时不钉版本，微软 2026-11-19 版已达 280.5MB，内嵌它会让 Online 安装器超出 300MB 预算。release.yml 对 offline 腿硬校验必须是 `offlineInstaller`。
 
 **修改安装期组件时必须同步检查**：新增 catalog 组件 → 无需改负载脚本（按 catalog 遍历）；
 新增 Python 依赖 → 确认 `pip wheel` 能构建出 wheel；升级 playwright → 负载里的内核

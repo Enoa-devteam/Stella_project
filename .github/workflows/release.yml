@@ -503,9 +503,25 @@ jobs:
             throw "非法 NSIS 压缩算法：'$compression'"
           }
           Write-Host "NSIS compression = $compression（payload=${{ matrix.payload }}）"
-          $override = Join-Path $env:RUNNER_TEMP 'tauri-nsis-compression.json'
-          @{ bundle = @{ windows = @{ nsis = @{ compression = $compression } } } } |
-            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $override -Encoding utf8NoBOM
+          # WebView2 安装方式按 payload 取 toolchain.json 的 webview_install_mode：
+          # offline 必须 offlineInstaller（零联网，2026-09 用户反馈）；online 本就
+          # 需联网装组件，用 embedBootstrapper——微软未钉版本的离线运行时
+          # 2026-11-19 涨到 280.5MB，内嵌它让 online 安装器超出体积预算。
+          $webview = $toolchain.webview_install_mode.'${{ matrix.payload }}'
+          if ('${{ matrix.payload }}' -eq 'offline' -and $webview -ne 'offlineInstaller') {
+            throw "offline 安装器必须内嵌 WebView2 离线安装包（实际 '$webview'）"
+          }
+          if ($webview -notin @('embedBootstrapper', 'offlineInstaller')) {
+            throw "非法 WebView2 安装方式：'$webview'"
+          }
+          Write-Host "WebView2 install mode = $webview（payload=${{ matrix.payload }}）"
+          $override = Join-Path $env:RUNNER_TEMP 'tauri-payload-override.json'
+          @{ bundle = @{ windows = @{
+              nsis = @{ compression = $compression }
+              webviewInstallMode = @{ type = $webview; silent = $true }
+          } } } |
+            ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $override -Encoding utf8NoBOM
+          Get-Content -LiteralPath $override
           cargo tauri build --bundles nsis --config $override
           if ($LASTEXITCODE -ne 0) { throw "tauri build 失败（退出码 $LASTEXITCODE）" }
 
