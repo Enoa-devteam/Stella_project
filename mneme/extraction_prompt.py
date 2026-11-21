@@ -148,6 +148,9 @@ EXTRACTION_PROMPT = """你将读到一段群聊记录。已经有初步判断认
 
 契约硬规则（服务端按固定句型逐字审核 verification_contract，完全命中才可能被判 accepted）：
 
+- 保持原文语言：英文消息就用下列英文句型逐字复制（如 I live in X），中文消息用中文句型；
+  绝不要把原文翻译成另一种语言再填 content / exact_support_span——翻译后不是原文子串，必被拒绝
+
 服务端支持的刻板句型（exact_support_span 必须逐字是其中一种；X 代表值段）：
 - 自我陈述（statement_kind=self_report，type 必须是 FACT，polarity 一律 positive）：
   - 「我住在X」「我居住在X」「我现在/目前住在X」→ predicate_key=profile.residence

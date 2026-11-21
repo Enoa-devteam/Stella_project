@@ -28,7 +28,7 @@ import re
 import sqlite3
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from nonebot import logger
 
@@ -116,6 +116,9 @@ _group_locks: dict[str, asyncio.Lock] = {}
 _TRUNCATION_MIN_BATCH = 5
 _TRUNCATION_MAX_ATTEMPTS = 3
 
+
+# 阶段2 截断后按行对半拆分重试的最大层数（2 层 → 单批最多 1+2+4=7 次调用）。
+_EXTRACT_SPLIT_MAX_DEPTH = 2
 
 class OutputTruncatedError(RuntimeError):
     """整合输出被 max_tokens 截断，且缩小批次后仍然截断。
@@ -334,8 +337,6 @@ class MemoryConsolidator:
         回退阶段1 候选」——与「成功但无候选」（返回 []，即复核认为确实没有）
         区别处理。
         """
-        from mneme.extraction_prompt import format_extraction_prompt
-
         # 每日 token 预算：阶段2 是纯增益步骤，被拦下就回退阶段1 候选，
         # 与「没有可用端点」走同一条降级路径（返回 None）。
         blocked = budget_blocked(ROLE_EXTRACT)
@@ -363,8 +364,29 @@ class MemoryConsolidator:
                 f"[Extractor] 阶段2 输入按 AT_MENTION 切片："
                 f"{len(messages_text)} → {len(sliced)} 字"
             )
-        prompt = format_extraction_prompt(sliced)
-        logger.info(f"🎯 [Extractor] 阶段2 候选提取：{name}（{model_tag}）")
+        return await self._extract_chunk(name, backend, model_tag, sliced, depth=0)
+
+    async def _extract_chunk(
+        self, name: str, backend: Any, model_tag: str, text: str, *, depth: int
+    ) -> list | None:
+        """阶段2 单次调用；截断时按行对半拆分重试（最多 ``_EXTRACT_SPLIT_MAX_DEPTH`` 层）。
+
+        阶段2 是唯一产出 verification_contract 的步骤；回退阶段1 候选等于
+        这批候选在晋升门必然 ``contract_missing``（2026-11-21 写侧诊断：
+        生产上限下 8/9 次截断）。所以截断先拆小再试，只有拆到底仍失败、
+        或任一半调用失败时才返回 None 走原有回退。消息按行分隔，两半不重叠，
+        不会把同一条消息算两次而虚增 occurrence_count。
+        """
+        from mneme.extraction_prompt import format_extraction_prompt
+
+        if depth > 0:
+            blocked = budget_blocked(ROLE_EXTRACT)
+            if blocked:
+                logger.warning(f"⚠️ [Extractor] 阶段2 拆分重试被预算拦下（{blocked}），回退阶段1 候选")
+                append_consolidation_log(f" > ⚠️ 阶段2 拆分重试被预算拦下（{blocked}），回退阶段1 候选\n")
+                return None
+        prompt = format_extraction_prompt(text)
+        logger.info(f"🎯 [Extractor] 阶段2 候选提取：{name}（{model_tag}，depth={depth}）")
         try:
             result, finish = await execute_model_call(
                 backend,
@@ -392,10 +414,29 @@ class MemoryConsolidator:
         )
         if finish == "length":
             # 阶段2 截断不像阶段1 那样会丢消息（checkpoint 由阶段1 决定），
-            # 因此只回退阶段1 候选，不阻断整批。但要显式记一笔：
-            # 否则表现为「候选莫名其妙变少」，排查时找不到原因。
+            # 因此不阻断整批：先按行对半拆分重试，拆到底仍截断才回退阶段1 候选。
+            # 回退要显式记一笔：否则表现为「候选莫名其妙变少」，排查时找不到原因。
             # 同样报「实际生效的上限」：现在由 LLM_ROLE_EXTRACT_MAX_TOKENS 给出
             effective = getattr(backend, "max_tokens", MEMORY_EXTRACT_MAX_TOKENS)
+            lines = [line for line in text.split("\n") if line.strip()]
+            if depth < _EXTRACT_SPLIT_MAX_DEPTH and len(lines) >= 2:
+                mid = len(lines) // 2
+                logger.warning(
+                    f"⚠️ [Extractor] 阶段2 输出被 max_tokens={effective} 截断，"
+                    f"按行拆成 {mid}+{len(lines) - mid} 条重试（depth={depth + 1}）"
+                )
+                append_consolidation_log(
+                    f" > ⚠️ 阶段2 输出截断，拆分重试（depth={depth + 1}）\n"
+                )
+                merged: list = []
+                for part in (lines[:mid], lines[mid:]):
+                    got = await self._extract_chunk(
+                        name, backend, model_tag, "\n".join(part), depth=depth + 1
+                    )
+                    if got is None:
+                        return None
+                    merged.extend(got)
+                return merged
             logger.warning(
                 f"⚠️ [Extractor] 阶段2 输出被 max_tokens={effective} 截断，回退阶段1 候选"
                 "（请调大 LLM_ROLE_EXTRACT_MAX_TOKENS）"

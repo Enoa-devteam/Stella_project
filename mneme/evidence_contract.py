@@ -62,6 +62,8 @@ _CONDITIONAL = re.compile(
     re.IGNORECASE,
 )
 _QUOTE_MARKS = frozenset("\"'“”‘’「」『』《》〈〉")
+# 两侧都是字母的 ' / ’ 视为拼写撇号，不参与引号判定（句首/句尾/空格旁的仍算引号）。
+_INWORD_APOSTROPHE = re.compile(r"(?<=[A-Za-z])['’](?=[A-Za-z])")
 _SELF_REPORT_PATTERNS = {
     "profile.residence": re.compile(
         r"我(?:目前|现在)?(?:住在|居住在)(?P<value>[^，。！？!?；;]+)[。！!]?"
@@ -590,7 +592,10 @@ def assess_candidate(
     if _SECOND_PERSON_VALUE.search(canonical_value):
         assessment_reasons.append("value_second_person")
     for span in support_by_id.values():
-        if _CONDITIONAL.search(span) or any(mark in span for mark in _QUOTE_MARKS):
+        # 词内撇号（I'm / don't / daughter's）是英文拼写，不是引号；不剔除的话
+        # 提示词列出的 I'm from X / I don't like X 句型永远无法 accepted。
+        quote_probe = _INWORD_APOSTROPHE.sub("", span)
+        if _CONDITIONAL.search(span) or any(mark in quote_probe for mark in _QUOTE_MARKS):
             assessment_reasons.append("conditional_quoted_or_roleplay")
         if span.rstrip().endswith(("?", "？")):
             assessment_reasons.append("question_not_accepted")
