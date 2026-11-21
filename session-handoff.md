@@ -1,4 +1,13 @@
-## Current Handoff — proactive / memory benchmark B05 M6 checkpoint (2026-11-11)
+## Current Handoff — proactive / memory benchmark B05 DeepSeek replication (2026-11-21)
+
+- Current Objective：PR #130 B05 joint-full / pairing-full 已用 `deepseek-flash` 完成跨模型复现（2,116/3,000 calls）。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`；完整 B05、B06、B08、产品效果 NOT READY。
+- Files：[B05 报告](docs/reports/2026-11-11-proactive-memory-benchmark-b05.md)「DeepSeek 跨模型复现」节、`progress.md`、`feature_list.json`、`session-handoff.md`。报告：`%TEMP%/stella-pr130-b05-joint-dsflash-full/report/proactive_b05_report.json`（SHA `e7b4a33e…c24e8`），`%TEMP%/stella-pr130-b05-pairing-dsflash-72pairs/report/proactive_b05_report.json`（SHA `253e8189…a5736`）。
+- Verification Evidence：两报告 MEASURED_IN_SCOPE / COMPLETE、schema PASS、0 截断；joint 1 次调用错误→1 条 ChMap 行 unscored。key 未落盘（grep 验证）。只改文档/状态。
+- Recovery Notes：Git Bash `/tmp` = `%TEMP%`，Python 解析 `/tmp` 为 `E:	mp`，两者不同，旧 qwen workdir 均已不存在。DeepSeek 端点 `https://api.deepseek.com/v1`，`reasoning_effort=none` 可用。临时 key 由用户声明任务后失效，不要复用或写入文件。
+- Blockers：ChMap 剩余 261/417 需改 `select_chmap_points` 设计；M6 full72 需新 workdir + 新累计上限（DeepSeek 做写侧非生产等价）；独立 judge 需 runner 支持分离 judge endpoint；B06 标注、B08 scope 未就绪。
+- Preserve：同下方既有未跟踪路径。
+
+## Previous Handoff — proactive / memory benchmark B05 M6 checkpoint (2026-11-11)
 
 - Current Objective：PR #130 的 B05 runner/offline rank/boundary、joint MemUse 72/72 pairs、pairing 72/72 pairs 与 M6 五对样本已完成各自范围。M6 full72 首轮 200-call budget partial；joint ChMap 只覆盖 156/417 topic points。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`；完整 B05、B06 人工盲评、B08 平台验收和产品效果仍 NOT READY。
 - Files：[B05 报告](docs/reports/2026-11-11-proactive-memory-benchmark-b05.md)、`progress.md`、`feature_list.json`、`session-handoff.md`。joint-full report SHA `846f35f1be8ec493c28fb43802fcb22b58d33b62508ae14134dcfaa85a72cb02`；pairing-full SHA `6a5a891725c0242e96de46730203db804750f571505721f9411c1b907160e938`；M6-5pairs report `/tmp/stella-pr130-b05-m6-qwen38-5pairs/report/proactive_b05_report.json` SHA `3d5e24f53ca948c9052ab417f01a024a3dc8409f64d4335172594af4eeb9fb45`；M6-full72 partial `/tmp/stella-pr130-b05-m6-qwen38-full72/report/proactive_b05_report.json` SHA `a492903defec0833b9f82d65ba1bee21a5d315f76002e1a705eece09008e2805`.

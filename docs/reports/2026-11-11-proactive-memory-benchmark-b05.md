@@ -1,6 +1,6 @@
 # 主动参与与记忆 Benchmark B05 — MemUse / ChMap 实现与离线门
 
-- 状态：**B05 runner、离线 rank/boundary、MemUse 72-pair joint、pairing 72-pair 扩样已完成；M6 有 5-pair COMPLETE 样本和 full72 的 200-call partial，ChMap topic points 仍为部分覆盖。** `MEASURED_IN_SCOPE` 仅适用于各自完成的样本范围；完整 B05、B06 人工盲评、B08 平台验收及整体产品效果仍 NOT READY。
+- 状态：**B05 runner、离线 rank/boundary、MemUse 72-pair joint、pairing 72-pair 扩样已完成；M6 有 5-pair COMPLETE 样本和 full72 的 200-call partial，ChMap topic points 仍为部分覆盖。2026-11-21 以 `deepseek-flash` 完成 joint-full 与 pairing-full 跨模型复现（2,116 calls）。** `MEASURED_IN_SCOPE` 仅适用于各自完成的样本范围；完整 B05、B06 人工盲评、B08 平台验收及整体产品效果仍 NOT READY。
 - 分支：`codex/proactive-memory-benchmark-implementation`；PR #130。
 - 数据：MemUse frozen registry 的 72 个正例、72 个负例及训练期 session-summary corpus；ChMap topic_rank 149 条。原始公开数据留在 gitignored `memory/benchmark/_public/proactive_eval/raw/`。
 - 运行环境：Python 3.12.3 / `uv` 隔离依赖；临时工作区 `/tmp/stella-pr130-b05-offline-final`，隔离 home 位于工作区内。没有读写生产库、用户配置或聊天记录。
@@ -49,9 +49,26 @@ pairing 与 joint 的 MemUse 部分均在当前模型和固定 `rule` retrieval 
 - full72 checkpoint 使用独立 workdir `/tmp/stella-pr130-b05-m6-qwen38-full72`，选全 72 pairs、相同 8081 reply/MEMORY endpoint、固定 `rule` retrieval。单轮达到 200 calls 后停止，耗时 1,597.847 秒；状态 `PARTIAL_BUDGET` / `PARTIAL`，7 条正例 judge rows、7 pair IDs、0 negative rows；报告仅有一个 `BudgetExceededError`，没有其他错误，因此没有 paired estimate。角色调用为 capture 25、consolidation 101、extract 60、reply 7、judge 7；consolidation/extract 截断 41/60。生产写入阶段出现多次在批次缩到 7 条后仍截断而中止；budget exception 在 `run_m6` 返回前触发，所以报告 `m6_write_side` aggregate 为空，但已完成 judge rows、数据库和 meta/checkpoint 都留在该隔离 workdir。最终报告 schema PASS，SHA-256 `a492903defec0833b9f82d65ba1bee21a5d315f76002e1a705eece09008e2805`。
 - 这次 200-call 预算是 full72 的首个 partial，不代表整个 M6 有足够预算。按计划全数据集要另设总调用上限，当前未自动续跑。后续若继续，使用相同 workdir 与 fingerprint，原命令参数保持不变并加 `--resume`；先确认新的累计模型调用上限，再继续。不要把当前 7 条正例与 5-pair 完整样本相加成一组配对成绩。
 
+## DeepSeek 跨模型复现（2026-11-21）
+
+- 目的：在本地 8081 端点不可用时，用用户临时授权的 DeepSeek 公共 API 以第二个模型复现 joint-full 与 pairing-full，检验 qwen 结果的方向是否依赖单一模型。用户指定模型 `deepseek-flash`（`/v1/models` 预检列出），会话累计上限 3,000 次 completion。API key 仅经命令行参数传入；fingerprint、meta、results、报告与日志均已 grep 确认不含 key。结论属**跨模型复现**，不是生产等价或产品效果验收。
+- 参数：与 qwen 全量运行一致——`--channel rule --memuse-pairs 0`，joint 加 `--chmap-records 0`，`--llm-reasoning-effort none`（默认），reply/judge token 上限 400/200；`--llm-base-url https://api.deepseek.com/v1 --llm-model deepseek-flash`。reply 与 judge 同为 `deepseek-flash`，自评偏差仍在。每个进程单独 budget：joint `--max-calls 1750 --max-runtime-seconds 14400`，pairing `--max-calls 500 --max-runtime-seconds 7200`，两轮均未触顶、无 partial。新隔离目录位于 Git Bash `/tmp`（即 `%TEMP%`）：`stella-pr130-b05-joint-dsflash-full`、`stella-pr130-b05-pairing-dsflash-72pairs`；git HEAD `555ce29`。
+- 调用：joint 1,655（reply 828 / judge 827），1,810.082 秒，prompt/completion tokens 796,209/62,362；pairing 459（reply 243 / judge 216），361.286 秒，146,186/8,294；另有 2 次 reasoning_effort 兼容性测试 completion。本次合计 **2,116 / 3,000**。截断 0。joint 有 1 次模型调用错误，对应 1 条 ChMap M1 label_no 行 judge `not_run`（报告 `errors` 为空，已在该 cell `unscored` 与配对排除数中体现）。
+
+| 任务 | DeepSeek 结果（95% cluster-bootstrap CI） | qwen 全量对照 | 报告 SHA-256 |
+| --- | --- | --- | --- |
+| joint MemUse 正例 integration | M0 15/72、M1 37/72、MS 28/72；M1−M0 +0.3056 [0.1875,0.4533]，MS−M0 +0.1806 [0.0769,0.2969]（72 项 / 22 clusters） | M1−M0 +0.4085 [0.3000,0.5303]；MS−M0 +0.2083 [0.1000,0.3448] | `e7b4a33e9dd91f7b23198bfd4a5823e9e072e6794e55e76dfac7274da58c24e8` |
+| joint MemUse 负例 overuse | M0 34/72、MS 36/72；MS−M0 +0.0278 [−0.0513,0.1159]（23 clusters）；fabricated recall M0 21/72、MS 22/72 | MS−M0 +0.0278 [−0.0625,0.1081] | 同上 |
+| joint ChMap（156/417 points，468 rows） | label_yes callback M0 11/99、M1 36/99，M1−M0 +0.2525 [0.1515,0.3535]；label_no premature callback +0.3036 [0.1964,0.4286]（56 项，1 排除）；M2 irrelevant-topic intrusion 差 +0.1667 [0.1097,0.2313]（156 项 / 118 clusters） | +0.3939 / +0.2807 / +0.2078 | 同上 |
+| pairing（72/72 pairs，216 rows） | correct T0 25/72、T3 23/72、T0_GUARD 19/72，unscored 均 0；T3−T0 −0.0278 [−0.0741,0.0000]，guard−T0 −0.0833 [−0.1846,0.0000]（72 项 / 22 clusters）；guard sufficiency SUPPORTED 26 / INSUFFICIENT 45 / AMBIGUOUS 1 | T3−T0 −0.0545 [−0.1321,0.0192]；guard−T0 −0.1273 [−0.2000,−0.0435]（55 项） | `253e8189f463c5f7d4c36e052de8cea23477fce8ab78d35745f73047873a5736` |
+
+- 两份报告 `MEASURED_IN_SCOPE`，task 均 `COMPLETE`，`stella-proactive-b05-report/1` Draft 2020-12 schema **PASS**。
+- 解读（仅限本范围）：两模型方向一致——oracle 记忆（M1）与 session-summary store（MS）提升 MemUse 正例 integration，CI 下界均 >0；负例 overuse 差值 CI 跨 0，未见显著过度使用，但上界 +11.6pp 高于 G5 预登记的 +1pp，**G5 不通过/未证明**；ChMap 中 M1 同时提升正确 callback 与过早 callback，M2 无关话题插入显著增加。pairing 中 T3 与 guard 均未优于 T0，guard 点估计更低且 CI 上界为 0。DeepSeek 下 pairing 无 unscored，qwen 有 16–17 个，故分母不同，不直接比较绝对值。
+- 未在本轮执行：ChMap 剩余 261/417 points（selection 每 record 最多 2 点，需改 selection 设计而非加样）、M6 full72（此前 qwen workdir 已不在本机，无法 `--resume`；用 DeepSeek 做写侧不是生产等价，且不在本轮授权范围）、embedding/hybrid、独立 judge 模型。
+
 ## 未运行与限制
 
-- 尚未覆盖的全量样本：ChMap 剩余 261/417 topic points；M6 full72 仅完成首个 200-call partial，尚余配对与负例。根据本次 1,597.847 秒 / 200 calls 的覆盖量，继续 M6 前需要单独确定总调用上限；未自动透支或续跑。本次所有模型任务固定使用 `rule` retrieval，embedding/hybrid 通道未运行。
+- 尚未覆盖的全量样本：ChMap 剩余 261/417 topic points；M6 full72 仅完成首个 200-call partial，尚余配对与负例。原 qwen M6 full72 隔离 workdir 在 2026-11-21 已不在本机，续跑需新 workdir 从头开始。根据本次 1,597.847 秒 / 200 calls 的覆盖量，继续 M6 前需要单独确定总调用上限；未自动透支或续跑。本次所有模型任务固定使用 `rule` retrieval，embedding/hybrid 通道未运行。
 - B05 会话用户 ID 显式传给生产 retrieval，避免 group-space 查询跨用户读取；pairing actor 输入只含 qid/question，不传 scorer gold answer。reply/judge prompt 把回忆内容和判分字段标为数据，不作为可执行指令。
 - M1 是 oracle 上界，MS 是同一用户在触发 session 之前的 summary store；B06 人工盲评与 B08 平台验收未覆盖。分支 participation manager 不读取记忆内容决定是否发言，因此本轮及未来 B05 模型结果只测固定决策下的内容。
 - 已完成的 M6 1-pair 与 5-pair 样本均未形成 active memory，不能据此声称写后 retrieval 已验证。full72 首轮 partial 的 `m6_write_side` 汇总为空，因为预算异常在 `run_m6` 返回前终止；7 条逐项 judge 行仍保存在 checkpoint。模型截断和回退均保留在报告中，不因 runner 完成或写侧轨迹继续推进而视为行为通过。

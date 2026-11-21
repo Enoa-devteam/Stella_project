@@ -1,3 +1,10 @@
+## 2026-11-21 — B05 DeepSeek 跨模型复现
+
+- Scope / Current State：PR #130 B05 的 joint-full 与 pairing-full 以用户授权的 DeepSeek 公共 API `deepseek-flash` 复现（会话上限 3,000，实际 2,116 calls）。本地 8081 不可用；原 qwen `/tmp` workdir 已不在本机。`AOEDE-MNEME-BENCH-IMPL` 仍 `in_progress`，完整 B05、B06、B08 与产品效果 NOT READY。
+- Evaluation：joint 828 rows / 1,655 calls，MemUse M1−M0 +0.3056 [0.1875,0.4533]、MS−M0 +0.1806 [0.0769,0.2969]、负例 overuse MS−M0 +0.0278 [−0.0513,0.1159]；ChMap callback +0.2525、premature +0.3036、M2 intrusion +0.1667（CI 均 >0）。pairing 216 rows / 459 calls，T3−T0 −0.0278 [−0.0741,0]，guard−T0 −0.0833 [−0.1846,0]。方向与 qwen 一致；G5 overuse 上界 > +1pp，未证明。详见 [B05 报告](docs/reports/2026-11-11-proactive-memory-benchmark-b05.md)。
+- Verification：两份报告 schema PASS、0 截断；API key 未出现在 meta/results/report/log。只改报告/状态，未跑测试。
+- Blockers / Next：ChMap selection 每 record ≤2 点，剩余 261/417 需改 selection 设计；M6 full72 需新 workdir 与新调用上限；独立 judge、embedding/hybrid 未运行；B06 标注、B08 授权未就绪。
+
 ## 2026-11-11 — 主动参与与记忆 Benchmark B05
 
 - Scope / Current State：PR #130 的 B05 runner/offline rank/boundary 已实现并推送，提交 `09cf14d62cf9131ac15f98b1cd66e4f8b8892390`；joint MemUse 与 pairing 均覆盖 72/72 pairs。M6 的 5-pair 样本完成，full72 首轮在 200-call 上限保存为 partial；joint ChMap 覆盖 156/417 points。详见 [B05 报告](docs/reports/2026-11-11-proactive-memory-benchmark-b05.md)。`AOEDE-MNEME-BENCH-IMPL` 继续为唯一 `in_progress` feature，完整 B05、产品效果和平台验收仍 NOT READY。
