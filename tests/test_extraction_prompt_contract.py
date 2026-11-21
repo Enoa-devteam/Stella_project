@@ -67,3 +67,11 @@ def test_contract_block_sits_above_separator_with_messages_last():
     sep = EXTRACTION_PROMPT.index(_SEPARATOR)
     assert EXTRACTION_PROMPT.index("profile.residence") < sep
     assert EXTRACTION_PROMPT.rindex("{messages}") > sep
+
+
+def test_contract_block_forbids_translating_source_language():
+    """2026-11-21 写侧诊断：模型把英文源句译成中文句型，必被 content_not_exact_support 拒绝。"""
+    sep = EXTRACTION_PROMPT.index(_SEPARATOR)
+    rule = EXTRACTION_PROMPT.index("保持原文语言")
+    assert rule < sep
+    assert "不要把原文翻译" in EXTRACTION_PROMPT
