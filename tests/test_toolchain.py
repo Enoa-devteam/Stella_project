@@ -70,8 +70,11 @@ def test_product_profiles_pin_embedding_to_toolchain_commit():
 def test_release_workflow_consumes_toolchain_locks():
     workflow = RELEASE_YML.read_text(encoding="utf-8")
     assert "toolchain.json" in workflow, "release.yml 必须从 toolchain.json 读锁定值"
-    assert "--version $toolchain.tauri_cli" in workflow, (
-        "tauri-cli 必须按锁定版本安装（替换 ^2 浮动）"
+    assert "uses: ./.github/actions/install-tauri-cli" in workflow, (
+        "tauri-cli 必须经锁定版本的安装 action 安装（替换 ^2 浮动）"
+    )
+    assert "cargo install tauri-cli" not in workflow, (
+        "tauri-cli 不再源码编译（每条矩阵腿 ~10 分钟），改用校验过的官方预编译包"
     )
     assert "maturin==$($toolchain.maturin)" in workflow, (
         "maturin 必须按锁定版本安装（替换 --upgrade 浮动）"
@@ -83,3 +86,26 @@ def test_release_workflow_consumes_toolchain_locks():
     assert workflow.count("$LASTEXITCODE -ne 0") >= 3, (
         "Windows 关键 native 命令后必须立即检查退出码（防后续成功命令盖掉失败）"
     )
+
+
+def test_tauri_cli_install_action_verifies_pinned_prebuilt():
+    toolchain = _toolchain()
+    assert re.fullmatch(r"[0-9a-f]{64}", toolchain["tauri_cli_windows_sha256"]), (
+        "tauri-cli 预编译包必须钉住 sha256"
+    )
+    action = (REPO_ROOT / ".github" / "actions" / "install-tauri-cli" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "tauri-cli-v$version" in action and "$toolchain.tauri_cli" in action
+    assert "$toolchain.tauri_cli_windows_sha256" in action, "必须校验预编译包哈希"
+    assert '"tauri-cli $version"' in action, "必须校验二进制自报版本"
+
+
+def test_nsis_compression_is_pinned_per_payload():
+    toolchain = _toolchain()
+    allowed = {"none", "zlib", "bzip2", "lzma"}
+    assert set(toolchain["nsis_compression"]) == {"online", "offline"}
+    assert set(toolchain["nsis_compression"].values()) <= allowed
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    assert "$toolchain.nsis_compression" in workflow
+    assert "--config $override" in workflow, "压缩算法必须经 --config 传给 tauri build"

@@ -1,3 +1,10 @@
+## 2026-11-21 — Release CI 耗时压缩
+
+- Scope：`RELEASE-CI-SPEEDUP`，分支 `ci/release-speedup`（worktree `../stella_project-release-speedup`）。v6.3.0 run 40062756112 共 42 分钟；关键路径 build-installer offline 腿 ~28 分钟 = tauri-cli `cargo install` 10m19s + Rust 编译 6m00s（其中 stella-desktop fat LTO ~3m）+ makensis 9m45s（online 2m）。
+- What's Done：tauri-cli 改用官方预编译包并钉 sha256（`.github/actions/install-tauri-cli`）；build-installer 加 `Swatinem/rust-cache`（shared-key `desktop-installer`，仅一条腿保存），新增 `release-cache-warm.yml` 在 main 预热（tag 运行只能读默认分支缓存）；NSIS 压缩按 payload 取 `toolchain.json` `nsis_compression`（默认仍 lzma，行为不变），dispatch 输入 `offline_nsis_compression` 可覆盖做实测；按维护者决定停发 Stella CLI 包（删两个 build-cli job、组装与上传，`cli/Cargo.toml` 版本合同保留）。顺带去掉 toolchain.json 重复的 `installer_budget_mb` 键。
+- Verification：`pytest tests/test_toolchain.py tests/test_install_contract.py tests/test_release_layout.py` 47 passed；`check_docs.py` ok；全部 workflow YAML 可解析；GitNexus detect-changes（worktree 索引）11 files / 12 symbols / 0 processes / low。actionlint 未运行（下载外部二进制被权限拒绝）。CI dispatch 实测待跑。
+- Next：dispatch #1（offline=zlib，冷缓存）→ dispatch #2（offline=none，热缓存）；按实测体积/耗时定 `nsis_compression.offline`，再开 PR。
+
 ## 2026-11-21 — 生产写侧 0 晋升最小修复与复测
 
 - Scope：按 [诊断报告](docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md) 修第 1–3 项：阶段 2 截断按行拆分重试（`_extract_chunk`，≤2 层）、词内撇号不算引号、提取提示词禁止翻译原文。未改阈值/TTL/默认上限/阶段 1 回退语义。

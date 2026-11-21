@@ -2,7 +2,11 @@
 
 中文 | [English](release.en.md) · [文档总览](../README.md)
 
-打 tag 后 CI（`.github/workflows/release.yml`）自动打包并发布，产出六类 Windows 产品资产：`Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe`（单文件安装器）、`Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe`（离线安装器，见下）与 `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip`（仅本体的解压包），另有 CLI、llama backend 等独立资产。
+打 tag 后 CI（`.github/workflows/release.yml`）自动打包并发布，产出六类 Windows 产品资产：`Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe`（单文件安装器）、`Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe`（离线安装器，见下）与 `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip`（仅本体的解压包），另有 llama backend 等独立资产。自 2026-11 起不再发布 Stella CLI 包（WebUI 已覆盖其用途；`cli/` 源码与 CI 门禁保留）。
+
+### 发布耗时与工具链缓存
+
+`build-installer` 是关键路径。tauri-cli 使用 `tauri-apps/tauri` 官方预编译包（版本与 sha256 钉在 `release_assets/toolchain.json` 的 `tauri_cli` / `tauri_cli_windows_sha256`，实现见 `.github/actions/install-tauri-cli`），不再 `cargo install` 源码编译。Rust 依赖经 `Swatinem/rust-cache`（`shared-key: desktop-installer`）缓存；tag 触发的运行只能读默认分支的缓存，因此由 `.github/workflows/release-cache-warm.yml` 在 main 上预热。NSIS 压缩算法按 online / offline 分别取 `toolchain.json` 的 `nsis_compression`；手工触发可用 `offline_nsis_compression` 输入覆盖 offline 腿做实测。
 
 ### OneClick Offline 的离线负载
 

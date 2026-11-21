@@ -15,6 +15,12 @@ on:
         required: false
         type: boolean
         default: false
+      offline_nsis_compression:
+        description: 'Offline 安装器 NSIS 压缩算法（实测用）；toolchain = 取 release_assets/toolchain.json 的 nsis_compression.offline'
+        required: false
+        type: choice
+        options: [toolchain, lzma, zlib, bzip2, none]
+        default: toolchain
 
 permissions:
   contents: write
@@ -455,20 +461,44 @@ jobs:
       # 工具链锁定（WP06）：NSIS 模板/插件随 tauri-cli 版本变化——飘一个
       # 小版本就可能改变 .nsi 结构与 hook 时序。精确版本来自
       # release_assets/toolchain.json，升级必须走独立可审阅的变更。
-      - name: 安装 Tauri CLI（精确锁定版本）
-        shell: pwsh
-        run: |
-          $toolchain = Get-Content 'release_assets/toolchain.json' -Raw | ConvertFrom-Json
-          cargo install tauri-cli --version $toolchain.tauri_cli --locked
-          if ($LASTEXITCODE -ne 0) { throw "tauri-cli 安装失败（退出码 $LASTEXITCODE）" }
+      # 用官方预编译二进制替代 cargo install 源码编译：同一版本、同一
+      # bundler，按 toolchain.json 钉住的 sha256 校验（源码编译每条矩阵腿
+      # ~10 分钟，v6.3.0 实测 10m19s）。实现见 .github/actions/install-tauri-cli。
+      - name: 安装 Tauri CLI（精确锁定版本，官方预编译）
+        uses: ./.github/actions/install-tauri-cli
+
+      # 依赖编译缓存：四条矩阵腿依赖完全相同（STELLA_BUILD_PROFILE 只影响
+      # stella-desktop 自身，rust-cache 本就不缓存工作区 crate）。只让一条腿
+      # 保存，避免四条腿抢写同一个 key。tag 触发的运行只能读取默认分支的
+      # 缓存，正式发布要命中需由 release-cache-warm.yml 在 main 上预热。
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+          shared-key: desktop-installer
+          save-if: ${{ matrix.profile == 'oneclick-python' && matrix.payload == 'online' }}
 
       - name: 构建 OneClick NSIS 安装器
         shell: pwsh
         working-directory: desktop/src-tauri
         env:
           STELLA_BUILD_PROFILE: ${{ matrix.profile }}
+          COMPRESSION_OVERRIDE: ${{ inputs.offline_nsis_compression }}
         run: |
-          cargo tauri build --bundles nsis
+          # 压缩算法按 payload 取 toolchain.json 的 nsis_compression；手工触发
+          # 可用 offline_nsis_compression 输入覆盖 offline 腿（实测耗时与体积用）。
+          $toolchain = Get-Content '../../release_assets/toolchain.json' -Raw | ConvertFrom-Json
+          $compression = $toolchain.nsis_compression.'${{ matrix.payload }}'
+          if ('${{ matrix.payload }}' -eq 'offline' -and $env:COMPRESSION_OVERRIDE -and $env:COMPRESSION_OVERRIDE -ne 'toolchain') {
+            $compression = $env:COMPRESSION_OVERRIDE
+          }
+          if ($compression -notin @('none', 'zlib', 'bzip2', 'lzma')) {
+            throw "非法 NSIS 压缩算法：'$compression'"
+          }
+          Write-Host "NSIS compression = $compression（payload=${{ matrix.payload }}）"
+          $override = Join-Path $env:RUNNER_TEMP 'tauri-nsis-compression.json'
+          @{ bundle = @{ windows = @{ nsis = @{ compression = $compression } } } } |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $override -Encoding utf8NoBOM
+          cargo tauri build --bundles nsis --config $override
           if ($LASTEXITCODE -ne 0) { throw "tauri build 失败（退出码 $LASTEXITCODE）" }
 
       # 签名（S14/WP14）：install-test 必须验收**签名后字节**——本步骤在
@@ -562,102 +592,6 @@ jobs:
           path: dist/rust-wheel/*.whl
           if-no-files-found: error
 
-  # ============ stellacli 二进制（先行构建，打包集中在 build 作业） ============
-  # CLI 包 = 完整程序目录 + stellacli：CLI 是编排层，本地形态要透传
-  # python -m deploy，只发二进制会连「项目根」都找不到。因此二进制先在
-  # 各自平台构建成 artifact，由 build 作业与程序目录一起组装（方案见
-  # design_docs/跨平台 CLI 控制台方案 v1.0.md；打包不在此处做，避免
-  # 「程序目录」在多个作业间重复维护排除清单）。
-  build-cli-linux-binary:
-    needs: [resolve-release]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 透传统一解析的发布版本
-        run: |
-          echo "RELEASE_VERSION=${{ needs.resolve-release.outputs.version }}" >> "$GITHUB_ENV"
-
-      # resolve-release 已做 tag/pyproject 一致性校验；此处保留 Cargo 侧防线
-      - name: 校验版本号一致（tag 触发时）
-        if: github.event_name == 'push'
-        run: |
-          CARGO_V=$(sed -nE 's/^version *= *"([^"]+)".*/\1/p' cli/Cargo.toml | head -n1)
-          echo "Cargo=$CARGO_V tag=$RELEASE_VERSION"
-          if [ "$CARGO_V" != "$RELEASE_VERSION" ]; then
-            echo "::error::版本不一致（Cargo/tag）"; exit 1
-          fi
-
-      # 手工触发测试打包流程时同步版本号（与安装器 job 的处理同款）
-      - name: 同步 Cargo 版本号（手工触发时）
-        if: github.event_name != 'push'
-        run: sed -i "s/^version *= *.*/version = \"$RELEASE_VERSION\"/" cli/Cargo.toml
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-musl
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: cli
-
-      - name: 安装 musl 工具链
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-
-      - name: 构建（musl 静态链接，任意发行版可直接运行）
-        working-directory: cli
-        run: cargo build --release --target x86_64-unknown-linux-musl
-
-      - name: 上传二进制
-        uses: actions/upload-artifact@v7
-        with:
-          name: stellacli-linux
-          path: cli/target/x86_64-unknown-linux-musl/release/stellacli
-          if-no-files-found: error
-
-  build-cli-windows-binary:
-    needs: [resolve-release]
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 透传统一解析的发布版本
-        shell: bash
-        run: |
-          echo "RELEASE_VERSION=${{ needs.resolve-release.outputs.version }}" >> "$GITHUB_ENV"
-
-      - name: 校验版本号一致（tag 触发时）
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          CARGO_V=$(sed -nE 's/^version *= *"([^"]+)".*/\1/p' cli/Cargo.toml | head -n1)
-          echo "Cargo=$CARGO_V tag=$RELEASE_VERSION"
-          if [ "$CARGO_V" != "$RELEASE_VERSION" ]; then
-            echo "::error::版本不一致（Cargo/tag）"; exit 1
-          fi
-
-      - name: 同步 Cargo 版本号（手工触发时）
-        if: github.event_name != 'push'
-        shell: bash
-        run: sed -i "s/^version *= *.*/version = \"$RELEASE_VERSION\"/" cli/Cargo.toml
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: cli
-
-      - name: 构建
-        working-directory: cli
-        run: cargo build --release
-
-      - name: 上传二进制
-        uses: actions/upload-artifact@v7
-        with:
-          name: stellacli-windows
-          path: cli/target/release/stellacli.exe
-          if-no-files-found: error
-
   # 最终 EXE 安装验收（WP02）：产物构建完成 ≠ 可发布。四个产物各自在独立
   # 的 Windows runner 上静默安装并校验真实落盘结果；安装失败的包不允许进入
   # 发布作业。报告（含产物 SHA-256）上传为 artifact，发布作业据此核对
@@ -708,8 +642,6 @@ jobs:
         build-installer,
         install-test,
         build-rust-wheel,
-        build-cli-linux-binary,
-        build-cli-windows-binary,
         build-oneclick-catalog-backend,
         build-dashboard
       ]
@@ -746,7 +678,7 @@ jobs:
       #
       # 开发向内容（2026-09-08 bug_report_2026_9_8#2：曾把 .claude/ 等整包发出去）：
       # .claude / AGENTS.md / CLAUDE.md 是 AI 编码代理的技能与指令文件；
-      # cli/ 是 Rust CLI 的源码（产物另行打包）；assets/ 是 README 的仓库渲染图；
+      # cli/ 是 Rust CLI 的源码（自 2026-11 起不再随 Release 发布，WebUI 已覆盖其用途）；assets/ 是 README 的仓库渲染图；
       # .gitattributes 是 git 元数据；.stella-state.json 是开发机的运行痕迹
       # （正常应只存在于 STELLA_HOME，仓库里这份是历史误提交，绝不能让新装用户
       # 带着别人的 last_schema_version 启动）。.gitnexus 当前未被 git 跟踪，
@@ -810,7 +742,7 @@ jobs:
              release_assets/stop.bat release_assets/README-快速开始.txt dist/Stella/
 
       # webui/dist（Bot 托管面板）是构建产物，checkout 里天然没有——必须在
-      # 组装 Standalone/CLI 产品之前放进 repo 树与 dist/Stella，否则打包脚本的
+      # 组装 Standalone 产品之前放进 repo 树与 dist/Stella，否则打包脚本的
       # 硬校验会拒打（v5.1.0-rc 实测：FileNotFoundError webui/dist）。
       # dashboard 产物由 build-dashboard job 产出（needs 已保证它先完成）。
       - name: 下载 WebUI 前端产物
@@ -827,20 +759,12 @@ jobs:
           cp -r desktop/dashboard-dist/* dist/Stella/webui/dist/
 
       # Linux 上打的 zip 若 bat 是 LF，Windows 的 cmd 可能解析异常，必须统一 CRLF。
-      # 放在 CLI 组装之前：CLI 包从这份目录复制，不能再各自转一遍。
       - name: 确保 bat 与 txt 为 CRLF
         run: |
           sed -i 's/\r$//' dist/Stella/start.bat dist/Stella/doctor.bat \
             dist/Stella/stop.bat dist/Stella/README-快速开始.txt
           sed -i 's/$/\r/' dist/Stella/start.bat dist/Stella/doctor.bat \
             dist/Stella/stop.bat dist/Stella/README-快速开始.txt
-
-      - name: 下载 CLI 二进制
-        uses: actions/download-artifact@v8
-        with:
-          pattern: stellacli-*
-          path: cli-bin
-          merge-multiple: false
 
       - name: 下载 Rust wheel
         uses: actions/download-artifact@v8
@@ -854,16 +778,6 @@ jobs:
           name: stella-oneclick-catalog-backend
           path: llama-catalog
 
-      - name: 校验 CLI 二进制到位
-        run: |
-          test -s cli-bin/stellacli-linux/stellacli || { echo "::error::缺少 Linux CLI 二进制"; exit 1; }
-          test -s cli-bin/stellacli-windows/stellacli.exe || { echo "::error::缺少 Windows CLI 二进制"; exit 1; }
-          # upload/download-artifact v4 不保留 Unix 权限位：下载回来的 Linux
-          # 二进制没有 +x，必须补上（cp 保留权限、tar 按此打包，用户解压
-          # 即得可执行文件；Windows exe 无权限位概念，不需要处理）。
-          chmod +x cli-bin/stellacli-linux/stellacli
-          test -x cli-bin/stellacli-linux/stellacli || { echo "::error::chmod 后仍不可执行"; exit 1; }
-
       # 用与 Release 运行时相同的 3.12 验证，避免「CI 用 3.10 通过、用户的 3.12 失败」
       - name: 准备校验用 Python
         uses: actions/setup-python@v5
@@ -873,7 +787,7 @@ jobs:
 
       # 装依赖不只是为了 import 检查——它同时验证了 requirements.txt 本身可安装。
       # 若某个 pin 写错或上游撤版，用户会在 start.bat 的 pip 步骤失败，
-      # 那时排查成本远高于在这里拦住。CLI 包复用同一份程序目录，无需重复校验。
+      # 那时排查成本远高于在这里拦住。
       - name: 校验发布包依赖可安装且模块可 import
         run: |
           python -m pip install --upgrade pip
@@ -883,7 +797,7 @@ jobs:
 
       # 清单是「用户有没有改过发布包自带文件」的唯一判据（见 deploy/manifest.py）。
       # 没有它，升级时只能二选一：覆盖用户改过的人格，或让用户永远拿不到新默认值。
-      # 清单只登记人格/能力配置等固定目标（不随二进制变化），CLI 包直接复用。
+      # 清单只登记人格/能力配置等固定目标（不随二进制变化）。
       - name: 生成发布包清单
         run: |
           cd dist/Stella
@@ -1042,63 +956,6 @@ jobs:
           set -e
           python scripts/check_installer_size.py --products dist/products
 
-      # ============ CLI 包组装（完整程序目录 + stellacli，永不混入 Tauri 安装器） ============
-      # stellacli 是编排层：本地形态靠「程序根目录 + Python」透传 deploy 模块，
-      # 只发二进制会在 find_root 就失败（2026-09-08 bug_report：单独下载启动报错）。
-      # Windows CLI 包保留 start.bat：它就是嵌入式 Python 运行时的引导脚本
-      # （stellacli 的本地形态自动识别 runtime/python.exe）；
-      # Linux 包去掉 Windows 专用脚本，改用系统 Python + requirements.txt。
-      # 产物名写入 GITHUB_ENV 只定义一次——2026-09-07 曾因 pwsh 的 ${env:} 写法
-      # 让产物旧名、上传找新名，直到 upload 才炸；名字漂移必须在这里就硬失败。
-      - name: 组装 CLI 发布包（Windows zip + Linux tar.gz）
-        run: |
-          set -e
-          # 公共部分：从主发布目录复制，去掉 Tauri 安装器（CLI 面向无 WebView 设备，
-          # 方案要求 CLI 永不混入 Windows 主发布包的图形安装器）。
-          # README-快速开始.txt 以「双击 Stella.exe」为主线，GUI 向导不进 CLI 包，
-          # CLI 包用 README-CLI-快速开始.txt。
-          rsync -a --exclude 'Stella.exe' --exclude 'README-快速开始.txt' dist/Stella/ dist/cli-win/
-          rsync -a --exclude 'Stella.exe' --exclude '*.bat' --exclude 'README-快速开始.txt' \
-            dist/Stella/ dist/cli-linux/
-
-          cp cli-bin/stellacli-windows/stellacli.exe dist/cli-win/
-          cp release_assets/README-CLI-快速开始.txt dist/cli-win/
-          # CLI 包里的 txt 也要 CRLF（同主包的坑：Linux 打包、Windows 消费）
-          sed -i 's/\r$//' dist/cli-win/README-CLI-快速开始.txt
-          sed -i 's/$/\r/' dist/cli-win/README-CLI-快速开始.txt
-
-          cp cli-bin/stellacli-linux/stellacli dist/cli-linux/
-          cp release_assets/README-CLI-快速开始.txt dist/cli-linux/
-
-          # 完整性守卫：CLI 包必须是「能独立跑起来的完整形态」，缺任何一块
-          # 都会重演「单独下载启动报错」——这里在发布前钉死最低限度的组成。
-          for d in dist/cli-win dist/cli-linux; do
-            for f in bot.py requirements.txt .env.example pyproject.toml LICENSE \
-                     deploy/__main__.py config/settings.py core/pipeline.py \
-                     memory/SYSTEM.md system_prompts; do
-              test -e "$d/$f" || { echo "::error::CLI 包缺少必需组件: $d/$f"; exit 1; }
-            done
-          done
-          test -x dist/cli-linux/stellacli || { echo "::error::Linux CLI 二进制不可执行"; exit 1; }
-          test -s dist/cli-win/stellacli.exe || { echo "::error::Windows CLI 二进制缺失"; exit 1; }
-
-          cd dist/cli-win
-          zip -q -r "../Stella-CLI-version-${RELEASE_REF}-windows-amd64.zip" .
-          cd ../cli-linux
-          tar czf "../Stella-CLI-version-${RELEASE_REF}-linux-amd64.tar.gz" .
-          cd ..
-          # 安装器绝不进 CLI 包（与「CLI 永不混入主发布包」互为镜像的边界）
-          if unzip -l "Stella-CLI-version-${RELEASE_REF}-windows-amd64.zip" | grep -q 'Stella\.exe'; then
-            echo "::error::CLI 包混入了 Tauri 安装器"; exit 1
-          fi
-          if tar tzf "Stella-CLI-version-${RELEASE_REF}-linux-amd64.tar.gz" | grep -q 'Stella\.exe'; then
-            echo "::error::CLI 包混入了 Tauri 安装器"; exit 1
-          fi
-
-          echo "CLI_WIN_ZIP=Stella-CLI-version-${RELEASE_REF}-windows-amd64.zip" >> "$GITHUB_ENV"
-          echo "CLI_TGZ=Stella-CLI-version-${RELEASE_REF}-linux-amd64.tar.gz" >> "$GITHUB_ENV"
-          ls -lh Stella-CLI-version-*
-
       # —— 核心改进：支持在同版本 Release 已存在时覆盖 asset ——
       # 旧逻辑仅执行 `gh release create`，若 Release 已存在则直接报错失败，
       # 无法实现“同版本重发/补丁包”场景。本步骤改为幂等逻辑：
@@ -1141,7 +998,7 @@ jobs:
           set -e
           cd dist
           for f in products/*.exe products/*.zip \
-            products/package-catalog-windows-amd64.json "$CLI_WIN_ZIP" "$CLI_TGZ"; do
+            products/package-catalog-windows-amd64.json; do
             if [ ! -f "$f" ]; then
               echo "::error::找不到发布包 $f"
               exit 1
@@ -1151,14 +1008,14 @@ jobs:
             echo "Release ${RELEASE_REF} 已存在，更新 asset（--clobber）..."
             gh release upload "${RELEASE_REF}" products/*.exe products/*.zip \
               products/package-catalog-windows-amd64.json products/release-manifest.json \
-              products/SHA256SUMS.txt "$CLI_WIN_ZIP" "$CLI_TGZ" --clobber
+              products/SHA256SUMS.txt --clobber
             gh release edit "${RELEASE_REF}" --notes-file ../release_assets/RELEASE_NOTES_EFFECTIVE.md
             echo "✅ 已覆盖 ${RELEASE_REF} 的资产"
           else
             echo "Release ${RELEASE_REF} 不存在，创建新 Release..."
             gh release create "${RELEASE_REF}" products/*.exe products/*.zip \
               products/package-catalog-windows-amd64.json products/release-manifest.json \
-              products/SHA256SUMS.txt "$CLI_WIN_ZIP" "$CLI_TGZ" \
+              products/SHA256SUMS.txt \
               --title "Stella ${RELEASE_REF}" \
               --notes-file ../release_assets/RELEASE_NOTES_EFFECTIVE.md
             echo "✅ 已创建 Release ${RELEASE_REF}"
@@ -1189,7 +1046,7 @@ jobs:
           set -e
           cd dist
           for f in products/*.exe products/*.zip \
-            products/package-catalog-windows-amd64.json "$CLI_WIN_ZIP" "$CLI_TGZ"; do
+            products/package-catalog-windows-amd64.json; do
             if [ ! -f "$f" ]; then
               echo "::error::找不到发布包 $f"
               exit 1
@@ -1199,14 +1056,14 @@ jobs:
             echo "Release ${RELEASE_REF} 已存在，覆盖 asset..."
             gh release upload "${RELEASE_REF}" products/*.exe products/*.zip \
               products/package-catalog-windows-amd64.json products/release-manifest.json \
-              products/SHA256SUMS.txt "$CLI_WIN_ZIP" "$CLI_TGZ" --clobber
+              products/SHA256SUMS.txt --clobber
             gh release edit "${RELEASE_REF}" --notes-file ../release_assets/RELEASE_NOTES_EFFECTIVE.md
             echo "✅ 已覆盖 ${RELEASE_REF} 的资产（手工触发）"
           else
             echo "Release ${RELEASE_REF} 不存在，创建新 Release（手工触发）..."
             gh release create "${RELEASE_REF}" products/*.exe products/*.zip \
               products/package-catalog-windows-amd64.json products/release-manifest.json \
-              products/SHA256SUMS.txt "$CLI_WIN_ZIP" "$CLI_TGZ" \
+              products/SHA256SUMS.txt \
               --title "Stella ${RELEASE_REF}" \
               --notes-file ../release_assets/RELEASE_NOTES_EFFECTIVE.md
             echo "✅ 已创建 Release ${RELEASE_REF}（手工触发）"
@@ -1225,5 +1082,4 @@ jobs:
           path: |
             dist/products/*
             dist/*.zip
-            dist/*.tar.gz
           retention-days: 7

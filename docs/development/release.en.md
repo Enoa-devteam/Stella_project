@@ -2,7 +2,11 @@
 
 [中文](release.md) | English · [Documentation](../README.en.md)
 
-After a tag is pushed, CI (`.github/workflows/release.yml`) automatically packages and publishes six Windows product assets: `Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe` (single-file installers), `Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe` (offline installers, see below), and `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip` (Stella-only archives), plus independent assets such as the CLI and the llama backend.
+After a tag is pushed, CI (`.github/workflows/release.yml`) automatically packages and publishes six Windows product assets: `Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe` (single-file installers), `Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe` (offline installers, see below), and `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip` (Stella-only archives), plus independent assets such as the llama backend. Since 2026-11 the Stella CLI package is no longer released (the WebUI covers its use cases; the `cli/` source and its CI gate remain).
+
+### Release duration and toolchain caching
+
+`build-installer` is the critical path. tauri-cli comes from the official `tauri-apps/tauri` prebuilt archive (version and sha256 pinned as `tauri_cli` / `tauri_cli_windows_sha256` in `release_assets/toolchain.json`; implemented in `.github/actions/install-tauri-cli`) instead of a `cargo install` source build. Rust dependencies are cached with `Swatinem/rust-cache` (`shared-key: desktop-installer`); tag-triggered runs can only read default-branch caches, so `.github/workflows/release-cache-warm.yml` warms the cache on main. The NSIS compressor is taken per payload from `nsis_compression` in `toolchain.json`; manual runs can override the offline legs with the `offline_nsis_compression` input for measurement.
 
 ### The OneClick Offline payload
 

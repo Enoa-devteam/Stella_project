@@ -441,11 +441,12 @@ def test_release_workflow_resolves_version_once():
         "build-oneclick-catalog-backend",
         "build-offline-payload",
         "build-installer",
-        "build-cli-linux-binary",
-        "build-cli-windows-binary",
         "build",
     ):
         assert "resolve-release" in jobs[job_name].get("needs", []), job_name
+    # 2026-11：WebUI 已覆盖 CLI 的用途，Release 不再构建与发布 stellacli 包
+    for retired in ("build-cli-linux-binary", "build-cli-windows-binary"):
+        assert retired not in jobs, retired
     # Dashboard marker 必须消费统一解析的版本（F17：手工发布曾取错来源）
     dashboard_steps = json.dumps(jobs["build-dashboard"]["steps"])
     assert "needs.resolve-release.outputs.version" in dashboard_steps
