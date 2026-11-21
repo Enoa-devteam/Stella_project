@@ -2465,7 +2465,7 @@
     },
     {
       "id": "RELEASE-CI-SPEEDUP",
-      "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）",
+      "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）及发布阻断修复",
       "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：代码已在分支实现，等待 workflow_dispatch 实测（外部 CI）；不占用唯一 in_progress 槽位。",
       "status": "blocked",
       "dependencies": [],
@@ -2476,18 +2476,25 @@
         "release_assets/toolchain.json",
         "tests/test_toolchain.py",
         "tests/test_install_contract.py",
-        "发布文档与 cli/README.md"
+        "发布文档与 cli/README.md",
+        "llama.cpp UI 资产版本钉住（LLAMA_CPP_UI_VERSION）",
+        "停止分发 NapCat（catalog / OneClick profile / 离线验收 / 用户文档）"
       ],
       "done_criteria": [
         "workflow_dispatch 实测：tauri-cli 安装步骤 <1 分钟，四条 build-installer 腿与 install-test 全部通过",
         "第二次 dispatch 实测 rust-cache 命中并记录 Rust 编译耗时",
         "offline NSIS 压缩候选（zlib / none）各有实测耗时与安装器体积，据此决定 toolchain.json nsis_compression.offline",
-        "Release 不再产出 Stella-CLI-version-* 资产；相关测试与 check_docs 通过"
+        "Release 不再产出 Stella-CLI-version-* 资产；相关测试与 check_docs 通过",
+        "下一版发布说明 Breaking Changes 列出：不再内置 NapCat、不再发布 Stella CLI 包"
       ],
       "evidence": [
         {
           "report": "progress.md 2026-11-21 Release CI 耗时压缩",
           "result": "Implemented on ci/release-speedup; local tests 47 passed, check_docs ok, detect-changes low/0 processes. Dispatch runs pending. actionlint not run (permission denied)."
+        },
+        {
+          "report": "progress.md 2026-11-21 Release CI 耗时压缩",
+          "result": "Dispatch 44905135423 failed in llama backend (HF UI b1 404 -> latest mismatch), fixed by pinning b10941; dispatch 44905862288 backend OK (5m40s) then failed: NapCat 3.2.1 MSI 404 (upstream archived). Maintainer decided to stop distributing NapCat; removed from catalog/profiles. Targeted 175 passed; selection 872 passed / 4 failed (3 env subprocess-interpreter failures reproduced on clean origin/main or with change stashed, 1 order-dependent that passes 13/13 alone). Speed measurements still pending."
         }
       ]
     }

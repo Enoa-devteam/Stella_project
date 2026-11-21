@@ -1177,7 +1177,7 @@ Store credential references such as `env:TELEGRAM_BOT_TOKEN` or a managed UUID r
 
 ## OneBot Connection
 
-The Bot communicates with NapCat through a OneBot V11 WebSocket. **NapCat must be logged in first**: install [NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop) and complete QQ login. The Bot no longer manages the NapCat process; automatic login falls back to QR-code scanning, so a person must be present for login
+The Bot communicates with NapCat through a OneBot V11 WebSocket. **NapCat must be logged in first**: install [NapCat](https://github.com/NapNeko/NapCatQQ) (or another OneBot V11 implementation) and complete QQ login. The Bot no longer manages the NapCat process; automatic login falls back to QR-code scanning, so a person must be present for login
 (see `design_docs/deprecated_napcat_manager.md`).
 
 | Method | Bot side (`.env`) | NapCat side (WebUI network settings) |

@@ -212,8 +212,10 @@ if ($ExpectedPayloadMode -eq "offline") {
             $progressPayload = Get-Content -LiteralPath $progressPath -Raw | ConvertFrom-Json
             Add-Check "offline: bootstrap progress state is complete" `
                 ($progressPayload.state -eq "complete") "state=$($progressPayload.state) error=$($progressPayload.error)"
-            Test-PathExists "offline: napcat metadata written" `
-                (Join-Path $dataRoot ".stella\napcat.json") | Out-Null
+            # NapCat 自 2026-11-21 起不随 OneClick 分发：离线安装不得再写 NapCat 元数据。
+            $napcatMeta = Join-Path $dataRoot ".stella\napcat.json"
+            Add-Check "offline: napcat no longer installed" `
+                (-not (Test-Path -LiteralPath $napcatMeta)) "unexpected $napcatMeta"
         } else {
             Add-Check "offline: bootstrap progress file found" -Passed $false `
                 "no .bootstrap-progress under data root $dataRoot（helper 可能在组件步骤失败——见报告中的会话日志）"

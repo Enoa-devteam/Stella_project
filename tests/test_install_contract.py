@@ -614,9 +614,10 @@ def test_helper_installs_bundled_rust_wheel_for_rust_products(tmp_path, monkeypa
 
 
 def test_component_failure_lands_in_failed_terminal_state(tmp_path, monkeypatch):
-    """F04 修复：NapCatError 也必须落到 failed 终态（归一化为 BootstrapError，
-    原始异常保留在异常链上）。"""
-    from deploy import bootstrap, napcat
+    """F04 修复：非 AcquireError 的组件异常也必须落到 failed 终态（归一化为
+    BootstrapError，原始异常保留在异常链上）。NapCat 已不随 OneClick 安装
+    （2026-11-21），失败注入改到仍会装载的默认 embedding 组件。"""
+    from deploy import bootstrap, packages
 
     def fake_download(record, data_root, **_kwargs):
         target = tmp_path / f"{record['id']}.zip"
@@ -627,9 +628,9 @@ def test_component_failure_lands_in_failed_terminal_state(tmp_path, monkeypatch)
     monkeypatch.setattr(bootstrap, "_download_record", fake_download)
 
     def explode(*_args, **_kwargs):
-        raise napcat.NapCatError("install_failed", "MSI 爆炸")
+        raise packages.PackageError("install_failed", "模型装载爆炸")
 
-    monkeypatch.setattr(bootstrap.acquire, "install_napcat", explode)
+    monkeypatch.setattr(bootstrap.acquire, "install_default_embedding", explode)
     data_root = tmp_path / "data"
     with pytest.raises(bootstrap.BootstrapError) as error:
         bootstrap.install_profile(
@@ -643,7 +644,7 @@ def test_component_failure_lands_in_failed_terminal_state(tmp_path, monkeypatch)
 
 def test_failed_run_retry_skips_healthy_components(tmp_path, monkeypatch):
     """F04 修复：failed 重试复核真实状态，健康组件（llama-cpu）直接复用。"""
-    from deploy import acquire, bootstrap, napcat, runtime
+    from deploy import acquire, bootstrap, packages, runtime
 
     catalog, _files = _catalog(tmp_path)
     downloads: list[str] = []
@@ -658,19 +659,16 @@ def test_failed_run_retry_skips_healthy_components(tmp_path, monkeypatch):
     monkeypatch.setattr(bootstrap, "_download_record", fake_download)
     monkeypatch.setattr(runtime, "INSTANCE_RUNTIME_DIR", tmp_path / "gui-runtime")
     monkeypatch.setattr(runtime, "INSTANCE_ID", "contract-retry-test")
-    napcat_calls = {"count": 0}
+    # NapCat 已不随 OneClick 安装（2026-11-21）：首轮失败注入到默认 embedding。
+    embedding_calls = {"count": 0}
 
-    def flaky_napcat(manifest, root, **kwargs):
-        napcat_calls["count"] += 1
-        if napcat_calls["count"] == 1:
-            raise napcat.NapCatError("install_failed", "MSI 爆炸")
-        return manifest
+    def flaky_embedding(model, root, **kwargs):
+        embedding_calls["count"] += 1
+        if embedding_calls["count"] == 1:
+            raise packages.PackageError("install_failed", "模型装载爆炸")
+        return {"id": model["id"]}
 
-    monkeypatch.setattr(acquire, "install_napcat", flaky_napcat)
-    monkeypatch.setattr(
-        acquire, "install_default_embedding",
-        lambda model, root, **kwargs: {"id": model["id"]},
-    )
+    monkeypatch.setattr(acquire, "install_default_embedding", flaky_embedding)
     data_root = tmp_path / "data"
     with pytest.raises(bootstrap.BootstrapError):
         bootstrap.install_profile("oneclick-python", data_root, catalog_path=catalog)

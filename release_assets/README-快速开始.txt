@@ -4,8 +4,8 @@
 
 本项目提供两类 Windows 版本：
 
-- OneClick：下载一个安装程序，双击后自动展开程序并准备 Python、llama.cpp、
-  NapCat 与 qwen3-embedding-0.6b。
+- OneClick：下载一个安装程序，双击后自动展开程序并准备 Python、llama.cpp
+  与 qwen3-embedding-0.6b（自 2026-11 起不再内置 NapCat）。
 - Standalone：只包含 Stella 本体，解压后使用系统 Python；不会自动下载 NapCat、
   llama.cpp 或任何 GGUF 模型。
 
@@ -15,9 +15,10 @@
  OneClick 首次安装
 ----------------------------------------------------
 1. 双击 `Stella-OneClick-*.exe`，安装程序会自动展开 Stella。
-2. 首次启动会自动准备嵌入式 Python、llama.cpp CPU 后端、
-   NapCat 和 `qwen3-embedding-0.6b`。
-3. NapCat 登录仍需人工扫码；程序不会 OCR、代扫码或自动确认。
+2. 首次启动会自动准备嵌入式 Python、llama.cpp CPU 后端
+   和 `qwen3-embedding-0.6b`。
+3. 自行安装并登录 NapCat（https://github.com/NapNeko/NapCatQQ）或其他 OneBot V11 实现；
+   登录需人工扫码，程序不会 OCR、代扫码或自动确认。
 4. 在 NapCat WebUI 的「网络配置」里添加「WebSocket 客户端」，
    地址填：
      ws://127.0.0.1:8080/onebot/v11/ws

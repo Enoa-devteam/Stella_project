@@ -1192,7 +1192,7 @@ bundle 中只写凭据引用，例如 `env:TELEGRAM_BOT_TOKEN` 或受管理的 U
 ## OneBot 连接
 
 Bot 通过 OneBot V11 WebSocket 与 NapCat 通信。**NapCat 侧必须先登录**：用
-[NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop) 安装并完成 QQ 登录，
+[NapCat](https://github.com/NapNeko/NapCatQQ)（或其他 OneBot V11 实现）安装并完成 QQ 登录，
 Bot 不再代管 NapCat 进程——自动登录会退化为扫码，登录必须有人在场
 （见 `design_docs/deprecated_napcat_manager.md`）。
 

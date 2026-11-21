@@ -18,7 +18,7 @@ Offline 变体与在线版**同一份代码、同一个 profile id**，只是 NS
 - 嵌入式 Python 运行时 zip（哈希从 `python.rs` 的 `PY_VER`/`PY_SHA256` 解析，单一事实来源）；
 - `get-pip.py`（`MANIFEST.json` 记录 sha256，安装器校验后配合 `--no-index` 离线装 pip）；
 - requirements.txt 的完整 wheel 闭包（`pip wheel` 现场构建，含只有 sdist 的包，如 `qrcode_terminal`）；
-- package catalog 声明的全部组件（llama.cpp backend / NapCat / 默认 embedding 模型，文件名 = catalog 的 `artifact` 字段，校验走与在线安装同一条 catalog checksum 路径）；
+- package catalog 声明的全部组件（llama.cpp backend / 默认 embedding 模型；NapCat 自 2026-11-21 起不再分发，文件名 = catalog 的 `artifact` 字段，校验走与在线安装同一条 catalog checksum 路径）；
 - playwright 的 chromium-headless-shell（`PLAYWRIGHT_BROWSERS_PATH` 指向随包内核，渲染零下载）。
 
 WebView2 运行时不在负载里，而是由 Tauri 的

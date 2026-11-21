@@ -15,26 +15,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from deploy.profiles import ONECLICK_DEFAULT_EMBEDDING
 
-NAPCAT = {
-    "kind": "onebot",
-    "id": "napcat",
-    "version": "3.2.1",
-    "path": "NapCatQQ-Desktop-3.2.1-x64.msi",
-    "platform": "windows-amd64",
-    "source": (
-        "https://github.com/NapNeko/NapCatQQ-Desktop/releases/download/"
-        "v3.2.1/NapCatQQ-Desktop-3.2.1-x64.msi"
-    ),
-    "checksum": "1dca9b69fabe6524370f1e8df0c7384edb9f112080878bd8ec52aa38495990df",
-    "license": "GPL-3.0",
-    "sbom": (
-        "https://github.com/NapNeko/NapCatQQ-Desktop/releases/download/"
-        "v3.2.1/SHA256SUMS"
-    ),
-    "artifact": "NapCatQQ-Desktop-3.2.1-x64.msi",
-    "status": "available",
-    "remote": True,
-}
+# NapCat 已停止随 OneClick 分发（2026-11-21）：上游 NapNeko/NapCatQQ-Desktop 迁移并归档，
+# 固定的 3.2.1 MSI 已不可下载。QQ 接入改为用户自行安装任一 OneBot V11 实现。
 
 
 def _sha256(path: Path) -> str:
@@ -95,7 +77,6 @@ def build_catalog(
             "size": backend_asset.stat().st_size,
             "remote": True,
         },
-        NAPCAT,
         {
             "kind": "model",
             "id": ONECLICK_DEFAULT_EMBEDDING["id"],

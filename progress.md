@@ -3,7 +3,10 @@
 - Scope：`RELEASE-CI-SPEEDUP`，分支 `ci/release-speedup`（worktree `../stella_project-release-speedup`）。v6.3.0 run 40062756112 共 42 分钟；关键路径 build-installer offline 腿 ~28 分钟 = tauri-cli `cargo install` 10m19s + Rust 编译 6m00s（其中 stella-desktop fat LTO ~3m）+ makensis 9m45s（online 2m）。
 - What's Done：tauri-cli 改用官方预编译包并钉 sha256（`.github/actions/install-tauri-cli`）；build-installer 加 `Swatinem/rust-cache`（shared-key `desktop-installer`，仅一条腿保存），新增 `release-cache-warm.yml` 在 main 预热（tag 运行只能读默认分支缓存）；NSIS 压缩按 payload 取 `toolchain.json` `nsis_compression`（默认仍 lzma，行为不变），dispatch 输入 `offline_nsis_compression` 可覆盖做实测；按维护者决定停发 Stella CLI 包（删两个 build-cli job、组装与上传，`cli/Cargo.toml` 版本合同保留）。顺带去掉 toolchain.json 重复的 `installer_budget_mb` 键。
 - Verification：`pytest tests/test_toolchain.py tests/test_install_contract.py tests/test_release_layout.py` 47 passed；`check_docs.py` ok；全部 workflow YAML 可解析；GitNexus detect-changes（worktree 索引）11 files / 12 symbols / 0 processes / low。actionlint 未运行（下载外部二进制被权限拒绝）。CI dispatch 实测待跑。
-- Next：dispatch #1（offline=zlib，冷缓存）→ dispatch #2（offline=none，热缓存）；按实测体积/耗时定 `nsis_compression.offline`，再开 PR。
+- 发布阻断 1（与本改动无关，main 同样受影响）：dispatch 44905135423 在 llama backend 失败——浅克隆让 llama.cpp 推导出不存在的 UI 版本 b1，回退浮动 latest，2026-11 latest 资产变化后资产校验失败。修复：`LLAMA_CPP_UI_VERSION: b10941`（git ls-remote 核实 4a89937 = b10941，bucket 200）。dispatch 44905862288 backend 5m40s 通过。`release-llama.yml` 同类风险未改。
+- 发布阻断 2：同 run 的 offline payload 因 NapCat 3.2.1 MSI 404 失败（NapNeko/NapCatQQ-Desktop → AQiaoYo/NapCatQQ-Desktop，已归档、无 release/tag）。已发布 v6.3.0 在线安装器的 NapCat 步骤同样失效。维护者决定：移除不可用下载源、停止支持。已做：catalog 删 NAPCAT、OneClick profile 去掉 napcat、`validate_profile` 仅放宽（不再要求 napcat，但不拒绝旧 profile；impact HIGH 已提示）、离线验收改为断言不再写 napcat.json、README/快速开始/配置/发布文档与 init 向导链接改指 NapNeko/NapCatQQ。保留已安装 NapCat 的运行期代码（deploy/napcat.py、packages napcat-* 子命令）以免升级破坏。`print_next_steps` impact LOW。
+- Verification（第二轮）：定向 175 passed；`-k deploy/install/...` 选集 872 passed / 4 failed——3 个为子进程解释器缺依赖的本机环境问题（干净 origin/main 或 stash 后同样失败），1 个顺序相关（单独 13/13 ×3 通过）。ruff PASS；check_docs ok；detect-changes 21 files / 30 symbols / 0 processes / low。
+- Next：重跑 dispatch #1（offline=zlib，冷缓存）→ dispatch #2（offline=none，热缓存）；按实测体积/耗时定 `nsis_compression.offline`，再开 PR。下一版发布说明 Breaking Changes 必须写明：不再内置 NapCat、不再发布 Stella CLI 包。
 
 ## 2026-11-21 — 生产写侧 0 晋升最小修复与复测
 

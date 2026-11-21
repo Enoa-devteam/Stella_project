@@ -15,7 +15,7 @@ The Offline variants share **the same code and the same profile id** as the onli
 - the embedded Python runtime zip (hash parsed from `PY_VER`/`PY_SHA256` in `python.rs` — single source of truth);
 - `get-pip.py` (`MANIFEST.json` records its sha256; the installer verifies it and installs pip offline with `--no-index`);
 - the full wheel closure of requirements.txt (built in CI with `pip wheel`, which also covers sdist-only packages such as `qrcode_terminal`);
-- every component declared by the package catalog (llama.cpp backend / NapCat / the default embedding model; file names equal the catalog `artifact` field, verified through the same catalog-checksum path as online installs);
+- every component declared by the package catalog (llama.cpp backend / the default embedding model — NapCat is no longer distributed since 2026-11-21; file names equal the catalog `artifact` field, verified through the same catalog-checksum path as online installs);
 - playwright's chromium-headless-shell (`PLAYWRIGHT_BROWSERS_PATH` points at the bundled kernel, so rendering needs no download).
 
 The WebView2 runtime is not part of the payload; instead it is embedded into the NSIS installer itself via Tauri's `webviewInstallMode: offlineInstaller` (about +127MB): at install time the registry is checked first — an existing WebView2 is left alone, a missing one is installed silently from the embedded offline package, with no network either way. The default `downloadBootstrapper` needs to download the runtime, which leaves the GUI unable to start on offline machines without WebView2 (real user report, 2026-09), and `embedBootstrapper` still requires internet — `offlineInstaller` is the only truly offline option.

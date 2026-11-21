@@ -312,8 +312,8 @@ def print_next_steps(a: Answers) -> None:
     """结尾清单。反向 WS 的 URL 用实际填的 host/port 拼出来，让用户直接复制。"""
     print()
     print("下一步：")
-    print("  1. 用 NapCatQQ Desktop 安装并登录 NapCat（需扫码，必须人工）")
-    print("     https://github.com/NapNeko/NapCatQQ-Desktop")
+    print("  1. 安装并登录 NapCat 或其他 OneBot V11 实现（需扫码，必须人工）")
+    print("     https://github.com/NapNeko/NapCatQQ")
     if a.onebot_mode == "reverse":
         print("  2. 在 NapCat WebUI 添加「WebSocket 客户端」，URL 填：")
         print(f"     ws://{a.host}:{a.port}/onebot/v11/ws")
