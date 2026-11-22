@@ -1,3 +1,14 @@
+## 2026-11-22 — v6.4.0 发布结果与 v6.4.1 准备
+
+- v6.4.0：已发布（tag → a351335，Release 44977488871，14m53s），公开资产哈希、安装后内嵌 URL、Rust 资产均核对。GHCR 新 namespace 包为 private，待维护者改 Public。
+- 测量更正：offline `none` 是按再压缩后的 artifact 大小误选；EXE 实际 zlib 1119MiB / none 1461MiB（+31%）。已更正 v6.4.0 发布说明与 #138 描述；6.4.1 改回 zlib（44986278592 实测 1120.3 / 1121.6MiB）。以后只比较 EXE 本体大小。
+- Windows Sandbox（干净 Win11 26100，无 VC++ / Python）发现：① Smart App Control 开启时未签名安装器被直接拦截；② v6.3.0、v6.4.0 桌面壳缺 VCRUNTIME140_1.dll 起不来、llama-server 0xC0000135（v6.2.0 导入表相同，未运行）；CI runner 自带运行库所以一直测不出。修复：build.rs `STATIC_VCRUNTIME`、llama 包 app-local CRT/OpenMP、`scripts/check_windows_crt.py` 门禁。
+- 6.4.1 实测（构建 500d882，SAC 仅在一次性 guest 内关闭）：Python offline 断网 GUI 首启 ready、llama/embedding/渲染通过；v6.3.0 覆盖升级 schema 22→24、数据与备份保留、活动 llama 为 6.4.1；两种 online 均能启动 GUI，Python online 依赖装好、llama 404（发布前预期）；Rust online 因 guest 无网未完成；Rust offline 结果见 PR。
+- v6.4.0 临时绕过：安装 Microsoft VC++ Redistributable 后 offline 断网全链路通过。
+- 另发现、未修：覆盖升级残留 `memory/participation/` 遮蔽兼容别名；组件下载失败时 GUI 仍显示「正在启动」；`deploy/llama.py:_server_path` 按字符串排序版本（6.4.10 < 6.4.9，发 x.y.10 前必须修）；#142、#143。
+- 五个测试用 candidate 预发布在删除前已不存在（非 agent、非工作流删除，tag 保留，来源不明）。
+- Next：PR 审阅合并（无 bypass 授权）→ 维护者决定是否打 v6.4.1 → 发布后用公开 online 安装器在 Sandbox 补测完整组件安装。
+
 ## 2026-11-22 — v6.4.0 发布准备
 
 - Scope：维护者要求从 main 发布 6.4.0。授权：#139、#140 与发布准备 PR 在各自 CI 通过后由 agent 用 admin bypass 合并（仅限这三个），随后推 tag 并验证。
@@ -24,7 +35,7 @@
 - 发布阻断 2：同 run 的 offline payload 因 NapCat 3.2.1 MSI 404 失败（NapNeko/NapCatQQ-Desktop → AQiaoYo/NapCatQQ-Desktop，已归档、无 release/tag）。已发布 v6.3.0 在线安装器的 NapCat 步骤同样失效。维护者决定：移除不可用下载源、停止支持。已做：catalog 删 NAPCAT、OneClick profile 去掉 napcat、`validate_profile` 仅放宽（不再要求 napcat，但不拒绝旧 profile；impact HIGH 已提示）、离线验收改为断言不再写 napcat.json、README/快速开始/配置/发布文档与 init 向导链接改指 NapNeko/NapCatQQ。保留已安装 NapCat 的运行期代码（deploy/napcat.py、packages napcat-* 子命令）以免升级破坏。`print_next_steps` impact LOW。
 - Verification（第二轮）：定向 175 passed；`-k deploy/install/...` 选集 872 passed / 4 failed——3 个为子进程解释器缺依赖的本机环境问题（干净 origin/main 或 stash 后同样失败），1 个顺序相关（单独 13/13 ×3 通过）。ruff PASS；check_docs ok；detect-changes 21 files / 30 symbols / 0 processes / low。
 - 发布阻断 3：online 安装器体积门禁（main 同样受影响）——Tauri `offlineInstaller` 内嵌的 WebView2 x64 离线运行时不钉版本，微软 2026-11-19 版 280.5MB，online 从 221MB 涨到 299–301MB > 300MB 预算。维护者决定 online 改 `embedBootstrapper`（`toolchain.json` `webview_install_mode`，CI 按 payload 覆盖；offline 硬校验必须 `offlineInstaller`）。
-- Evaluation（同 v6.3.0 run 40062756112：42m03s）：44907469739（冷缓存，offline zlib）到 build 作业 20m07s；44909779625（热缓存，offline none）16m41s；两者仅败于上述体积门禁。makensis offline：lzma 9m45s / zlib 1m08s / none 8s；offline 体积 zlib 1117–1118MB / none 1123–1125MB；tauri-cli 安装 1–2s（原 10m19s）；rust-cache full match，仅 stella-desktop 编译 2m31s–3m05s（原 6m00s 全量）。定 `nsis_compression.offline = none`。终验 44911478831 全绿 **17m29s**：安装器腿 3m32s–5m20s，online 16–18MB，offline 1123–1125MB，4 个 install-test 通过。
+- Evaluation（同 v6.3.0 run 40062756112：42m03s）：44907469739（冷缓存，offline zlib）到 build 作业 20m07s；44909779625（热缓存，offline none）16m41s；两者仅败于上述体积门禁。makensis offline：lzma 9m45s / zlib 1m08s / none 8s；offline 体积 zlib 1117–1118MB / none 1123–1125MB（**更正 2026-11-22：这是再压缩后的 artifact 大小；EXE 实际 zlib 1119MiB / none 1461MiB**）；tauri-cli 安装 1–2s（原 10m19s）；rust-cache full match，仅 stella-desktop 编译 2m31s–3m05s（原 6m00s 全量）。定 `nsis_compression.offline = none`。终验 44911478831 全绿 **17m29s**：安装器腿 3m32s–5m20s，online 16–18MB，offline 1123–1125MB，4 个 install-test 通过。
 - Next：开 PR（待维护者确认）；合并后确认 `release-cache-warm.yml` 在 main 跑通；下一版发布说明 Breaking Changes 写明：不再内置 NapCat、不再发布 Stella CLI 包、online 安装器改为 WebView2 引导器（缺 WebView2 时联网安装）。clean VM 验证缺 WebView2 机器上的 online 安装。可选后续：`lto = "thin"`（改变发布二进制，需决策）、llama backend 缓存（现 4.5–6 分钟，关键路径首段）、`release-llama.yml` 同类 UI 版本风险、清理已安装 NapCat 的运行期代码、message-flow manifest 归档无限增长（150MB/41 份）。
 
 ## 2026-11-21 — 生产写侧 0 晋升最小修复与复测

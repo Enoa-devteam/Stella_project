@@ -48,7 +48,10 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 ## Known Boundaries
 
 - The legacy runtime remains the default.
-- Not verified: WebView2 installation on a machine without it, real QQ/OneBot delivery, and real-model acceptance.
+- Tested in Windows Sandbox on pre-release builds with Smart App Control off: a Python Offline install and an over-install from v6.3.0, both without network, reached a ready GUI core with user data kept.
+- Not verified: a complete Online component installation of this version (its download URL exists only after publication), WebView2 installation on a machine without it, Windows 10, real QQ/OneBot delivery, and chat-model acceptance.
+- An over-install from v6.3.0 or earlier leaves the old `memory/participation/` directory, which shadows the compatibility alias `memory.participation` for plugins that import it. stella itself imports `aoede.participation`. A clean program directory avoids this.
+- When a component download fails on first start, the app keeps showing the starting screen instead of the error.
 - Known issues: #142 (a failed table creation during migration is not reported) and #143 (no downgrade guard; restore the pre-migration backup to roll back).
 - `VERSIONED_LAYOUT=0` remains the workflow default.
 
