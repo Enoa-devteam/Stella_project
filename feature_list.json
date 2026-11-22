@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-21",
+  "updated_at": "2026-11-22",
   "active_feature": "AOEDE-MNEME-BENCH-IMPL",
   "features": [
     {
@@ -2480,7 +2480,8 @@
         "llama.cpp UI 资产版本钉住（LLAMA_CPP_UI_VERSION）",
         "停止分发 NapCat（catalog / OneClick profile / 离线验收 / 用户文档）",
         "online 安装器 WebView2 改 embedBootstrapper；offline NSIS 压缩定为 none",
-        "llama.cpp backend 缓存（.github/actions/llama-cpu-backend）、desktop crate-type 仅 rlib、大 artifact compression-level 0、release-llama.yml UI 版本钉住"
+        "llama.cpp backend 缓存（.github/actions/llama-cpu-backend）、desktop crate-type 仅 rlib、大 artifact compression-level 0、release-llama.yml UI 版本钉住",
+        "v6.4.0 发布：迁移预演数据丢失修复（#140）、安装器内嵌正式 Release URL 与 Rust 资产修复（#139）、版本与发布说明"
       ],
       "done_criteria": [
         "workflow_dispatch 实测：tauri-cli 安装步骤 <1 分钟，四条 build-installer 腿与 install-test 全部通过",
@@ -2505,6 +2506,10 @@
         {
           "report": "progress.md 2026-11-22 Release CI 耗时压缩（第二轮）",
           "result": "Warm workflow 44966694885 succeeded (rust 5m32s, llama backend 4m32s, cache saved). Release dispatch 44967247863 succeeded end to end in 12m00s: backend 24s (cache hit), rust-cache full match on the warm-saved key, stella-desktop 2m12s-2m45s, payload upload 8s (was 36s), installer upload 15s (was 47s)."
+        },
+        {
+          "report": "progress.md 2026-11-22 v6.4.0 发布准备",
+          "result": "PR #138 merged (8d86235). Pre-tag audit found three defects: migrate dry-run data loss (#140), disposable candidate URLs embedded in installers and stale Rust asset contract (#139). The earlier claim that deleted candidates did not affect shipped installers was wrong."
         }
       ]
     }

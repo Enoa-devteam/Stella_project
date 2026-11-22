@@ -1,3 +1,12 @@
+## Current Handoff — v6.4.0 发布（2026-11-22）
+
+- Current Objective：合并 #139、#140 与发布准备 PR 后，从 main 打 `v6.4.0`。admin bypass 授权仅限这三个 PR、且各自 CI 通过后。
+- Files：`mneme/schema.py`（#140）；`release.yml`、`release-memory-rust.yml`（#139）；版本文件、发布说明、README（发布准备 PR）。
+- Verification Evidence：见两个 PR 与 progress.md 同日条目。
+- Recovery Notes：打 tag 前确认远端没有 v6.4.0、main 的 CI 与 Release cache warm 都通过（版本号变化会改变 Rust 缓存键）。tag 同时触发 GHCR `latest` 与未签名安装器发布。已发布版本的 llama 资产不可替换，失败时只重跑失败作业。
+- Blockers：干净 VM、覆盖升级、真实 QQ / 模型未验收。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — Release CI 耗时压缩（2026-11-21）
 
 - Current Objective：`RELEASE-CI-SPEEDUP`（blocked，非唯一 in_progress 槽位）。分支 `ci/release-speedup`，worktree `E:\stella\stella_project-release-speedup`（主 checkout 因未跟踪文件冲突无法切换）。CI 实测全绿：dispatch 44967247863，12m00s（v6.3.0 为 42m03s）；预热工作流 44966694885 通过，backend 与 Rust 缓存均命中。
