@@ -54,9 +54,28 @@ def test_toolchain_llama_commit_matches_release_workflow():
 
 def test_release_workflow_pins_llama_ui_assets():
     # 不钉时浅克隆推导出不存在的 b1 并回退浮动 latest（run 44905135423 失败）
+    toolchain = _toolchain()
     workflow = RELEASE_YML.read_text(encoding="utf-8")
-    assert re.search(r"LLAMA_CPP_UI_VERSION: b\d+\n", workflow), "llama.cpp UI 资产版本必须钉住"
-    assert "HF_UI_VERSION: ${{ env.LLAMA_CPP_UI_VERSION }}" in workflow
+    match = re.search(r"LLAMA_CPP_UI_VERSION: (b\d+)\n", workflow)
+    assert match, "llama.cpp UI 资产版本必须钉住"
+    assert match.group(1) == toolchain["llama_cpp_ui_version"]
+    assert "ui-version: ${{ env.LLAMA_CPP_UI_VERSION }}" in workflow
+    action = (REPO_ROOT / ".github" / "actions" / "llama-cpu-backend" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "HF_UI_VERSION: ${{ inputs.ui-version }}" in action
+
+
+def test_llama_backend_cache_key_covers_all_inputs():
+    action = (REPO_ROOT / ".github" / "actions" / "llama-cpu-backend" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    key_part = action.split("- id: restore")[0]
+    for token in ("INPUT_COMMIT", "INPUT_UI_VERSION", "build_llama_package.py",
+                  "verify_llama_package.py", "OPENSSL_RUNTIME_DIR"):
+        assert token in key_part, f"缓存键缺少输入 {token}"
+    verify_step = action.split("- name: 校验 Windows CPU backend")[1].split("- name:")[0]
+    assert "if:" not in verify_step, "命中缓存也必须重跑校验"
 
 
 def test_product_profiles_pin_embedding_to_toolchain_commit():

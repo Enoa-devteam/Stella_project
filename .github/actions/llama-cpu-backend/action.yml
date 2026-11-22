@@ -1,0 +1,137 @@
+name: Build pinned llama.cpp Windows CPU backend (cached)
+description: >-
+  构建并校验 OneClick 使用的 llama.cpp Windows CPU backend 包目录（不含版本号）。
+  产物只由 llama.cpp 提交、内嵌 Web UI 版本、打包/校验脚本与 runner 上被随包
+  拷入的 OpenSSL DLL 决定，因此按这些输入的哈希缓存：命中时跳过 llama.cpp
+  检出与 ~4.5 分钟的编译，只重跑静态校验。tag 运行只能读默认分支缓存，
+  main 上由 release-cache-warm.yml 预热。调用方需先 checkout 本仓库并 setup-python。
+
+inputs:
+  commit:
+    description: 'llama.cpp 完整提交（与 release.yml LLAMA_CPP_COMMIT / toolchain.json 一致）'
+    required: true
+  ui-version:
+    description: 'llama-server 内嵌 Web UI 的 HF bucket 版本（该提交的 release tag，如 b10941）'
+    required: true
+  package-dir:
+    description: '输出包目录（版本无关；调用方再按发布版本命名归档）'
+    required: true
+
+outputs:
+  cache-hit:
+    description: "'true' 表示包目录来自缓存"
+    value: ${{ steps.restore.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: 准备 Windows OpenSSL runtime
+      shell: pwsh
+      run: |
+        $requiredSets = @(
+          @('libcrypto-3-x64.dll', 'libcrypto-3.dll'),
+          @('libssl-3-x64.dll', 'libssl-3.dll')
+        )
+        $roots = @(
+          (Join-Path $env:ProgramFiles 'OpenSSL-Win64\bin'),
+          (Join-Path $env:ProgramFiles 'OpenSSL\bin'),
+          'C:\Program Files\Git\usr\bin',
+          'C:\ProgramData\chocolatey\bin'
+        )
+        function Find-OpenSslDir {
+          foreach ($root in $roots) {
+            $crypto = $requiredSets[0] | Where-Object {
+              Test-Path (Join-Path $root $_)
+            }
+            $ssl = $requiredSets[1] | Where-Object {
+              Test-Path (Join-Path $root $_)
+            }
+            if ($crypto -and $ssl) {
+              return $root
+            }
+          }
+          return $null
+        }
+        $opensslDir = Find-OpenSslDir
+        if (-not $opensslDir) {
+          choco install openssl --yes --no-progress
+          $opensslDir = Find-OpenSslDir
+        }
+        if (-not $opensslDir) {
+          throw "未找到 Windows OpenSSL runtime: libcrypto-3-x64.dll/libcrypto-3.dll, libssl-3-x64.dll/libssl-3.dll"
+        }
+        "OPENSSL_RUNTIME_DIR=$opensslDir" >> $env:GITHUB_ENV
+
+    # 缓存键覆盖全部产物输入：提交、UI 版本、打包/校验脚本、本 action，以及
+    # 会被拷进包里的 OpenSSL DLL 本身——runner 镜像升级 OpenSSL 即自动重建。
+    - name: 计算 backend 缓存键
+      id: key
+      shell: pwsh
+      env:
+        INPUT_COMMIT: ${{ inputs.commit }}
+        INPUT_UI_VERSION: ${{ inputs.ui-version }}
+      run: |
+        if ($env:INPUT_COMMIT -notmatch '^[0-9a-f]{40}$') { throw "llama.cpp 提交必须是完整 sha：'$env:INPUT_COMMIT'" }
+        if ($env:INPUT_UI_VERSION -notmatch '^b[0-9]+$') { throw "UI 版本必须形如 b12345：'$env:INPUT_UI_VERSION'" }
+        $files = @(
+          (Join-Path $env:GITHUB_WORKSPACE 'scripts/build_llama_package.py'),
+          (Join-Path $env:GITHUB_WORKSPACE 'scripts/verify_llama_package.py'),
+          (Join-Path $env:GITHUB_ACTION_PATH 'action.yml')
+        )
+        $files += @(Get-ChildItem -LiteralPath $env:OPENSSL_RUNTIME_DIR -File |
+          Where-Object { $_.Name -match '^lib(crypto|ssl)-3(-x64)?\.dll$' } |
+          Sort-Object Name | ForEach-Object { $_.FullName })
+        $lines = foreach ($f in $files) { "$((Get-FileHash -Algorithm SHA256 -LiteralPath $f).Hash) $(Split-Path -Leaf $f)" }
+        $lines | ForEach-Object { Write-Host "  $_" }
+        $sha = [Security.Cryptography.SHA256]::Create()
+        $digest = -join ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) | ForEach-Object { $_.ToString('x2') })
+        "key=llama-cpu-win-$($env:INPUT_COMMIT.Substring(0,12))-$env:INPUT_UI_VERSION-$($digest.Substring(0,16))" >> $env:GITHUB_OUTPUT
+
+    - id: restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ inputs.package-dir }}
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Checkout pinned llama.cpp
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: ggml-org/llama.cpp
+        ref: ${{ inputs.commit }}
+        path: .llama.cpp
+
+    # HF_UI_VERSION：浅克隆下 llama.cpp 会推导出不存在的 b1 并回退浮动 latest
+    # （2026-11 latest 变化后资产校验失败，run 44905135423），必须显式钉住。
+    - name: 构建 Windows CPU backend
+      if: steps.restore.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        HF_UI_VERSION: ${{ inputs.ui-version }}
+        INPUT_COMMIT: ${{ inputs.commit }}
+        PACKAGE_DIR: ${{ inputs.package-dir }}
+      run: |
+        python scripts/build_llama_package.py .llama.cpp `
+          --output $env:PACKAGE_DIR `
+          --backend cpu `
+          --commit $env:INPUT_COMMIT `
+          --os windows `
+          --arch windows-amd64 `
+          --runtime-dir $env:OPENSSL_RUNTIME_DIR
+        if ($LASTEXITCODE -ne 0) { throw "build_llama_package 失败（退出码 $LASTEXITCODE）" }
+
+    # 命中缓存也照样校验：缓存只省编译，不省门禁。
+    - name: 校验 Windows CPU backend
+      shell: pwsh
+      env:
+        PACKAGE_DIR: ${{ inputs.package-dir }}
+      run: |
+        python scripts/verify_llama_package.py $env:PACKAGE_DIR
+        if ($LASTEXITCODE -ne 0) { throw "verify_llama_package 失败（退出码 $LASTEXITCODE）" }
+
+    - name: 保存 backend 缓存
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ inputs.package-dir }}
+        key: ${{ steps.key.outputs.key }}

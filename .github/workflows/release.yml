@@ -120,71 +120,24 @@ jobs:
           "RELEASE_VERSION=${{ needs.resolve-release.outputs.version }}" >> $env:GITHUB_ENV
           "BUILD_ID=${{ needs.resolve-release.outputs.build_id }}" >> $env:GITHUB_ENV
 
-      - name: Checkout pinned llama.cpp
-        uses: actions/checkout@v4
-        with:
-          repository: ggml-org/llama.cpp
-          ref: ${{ env.LLAMA_CPP_COMMIT }}
-          path: .llama.cpp
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: 准备 Windows OpenSSL runtime
-        shell: pwsh
-        run: |
-          $requiredSets = @(
-            @('libcrypto-3-x64.dll', 'libcrypto-3.dll'),
-            @('libssl-3-x64.dll', 'libssl-3.dll')
-          )
-          $roots = @(
-            (Join-Path $env:ProgramFiles 'OpenSSL-Win64\bin'),
-            (Join-Path $env:ProgramFiles 'OpenSSL\bin'),
-            'C:\Program Files\Git\usr\bin',
-            'C:\ProgramData\chocolatey\bin'
-          )
-          function Find-OpenSslDir {
-            foreach ($root in $roots) {
-              $crypto = $requiredSets[0] | Where-Object {
-                Test-Path (Join-Path $root $_)
-              }
-              $ssl = $requiredSets[1] | Where-Object {
-                Test-Path (Join-Path $root $_)
-              }
-              if ($crypto -and $ssl) {
-                return $root
-              }
-            }
-            return $null
-          }
-          $opensslDir = Find-OpenSslDir
-          if (-not $opensslDir) {
-            choco install openssl --yes --no-progress
-            $opensslDir = Find-OpenSslDir
-          }
-          if (-not $opensslDir) {
-            throw "未找到 Windows OpenSSL runtime: libcrypto-3-x64.dll/libcrypto-3.dll, libssl-3-x64.dll/libssl-3.dll"
-          }
-          "OPENSSL_RUNTIME_DIR=$opensslDir" >> $env:GITHUB_ENV
+      # 构建 + 校验 + 按输入哈希缓存（命中省 ~4.5 分钟编译），见
+      # .github/actions/llama-cpu-backend；包目录不含版本号，归档时再命名。
+      - name: 构建并校验 Windows CPU backend（缓存）
+        uses: ./.github/actions/llama-cpu-backend
+        with:
+          commit: ${{ env.LLAMA_CPP_COMMIT }}
+          ui-version: ${{ env.LLAMA_CPP_UI_VERSION }}
+          package-dir: dist/llama-cpu-package
 
-      - name: 构建并校验 Windows CPU backend
+      - name: 打包 Windows CPU backend 发布归档
         shell: pwsh
-        env:
-          HF_UI_VERSION: ${{ env.LLAMA_CPP_UI_VERSION }}
         run: |
-          $package = "dist\Stella-llama-v$env:RELEASE_VERSION-windows-x86_64-cpu"
           $archive = "dist\Stella-llama-v$env:RELEASE_VERSION-windows-x86_64-cpu.zip"
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          python scripts/build_llama_package.py .llama.cpp `
-            --output $package `
-            --backend cpu `
-            --commit $env:LLAMA_CPP_COMMIT `
-            --os windows `
-            --arch windows-amd64 `
-            --runtime-dir $env:OPENSSL_RUNTIME_DIR
-          python scripts/verify_llama_package.py $package
-          Compress-Archive -Path "$package\*" -DestinationPath $archive
+          Compress-Archive -Path "dist\llama-cpu-package\*" -DestinationPath $archive
           if (-not (Test-Path -LiteralPath $archive)) {
             throw "Windows CPU backend asset was not created: $archive"
           }
@@ -325,6 +278,8 @@ jobs:
           name: stella-offline-payload
           path: offline-stage/payload
           if-no-files-found: error
+          # 内容多为已压缩的 wheel / 模型 / 运行时：artifact 再 deflate 只耗时不省体积
+          compression-level: 0
 
   # Tauri 的 Windows WebView/Rust 产物必须在 Windows runner 上构建。
   # OneClick 只发布 NSIS setup executable；程序树通过 Tauri resources 嵌入，
@@ -587,6 +542,8 @@ jobs:
           name: stella-desktop-${{ matrix.profile }}-${{ matrix.payload }}
           path: desktop/src-tauri/target/release/bundle/nsis/*setup.exe
           if-no-files-found: error
+          # 内容多为已压缩的 wheel / 模型 / 运行时：artifact 再 deflate 只耗时不省体积
+          compression-level: 0
 
   build-rust-wheel:
     runs-on: windows-latest

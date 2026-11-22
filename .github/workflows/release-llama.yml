@@ -12,6 +12,11 @@ on:
         description: "Pinned llama.cpp commit"
         required: true
         type: string
+      llama_ui_version:
+        description: "llama-server Web UI bucket version (e.g. b10941). Empty = the commit's llama.cpp release tag"
+        required: false
+        default: ""
+        type: string
       publish:
         description: "Upload verified backend assets to the matching Release"
         required: true
@@ -52,6 +57,27 @@ jobs:
           repository: ggml-org/llama.cpp
           ref: ${{ inputs.llama_commit }}
           path: .llama.cpp
+      # The shallow checkout makes llama.cpp derive UI version "b1", which does
+      # not exist, and silently fall back to the floating "latest" bucket; once
+      # "latest" changed (2026-11) the pinned commit's asset check failed
+      # (release.yml run 44905135423). Pin it to the commit's release tag.
+      - name: Resolve llama-server Web UI version
+        shell: bash
+        env:
+          LLAMA_COMMIT: ${{ inputs.llama_commit }}
+          UI_VERSION: ${{ inputs.llama_ui_version }}
+        run: |
+          set -euo pipefail
+          if [ -z "$UI_VERSION" ]; then
+            UI_VERSION=$(git ls-remote --tags https://github.com/ggml-org/llama.cpp.git \
+              | awk -v c="$LLAMA_COMMIT" '$1 == c && $2 ~ /^refs\/tags\/b[0-9]+$/ {sub("refs/tags/", "", $2); print $2; exit}')
+          fi
+          if ! printf '%s' "$UI_VERSION" | grep -Eq '^b[0-9]+$'; then
+            echo "::error::Cannot resolve a llama.cpp release tag for $LLAMA_COMMIT; pass llama_ui_version explicitly"
+            exit 1
+          fi
+          echo "Web UI version: $UI_VERSION"
+          echo "HF_UI_VERSION=$UI_VERSION" >> "$GITHUB_ENV"
       - name: Prepare Windows OpenSSL runtime
         if: runner.os == 'Windows'
         shell: pwsh
