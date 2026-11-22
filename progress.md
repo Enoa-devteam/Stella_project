@@ -1,3 +1,19 @@
+## 2026-11-22 — v6.4.1 发布后验收
+
+- Current State：v6.4.1 已发布并为 Latest（tag → 204fdaf；Release 45019644302 14m16s、Docker 45019644267、Rust 资产 45020827813 均成功）。`SHA256SUMS` 所列 10 项与公开下载一致。GHCR 已由维护者改为 Public，匿名可解析 `6.4.1` / `6.4` / `latest`。
+- 通过：公开 Python Offline EXE 在干净 Windows 11 Sandbox（无 VC++、断网、SAC 仅在 guest 内关闭）按截图打开初始化面板，core ready、llama 可用。公开 Rust Offline EXE 未运行（同代码测试构建 45002223547 通过）。
+- **未通过：公开 Online 安装器（Python、Rust）均未完成组件安装。** Rust 重试 3004 秒、重开 15 次，未下完 llama-cpu。
+- **更正：此前把上述失败全部归因于网络超时，是漏看日志。** 该次重试 62 个最终错误中 36 个是 `CERTIFICATE_VERIFY_FAILED`、26 个是 WinError 10060；Python Online 为 2 / 3。
+- 根因（全新 Sandbox、安装器钉定的嵌入式 Python 3.12.10、无 curl 预热的对照）：`deploy/acquire.py` 用 urllib 默认信任，只读 Windows 根存储中已有的证书，不触发系统按需下载根证书。
+  ① 默认：release-assets、huggingface.co、pypi.org 证书失败（github.com 当次超时）；② certifi：四个域名全部通过；③ 再用默认：四个全部证书失败；④ truststore：全部通过且根证书 11 → 16；⑤ 再用默认：全部通过。
+  v6.0.1–v6.4.1 的该文件逐字节相同。CI runner 根存储是热的，所以测不出。
+- 另一独立因素：本机网络下 guest 直连 GitHub / Hugging Face 间歇超时，组件无镜像。模型下载在 guest 内从未走到。
+- 代码阅读发现、未实测：`_download_once` 中 `response.read()` 的网络错误不会转为可重试错误，与注释的续传重试语义不符；`deploy/bootstrap.py` 远程 catalog 的 urlopen 同样使用默认信任。
+- What's Done：v6.4.0 警告改为「已在 v6.4.1 修复」；v6.0.1–v6.3.0 页面加中英指引；五页均注明 Online 限制、推荐 v6.4.1 Offline，回读确认只改正文、Latest 不变。远端 14 个 candidate tag 已删；42 个 v4.x Pre-release 标记按决定保留。
+- What's Next：① 修 TLS 信任（候选 truststore；未实现）与读阶段重试，发补丁版后在冷根存储 Sandbox 复测 Online；② v6.4.1 发布说明尚未写此限制，待维护者确认；③ #147 须在 x.y.10 前修；④ 是否加镜像待定；⑤ 本地克隆仍有 candidate tag，勿 `git push --tags`。
+- Not verified：Online 全链路、Standalone `start.bat`、Windows 10、缺 WebView2、真实 QQ / 模型，保持 NOT READY。
+- Files：`progress.md`、`session-handoff.md`、`feature_list.json`。
+
 ## 2026-11-22 — v6.4.0 发布结果与 v6.4.1 准备
 
 - v6.4.0：已发布（tag → a351335，Release 44977488871，14m53s），公开资产哈希、安装后内嵌 URL、Rust 资产均核对。GHCR 新 namespace 包为 private，待维护者改 Public。

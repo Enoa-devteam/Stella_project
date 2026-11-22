@@ -1,3 +1,13 @@
+## Current Handoff — v6.4.1 发布后（2026-11-22）
+
+- Current Objective：v6.4.1 已发布；下文 v6.4.0 / v6.4.1 准备与 CI 耗时三条 handoff 可归档。`RELEASE-CI-SPEEDUP` 保持 `blocked`。
+- Verification Evidence：progress.md 同日「v6.4.1 发布后验收」。公开 Python Offline 通过；两个公开 Online 均未通过。
+- Blockers：干净 Windows 上 Online 组件下载 `CERTIFICATE_VERIFY_FAILED`（`deploy/acquire.py` 默认信任，尚无修复授权与 issue）；GitHub / Hugging Face 无镜像；安装器未签名（SAC 拦截）。
+- Recommended Next Step：对 `deploy/acquire.py:_download_once` 做 upstream impact，再修 TLS 信任与读阶段重试。验收必须用全新 Sandbox，先不要运行 curl / 浏览器（会预热根存储），并看截图与全部错误行，不能只看最后一条。
+- Recovery Notes：安装器只在 Sandbox 运行；不创建 candidate 预发布；不要 `git push --tags`。
+- Files：`deploy/acquire.py`、`deploy/bootstrap.py`（待改）；本轮只改状态文件。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.1 准备（2026-11-22）
 
 - Current Objective：`release/v6.4.1` PR 待维护者合并；未获合并 bypass 与打 tag 授权。v6.4.0 已发布。
