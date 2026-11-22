@@ -4,7 +4,7 @@
 - Files：`.github/workflows/release.yml`、`.github/workflows/release-cache-warm.yml`、`.github/actions/install-tauri-cli/action.yml`、`release_assets/toolchain.json`、`scripts/build_release_catalog.py`、`deploy/profiles.py`、`deploy/init_wizard.py`、OneClick product profiles、`scripts/test_nsis_install.ps1`、`desktop/src-tauri/installer-hooks.nsh`、README / 快速开始 / 发布与配置文档、对应测试，以及状态文件。删除 `release_assets/README-CLI-快速开始.txt`。
 - Verification Evidence：见 progress.md 同日条目；本地定向测试通过，check_docs ok，每次提交前 detect-changes low / 0 processes。actionlint 未运行（权限拒绝）。
 - Recovery Notes：每次 workflow_dispatch 会创建公开 `candidate-<run_id>` 预发布（与正式流程相同）。GitNexus 需对 worktree 单独 `analyze --index-only`，repo 参数用绝对路径。仓库已转移到 `Enoa-devteam/stella_project`，本地 remote 仍指旧名（重定向可用）。
-- Blockers：PR 未开（待维护者确认）；缓存预热需合并到 main 后才生效；clean VM 缺 WebView2 场景未验；下一版发布说明需列 breaking changes（NapCat、CLI、WebView2 引导器）。
+- Blockers：PR #138 待审阅合并；缓存预热需合并到 main 后才生效；clean VM 缺 WebView2 场景未验；下一版发布说明需列 breaking changes（NapCat、CLI、WebView2 引导器）。
 - Preserve：同下方既有未跟踪路径。
 
 ## Current Handoff — memory write-path fix and PR #130 close-out (2026-11-21)

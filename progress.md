@@ -3,7 +3,7 @@
 - Scope：继续 `RELEASE-CI-SPEEDUP`（分支 `ci/release-speedup`）。维护者要求把可优化项尽量做完再提 PR。
 - What's Done：llama.cpp Windows CPU backend 移入 `.github/actions/llama-cpu-backend`，按 llama.cpp 提交 / UI 版本 / 打包与校验脚本 / 随包 OpenSSL DLL 哈希缓存版本无关包目录（命中跳过检出与编译，校验照跑），`release-cache-warm.yml` 增加 backend 预热；`llama_cpp_ui_version` 入 `toolchain.json`（测试校验与 release.yml 一致）。desktop `crate-type` 仅 `rlib`（staticlib/cdylib 只给 mobile，fat LTO 下白做两份不发布的库）。离线负载与安装器 artifact `compression-level: 0`。`release-llama.yml` 按提交的 release tag 钉 UI 版本（可显式输入，解析不到即失败）。
 - Evaluation：预热 44966694885 通过（Rust 5m32s——crate-type 改变 LTO 下依赖的编译方式，一次性全量重编；backend 4m32s 冷构建并保存）。发布 44967247863 全绿 **12m00s**（v6.3.0 42m03s；上一轮 17m29s）：backend 24s（缓存命中）；rust-cache 对预热保存的 key full match；stella-desktop 2m12s–2m45s（原 2m31s–3m05s）；负载上传 8s（原 36s）、安装器上传 15s（原 47s）。临时让预热工作流在本分支 push 触发以实测，已移除。
-- Next：开 PR。合并后确认 main 上预热跑通；clean VM 验证缺 WebView2 的 online 安装；下一版发布说明列 breaking changes。剩余可选：`lto = "thin"`（改变发布二进制优化方式，估计再省 ~1.5–2 分钟，需维护者决定）。
+- Next：PR #138 已开（https://github.com/Enoa-devteam/stella_project/pull/138）。合并后确认 main 上预热跑通；clean VM 验证缺 WebView2 的 online 安装；下一版发布说明列 breaking changes。剩余可选：`lto = "thin"`（改变发布二进制优化方式，估计再省 ~1.5–2 分钟，需维护者决定）。
 
 ## 2026-11-21 — Release CI 耗时压缩
 
