@@ -36,13 +36,12 @@ You decide where the models come from.
 
 > Note: With the all-local deployment mode, the data truly stays off the network. Networked tools (such as weather and anime lookups) send requests and return actual data themselves, while deciding whether to use a tool, compressing its result into a summary, and rendering plugin cards as images all happen locally.
 
-## 6.4.0 Release
+## 6.4.1 Release
 
-- Memory schema 22 → 24 (backed up and migrated on first start); the Rust backend is API 4 / schema 24. Rolling back requires restoring the pre-migration backup.
-- NapCat is no longer bundled, stella CLI packages are no longer published, and only the OneBot V11 adapter is installed for now.
-- Online installers download WebView2 when it is missing; use an Offline installer (about 1.1 GB) on machines without internet access.
-- Proactive participation is context-first and limited by `PROACTIVE_FREQUENCY`; QQ and WebChat use the shared ingress by default.
-- The legacy entrypoint remains the default. Clean VM, GUI first boot, complete online component installation, over-install upgrade, real QQ and real models have not been accepted.
+- Fixes the desktop app and the bundled llama.cpp backend failing to start on Windows without the Visual C++ runtime (confirmed on v6.3.0 and v6.4.0), and the first start of a new installation always failing.
+- Offline installers are compressed again (about 1.2 GB); Online installers download WebView2 when it is missing.
+- Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
+- Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only the OneBot V11 adapter for now.
 
 Back up the complete data root before upgrading; when importing from an old directory, first run `python -m deploy migrate --from <old-install> --dry-run`. See the [release notes](release_assets/RELEASE_NOTES_TEMPLATE.md) and the [documentation index](docs/README.en.md).
 

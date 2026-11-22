@@ -76,6 +76,7 @@ runs:
         $files = @(
           (Join-Path $env:GITHUB_WORKSPACE 'scripts/build_llama_package.py'),
           (Join-Path $env:GITHUB_WORKSPACE 'scripts/verify_llama_package.py'),
+          (Join-Path $env:GITHUB_WORKSPACE 'scripts/check_windows_crt.py'),
           (Join-Path $env:GITHUB_ACTION_PATH 'action.yml')
         )
         $files += @(Get-ChildItem -LiteralPath $env:OPENSSL_RUNTIME_DIR -File |
@@ -128,6 +129,9 @@ runs:
       run: |
         python scripts/verify_llama_package.py $env:PACKAGE_DIR
         if ($LASTEXITCODE -ne 0) { throw "verify_llama_package 失败（退出码 $LASTEXITCODE）" }
+        # runner 装有 VC++ 运行库，「能跑」证明不了任何事：只能静态查导入表
+        python scripts/check_windows_crt.py $env:PACKAGE_DIR
+        if ($LASTEXITCODE -ne 0) { throw "backend 依赖未随包的 VC++ 运行库（退出码 $LASTEXITCODE）" }
 
     - name: 保存 backend 缓存
       if: steps.restore.outputs.cache-hit != 'true'

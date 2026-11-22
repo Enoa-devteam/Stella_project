@@ -2510,6 +2510,18 @@
         {
           "report": "progress.md 2026-11-22 v6.4.0 发布准备",
           "result": "PR #138 merged (8d86235). Pre-tag audit found three defects: migrate dry-run data loss (#140), disposable candidate URLs embedded in installers and stale Rust asset contract (#139). The earlier claim that deleted candidates did not affect shipped installers was wrong."
+        },
+        {
+          "report": "progress.md 2026-11-22 v6.4.0 发布结果与 v6.4.1 准备",
+          "result": "v6.4.0 released in 14m53s. CORRECTION: the earlier 1123-1125 MB offline figure was a deflated artifact size; the real EXE was 1461 MiB with none vs 1119 MiB with zlib. 6.4.1 prep returns to zlib and fixes clean-Windows startup (static CRT, app-local llama runtime), tested in Windows Sandbox on build 44986278592."
+        },
+        {
+          "report": "progress.md 2026-11-22 GUI 首启更正",
+          "result": "CORRECTION: the earlier 6.4.1 GUI first-boot pass was judged from the health endpoint only. The window was stuck on the starting screen (first-start control-record bug plus a crash in the page's catch). Fixed in code; installer retest pending."
+        },
+        {
+          "report": "progress.md 2026-11-22 GUI 首启复测",
+          "result": "Build 45002223547 (ff613af), judged by screenshots in Windows Sandbox: Python/Rust offline and over-install from v6.3.0 open the setup panel; an online download failure shows its error. Online end-to-end, start.bat, Windows 10 not run."
         }
       ]
     }

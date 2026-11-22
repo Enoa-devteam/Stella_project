@@ -227,7 +227,7 @@ jobs:
           name: stella-offline-payload
           path: offline-stage/payload
           if-no-files-found: error
-          # 内容多为已压缩的 wheel / 模型 / 运行时：artifact 再 deflate 只耗时不省体积
+          # 只在本次运行内流转，选速度：deflate 能把负载 1001→809MiB，但上传多花约 28s
           compression-level: 0
 
   # Tauri 的 Windows WebView/Rust 产物必须在 Windows runner 上构建。
@@ -427,6 +427,9 @@ jobs:
           Get-Content -LiteralPath $override
           cargo tauri build --bundles nsis --config $override
           if ($LASTEXITCODE -ne 0) { throw "tauri build 失败（退出码 $LASTEXITCODE）" }
+          # runner 装有 VC++ 运行库，install-test 测不出缺 DLL：静态查桌面壳的导入表
+          python ../../scripts/check_windows_crt.py target/release/stella.exe
+          if ($LASTEXITCODE -ne 0) { throw "桌面壳依赖干净 Windows 没有的 VC++ 运行库（退出码 $LASTEXITCODE）" }
 
       # 签名（S14/WP14）：install-test 必须验收**签名后字节**——本步骤在
       # 上传之前执行。凭据缺失的语义：PR/手工构建允许未签名（大字警告），
@@ -490,7 +493,7 @@ jobs:
           name: stella-desktop-${{ matrix.profile }}-${{ matrix.payload }}
           path: desktop/src-tauri/target/release/bundle/nsis/*setup.exe
           if-no-files-found: error
-          # 内容多为已压缩的 wheel / 模型 / 运行时：artifact 再 deflate 只耗时不省体积
+          # 安装器已由 NSIS 压缩；也让 artifact 大小 ≈ EXE 大小（否则会被误读成安装器体积）
           compression-level: 0
 
   build-rust-wheel:

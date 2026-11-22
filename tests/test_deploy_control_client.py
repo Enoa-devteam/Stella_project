@@ -219,3 +219,34 @@ def test_runtime_cli_control_failure_does_not_load_legacy_modules(
     assert cli.main(["runtime", "start", "--component", "stella"]) == 1
     assert called and called[0][0:2] == ("start", "stella")
     assert json.loads(capsys.readouterr().out)["error"]["code"] == "controller_unreachable"
+
+
+def test_first_start_waits_for_the_control_record_to_appear(tmp_path: Path, monkeypatch) -> None:
+    """全新安装没有 local-control.json：记录尚未写出 ≠ 记录无效（v6.3.0–v6.4.0 首启必失败）。"""
+    env = _environment(tmp_path / "home")
+    home = Path(env["STELLA_HOME"])
+    path = local_control_record_path(home, env["STELLA_INSTANCE_ID"])
+    record = LocalControlRecord(env["STELLA_INSTANCE_ID"], "boot-1", "127.0.0.1", 45678, "capability")
+
+    class Spawned:
+        polls = 0
+
+        def poll(self):
+            Spawned.polls += 1
+            if Spawned.polls == 3:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(record.to_dict()), encoding="utf-8")
+                path.chmod(0o600)
+            return
+
+    monkeypatch.setattr(control_client, "build_config_revision", lambda **_kwargs: object())
+    monkeypatch.setattr(control_client, "write_revision", lambda *_args: home / "revision.json")
+    monkeypatch.setattr(control_client, "_corona_environment", lambda *_args: {})
+    monkeypatch.setattr(control_client, "_spawn_corona", lambda *_args, **_kwargs: Spawned())
+    monkeypatch.setattr(control_client, "_status_from_control", lambda *_args: {"alive": True})
+    monkeypatch.setattr(control_client.LocalControlClient, "status", lambda _self: {})
+
+    started = control_client.start(environ=env, timeout=5)
+
+    assert started["ok"] is True, started
+    assert Spawned.polls >= 3

@@ -1,3 +1,12 @@
+## Current Handoff — v6.4.1 准备（2026-11-22）
+
+- Current Objective：`release/v6.4.1` PR 待维护者合并；未获合并 bypass 与打 tag 授权。v6.4.0 已发布。
+- Files：`desktop/src-tauri/build.rs`、`scripts/build_llama_package.py`、`scripts/check_windows_crt.py`、发布工作流、`toolchain.json`、版本与发布说明。
+- Verification Evidence：构建 44986278592；Sandbox 结果见 progress.md 同日条目与 PR。
+- Recovery Notes：安装器只在 Windows Sandbox 里运行，不在开发机运行。比较体积只看 EXE 本体，不看 artifact。tag 前确认 main CI 与 cache warm 通过。
+- Blockers：发布后须用公开 online 安装器补测，并**看截图**确认面板真正打开（不能只看 health）；GHCR 包 private；安装器未签名（SAC 拦截）；发布后需补测 online 全链路。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.0 发布（2026-11-22）
 
 - Current Objective：合并 #139、#140 与发布准备 PR 后，从 main 打 `v6.4.0`。admin bypass 授权仅限这三个 PR、且各自 CI 通过后。

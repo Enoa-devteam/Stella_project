@@ -69,6 +69,36 @@ def _find_runtime_dll(name: str, roots: Iterable[Path]) -> Path | None:
     return None
 
 
+def find_vc_runtime_dirs() -> list[Path]:
+    """The x64 app-local CRT and OpenMP redist folders of the newest installed MSVC."""
+    vswhere = (
+        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)"))
+        / "Microsoft Visual Studio"
+        / "Installer"
+        / "vswhere.exe"
+    )
+    if not vswhere.is_file():
+        raise FileNotFoundError(f"vswhere not found, cannot locate the VC++ runtime: {vswhere}")
+    install = subprocess.run(
+        [str(vswhere), "-latest", "-products", "*", "-property", "installationPath"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    redist = Path(install) / "VC" / "Redist" / "MSVC"
+    versions = sorted(
+        (p for p in redist.glob("*") if p.name.replace(".", "").isdigit()),
+        key=lambda p: tuple(int(part) for part in p.name.split(".")),
+        reverse=True,
+    )
+    for version in versions:
+        crt = sorted((version / "x64").glob("Microsoft.VC*.CRT"))
+        openmp = sorted((version / "x64").glob("Microsoft.VC*.OpenMP"))
+        if crt and openmp:
+            return [crt[-1], openmp[-1]]
+    raise FileNotFoundError(f"no x64 VC++ CRT / OpenMP redistributable under {redist}")
+
+
 def _find_openssl_dll(
     alternatives: tuple[str, ...], roots: Iterable[Path]
 ) -> Path | None:
@@ -86,12 +116,17 @@ def _copy_runtime_libraries(
     *,
     os_name: str,
     runtime_dirs: Iterable[Path],
+    vc_runtime_dirs: Iterable[Path] = (),
 ) -> None:
     for path in build_dir.rglob("*"):
         if path.is_file() and path.suffix.lower() in {".dll", ".so", ".dylib"}:
             shutil.copy2(path, output / path.name)
     if os_name != "windows":
         return
+    # App-local deployment: clean Windows has no VC++ / OpenMP runtime (0xC0000135).
+    for directory in vc_runtime_dirs:
+        for dll in sorted(Path(directory).glob("*.dll")):
+            shutil.copy2(dll, output / dll.name)
     roots = _runtime_roots(build_dir, executable, runtime_dirs)
     missing: list[str] = []
     for alternatives in WINDOWS_OPENSSL_DLLS:
@@ -122,6 +157,7 @@ def build(
     os_name: str,
     arch: str,
     runtime_dirs: Iterable[Path] = (),
+    vc_runtime_dirs: Iterable[Path] = (),
 ) -> Path:
     if backend not in FLAGS:
         raise ValueError(f"unsupported backend: {backend}")
@@ -175,6 +211,7 @@ def build(
         output,
         os_name=normalized_os,
         runtime_dirs=runtime_dirs,
+        vc_runtime_dirs=vc_runtime_dirs,
     )
     license_source = next(
         (path for path in (source / "LICENSE", source / "LICENSE.md") if path.is_file()),
@@ -238,6 +275,7 @@ def main() -> int:
         os_name=args.os_name,
         arch=args.arch,
         runtime_dirs=args.runtime_dir,
+        vc_runtime_dirs=find_vc_runtime_dirs() if args.os_name.lower().startswith("windows") else (),
     )
     return 0
 

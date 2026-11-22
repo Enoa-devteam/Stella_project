@@ -34,13 +34,12 @@ Stella 的设计前提是上下文窗口很小 —— 基准上限是 **8192 tok
 
 > 注：选择全本地部署运行的模式时，数据不出网是彻底的。需要联网的工具（查天气、查番剧）由插件自己发送请求和返回实际的数据，而判断该不该用工具、把结果压缩成摘要、把插件卡片渲染成图片，全部在本地完成。
 
-## 6.4.0 发布说明
+## 6.4.1 发布说明
 
-- 记忆 schema 22 → 24（首次启动自动备份并迁移），Rust backend 为 API 4 / schema 24；回退须恢复迁移前备份。
-- 不再内置 NapCat，不再发布 stella CLI 包；暂时只安装 OneBot V11 适配器。
-- Online 安装器在缺少 WebView2 时需联网下载；离线机器请使用 Offline 安装器（约 1.1 GB）。
-- 主动参与改为上下文优先并由 `PROACTIVE_FREQUENCY` 限频；QQ / WebChat 默认走共享入站。
-- legacy 仍是默认入口。干净 VM、GUI 首启、完整在线组件安装、覆盖升级、真实 QQ 与模型均未验收。
+- 修复没有 Visual C++ 运行库的 Windows 上桌面程序与随包 llama.cpp 后端无法启动（v6.3.0、v6.4.0 实测受影响），并修复全新安装首次启动必定失败。
+- Offline 安装器恢复压缩（约 1.2 GB）；Online 安装器在缺少 WebView2 时需联网下载。
+- 安装器未经代码签名：开启「智能应用控制」的 Windows 11 会直接拦截。
+- 自 6.4.0 起：记忆 schema 为 24（回退须恢复迁移前备份）、不再内置 NapCat、不再发布 stella CLI 包、暂时只安装 OneBot V11 适配器。
 
 升级前备份完整数据根；从旧目录导入时先运行 `python -m deploy migrate --from <旧目录> --dry-run`。完整变更见 [发布说明](release_assets/RELEASE_NOTES_TEMPLATE.md)，指南与默认值见 [文档索引](docs/README.md)。
 
