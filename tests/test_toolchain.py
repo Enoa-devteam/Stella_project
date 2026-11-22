@@ -132,6 +132,8 @@ def test_nsis_compression_is_pinned_per_payload():
     allowed = {"none", "zlib", "bzip2", "lzma"}
     assert set(toolchain["nsis_compression"]) == {"online", "offline"}
     assert set(toolchain["nsis_compression"].values()) <= allowed
+    # none 让 offline EXE 大 31%（1119→1461MiB），只省约 1 分钟构建：v6.4.0 误选过一次
+    assert toolchain["nsis_compression"]["offline"] != "none"
     workflow = RELEASE_YML.read_text(encoding="utf-8")
     assert "$toolchain.nsis_compression" in workflow
     assert "--config $override" in workflow, "压缩算法必须经 --config 传给 tauri build"

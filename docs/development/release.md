@@ -22,7 +22,7 @@ Offline 变体与在线版**同一份代码、同一个 profile id**，只是 NS
 - playwright 的 chromium-headless-shell（`PLAYWRIGHT_BROWSERS_PATH` 指向随包内核，渲染零下载）。
 
 WebView2 运行时不在负载里，而是由 Tauri 的
-`webviewInstallMode: offlineInstaller` 内嵌进 NSIS 安装器本体（约 +127MB）：
+`webviewInstallMode: offlineInstaller` 内嵌进 NSIS 安装器本体（微软不钉版本，2026-11-19 版约 +280MB）：
 安装时先检测注册表，已有 WebView2 则跳过，没有则静默装内嵌的离线安装包，
 同样零联网。默认的 `downloadBootstrapper` 需要联网下载运行时，在无 WebView2
 的离线机器上 GUI 起不来（2026-09 真实用户反馈），`embedBootstrapper` 也仍需
