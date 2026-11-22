@@ -144,6 +144,9 @@ jobs:
           VERSION="${{ inputs.version }}"
           VERSION="${VERSION#v}"
           python scripts/verify_llama_package.py "dist/Stella-llama-v${VERSION}-${{ matrix.target }}-${{ matrix.backend }}"
+          if [ '${{ runner.os }}' = 'Windows' ]; then
+            python scripts/check_windows_crt.py "dist/Stella-llama-v${VERSION}-${{ matrix.target }}-${{ matrix.backend }}"
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: llama-${{ matrix.target }}-${{ matrix.backend }}
