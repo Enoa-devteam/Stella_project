@@ -3,9 +3,10 @@
 - v6.4.0：已发布（tag → a351335，Release 44977488871，14m53s），公开资产哈希、安装后内嵌 URL、Rust 资产均核对。GHCR 新 namespace 包为 private，待维护者改 Public。
 - 测量更正：offline `none` 是按再压缩后的 artifact 大小误选；EXE 实际 zlib 1119MiB / none 1461MiB（+31%）。已更正 v6.4.0 发布说明与 #138 描述；6.4.1 改回 zlib（44986278592 实测 1120.3 / 1121.6MiB）。以后只比较 EXE 本体大小。
 - Windows Sandbox（干净 Win11 26100，无 VC++ / Python）发现：① Smart App Control 开启时未签名安装器被直接拦截；② v6.3.0、v6.4.0 桌面壳缺 VCRUNTIME140_1.dll 起不来、llama-server 0xC0000135（v6.2.0 导入表相同，未运行）；CI runner 自带运行库所以一直测不出。修复：build.rs `STATIC_VCRUNTIME`、llama 包 app-local CRT/OpenMP、`scripts/check_windows_crt.py` 门禁。
-- 6.4.1 实测（构建 500d882，SAC 仅在一次性 guest 内关闭）：Python offline 断网 GUI 首启 ready、llama/embedding/渲染通过；v6.3.0 覆盖升级 schema 22→24、数据与备份保留、活动 llama 为 6.4.1；两种 online 均能启动 GUI，Python online 依赖装好、llama 404（发布前预期）；Rust online 因 guest 无网未完成；Rust offline 结果见 PR。
-- v6.4.0 临时绕过：安装 Microsoft VC++ Redistributable 后 offline 断网全链路通过。
-- 另发现、未修：覆盖升级残留 `memory/participation/` 遮蔽兼容别名；组件下载失败时 GUI 仍显示「正在启动」；`deploy/llama.py:_server_path` 按字符串排序版本（6.4.10 < 6.4.9，发 x.y.10 前必须修）；#142、#143。
+- 6.4.1 实测（构建 500d882，SAC 仅在一次性 guest 内关闭）：后端层通过——三个 offline 场景 core ready、llama/embedding/渲染可用；v6.3.0 覆盖升级 schema 22→24、数据与备份保留。**更正：此前记为「GUI 首启通过」是只看了 health 端点；截图显示窗口一直停在「正在启动」（保持 4 分 14 秒仍然如此）。**
+- GUI 卡死根因（Sandbox 内 WebView2 调试器抓到原值）：① 全新安装没有 local-control.json，`control_client.start` 第一次轮询即判 `control_record_invalid`（v6.3.0 引入）；② Tauri 以字符串 reject，`BackendOfflinePage` 的 catch 读 `.message` 再次抛错，转圈永不结束。已修并补先失败后通过的测试；GitNexus 对两处均为 UNKNOWN，已文本搜索补证调用者。**新构建的 GUI 实测待跑。**
+- v6.4.0 临时绕过（更正：并非全链路通过）：装 VC++ Redistributable 只能让壳与后端起来，全新安装首启仍卡在「正在启动」；关闭后重开是否恢复未验证。
+- 另发现、未修：覆盖升级残留 `memory/participation/` 遮蔽兼容别名；`deploy/llama.py:_server_path` 按字符串排序版本（6.4.10 < 6.4.9，发 x.y.10 前必须修）；#142、#143。
 - 五个测试用 candidate 预发布在删除前已不存在（非 agent、非工作流删除，tag 保留，来源不明）。
 - Next：PR 审阅合并（无 bypass 授权）→ 维护者决定是否打 v6.4.1 → 发布后用公开 online 安装器在 Sandbox 补测完整组件安装。
 

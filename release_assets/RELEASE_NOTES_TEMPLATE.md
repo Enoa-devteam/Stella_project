@@ -8,6 +8,8 @@ This patch release builds on [v6.4.0](https://github.com/Enoa-devteam/stella_pro
 
 - **The desktop app now starts on Windows without the Visual C++ Redistributable.** v6.4.0, v6.3.0 and v6.2.0 fail there with "VCRUNTIME140_1.dll was not found". The C++ runtime is now linked statically.
 - **The bundled llama.cpp backend now runs on such machines.** It ships the Visual C++ and OpenMP runtime DLLs beside `llama-server.exe`; previously it exited with `0xC0000135`.
+- **The first start of a new installation no longer fails.** In v6.4.0 and v6.3.0, `deploy start` gave up before the new controller had written its control record. This affects the desktop app and Standalone `start.bat`.
+- **The desktop start screen shows errors instead of spinning forever.** It crashed while handling any error reported by the shell, including failed component downloads.
 - **Offline installers are smaller again.** v6.4.0 stored them uncompressed, which made them about 31% larger; they now use zlib.
 - `docker-compose.yml` names the current image, `ghcr.io/enoa-devteam/stella_project`.
 
@@ -48,10 +50,8 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 ## Known Boundaries
 
 - The legacy runtime remains the default.
-- Tested in Windows Sandbox on pre-release builds with Smart App Control off: a Python Offline install and an over-install from v6.3.0, both without network, reached a ready GUI core with user data kept.
 - Not verified: a complete Online component installation of this version (its download URL exists only after publication), WebView2 installation on a machine without it, Windows 10, real QQ/OneBot delivery, and chat-model acceptance.
 - An over-install from v6.3.0 or earlier leaves the old `memory/participation/` directory, which shadows the compatibility alias `memory.participation` for plugins that import it. stella itself imports `aoede.participation`. A clean program directory avoids this.
-- When a component download fails on first start, the app keeps showing the starting screen instead of the error.
 - Known issues: #142 (a failed table creation during migration is not reported) and #143 (no downgrade guard; restore the pre-migration backup to roll back).
 - `VERSIONED_LAYOUT=0` remains the workflow default.
 
@@ -59,6 +59,8 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 
 - **修复：没有 Visual C++ 运行库的 Windows 上桌面程序无法启动**（v6.4.0、v6.3.0、v6.2.0 均报「找不到 VCRUNTIME140_1.dll」），现已静态链接。
 - **修复：随包 llama.cpp 后端在这类机器上以 `0xC0000135` 退出**，现随包携带 VC++ 与 OpenMP 运行库。
+- **修复：全新安装的第一次启动必定失败**（v6.4.0、v6.3.0：控制记录尚未写出就被判为无效；桌面程序与 Standalone `start.bat` 均受影响）。
+- **修复：启动页遇到任何错误都永远停在「正在启动」**，现会显示错误与重试。
 - **Offline 安装器恢复压缩**：v6.4.0 未压缩导致体积大了约 31%，现改用 zlib。
 - `docker-compose.yml` 改用当前镜像名 `ghcr.io/enoa-devteam/stella_project`。
 - **注意：安装器未经代码签名。开启「智能应用控制」的 Windows 11 会直接拦截，且没有「仍要运行」选项**；其他系统会显示 SmartScreen 未知发布者提示。

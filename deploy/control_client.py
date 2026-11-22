@@ -157,6 +157,10 @@ def start(
                 code,
                 "已有 Corona 控制器仍持有实例。" if exit_code == 73 else f"Corona 提前退出（code {exit_code}）。",
             )
+        # 全新安装时子进程还没写出控制记录：「尚不存在」要等，只有「存在但无效」才失败。
+        if not (path.exists() or path.is_symlink()):
+            time.sleep(0.1)
+            continue
         try:
             client = LocalControlClient.from_record_file(path, timeout=_LOCAL_TIMEOUT)
             payload = client.status()

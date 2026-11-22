@@ -4,7 +4,7 @@
 - Files：`desktop/src-tauri/build.rs`、`scripts/build_llama_package.py`、`scripts/check_windows_crt.py`、发布工作流、`toolchain.json`、版本与发布说明。
 - Verification Evidence：构建 44986278592；Sandbox 结果见 progress.md 同日条目与 PR。
 - Recovery Notes：安装器只在 Windows Sandbox 里运行，不在开发机运行。比较体积只看 EXE 本体，不看 artifact。tag 前确认 main CI 与 cache warm 通过。
-- Blockers：GHCR 包 private；安装器未签名（SAC 拦截）；发布后需补测 online 全链路。
+- Blockers：新构建须在 Sandbox 里**看截图**确认面板真正打开（不能只看 health）；GHCR 包 private；安装器未签名（SAC 拦截）；发布后需补测 online 全链路。
 - Preserve：同下方既有未跟踪路径。
 
 ## Current Handoff — v6.4.0 发布（2026-11-22）

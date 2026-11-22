@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 
 import { isTauri, tauriBridge } from '@/api/tauri';
 import { useAuthStore } from '@/stores/auth';
+import { errorText } from '@/utils/errorText';
 
 // 离线页（方案 §11）：
 // - 浏览器：纯重试；
@@ -196,7 +197,7 @@ async function startBot(): Promise<void> {
   try {
     await tauriBridge.startBot(false);
   } catch (err) {
-    const msg = (err as Error).message;
+    const msg = errorText(err);
     // Bot 已在运行（deploy 拒绝重复启动）不算失败——目标本来就是进面板
     if (!msg.includes('已在运行') && !msg.includes('already running')) {
       startError.value = msg;
@@ -213,7 +214,7 @@ async function startBot(): Promise<void> {
     step.value = '就绪，正在打开面板…';
     window.location.href = base;
   } catch (err) {
-    startError.value = (err as Error).message;
+    startError.value = errorText(err);
     step.value = '';
     starting.value = false;
     stopLoadingUi();
@@ -232,7 +233,7 @@ async function runShellDoctor(): Promise<void> {
       doctorItems.value = [];
     }
   } catch (err) {
-    doctorText.value = `自检失败：${(err as Error).message}`;
+    doctorText.value = `自检失败：${errorText(err)}`;
     doctorItems.value = [];
   }
 }
@@ -326,7 +327,7 @@ async function saveAndStart(): Promise<void> {
     try {
       await tauriBridge.startBot(false);
     } catch (err) {
-      const msg = (err as Error).message;
+      const msg = errorText(err);
       if (!msg.includes('已在运行') && !msg.includes('already running')) throw err;
     }
     wizardStep.value = '等待服务就绪（最长 20 分钟）…';
@@ -334,7 +335,7 @@ async function saveAndStart(): Promise<void> {
     wizardStep.value = '就绪，正在打开面板…';
     window.location.href = base;
   } catch (err) {
-    wizardError.value = (err as Error).message;
+    wizardError.value = errorText(err);
     wizardBusy.value = false;
   }
 }
