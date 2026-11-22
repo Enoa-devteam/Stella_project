@@ -9,8 +9,7 @@ name: Release cache warm
 # GitHub 缓存 7 天未访问即被淘汰，所以另加每周两次的定时预热。
 on:
   push:
-    # TEMP(2026-11-22): ci/release-speedup 仅用于在合并前实测预热作业，PR 前移除
-    branches: [main, ci/release-speedup]
+    branches: [main]
     paths:
       - 'desktop/src-tauri/Cargo.toml'
       - 'desktop/src-tauri/Cargo.lock'

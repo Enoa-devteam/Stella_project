@@ -2466,7 +2466,7 @@
     {
       "id": "RELEASE-CI-SPEEDUP",
       "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）及发布阻断修复",
-      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：分支 CI 实测全绿（44911478831，17m29s）；待 PR 审阅合并、合并后 main 预热缓存、下一版发布说明写明 breaking changes，以及 clean VM 验证 online 安装器在缺 WebView2 机器上的引导器路径。",
+      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：分支 CI 实测全绿（44967247863，12m00s）；待 PR 审阅合并、合并后 main 预热缓存、下一版发布说明写明 breaking changes，以及 clean VM 验证 online 安装器在缺 WebView2 机器上的引导器路径。",
       "status": "blocked",
       "dependencies": [],
       "scope": [
@@ -2479,7 +2479,8 @@
         "发布文档与 cli/README.md",
         "llama.cpp UI 资产版本钉住（LLAMA_CPP_UI_VERSION）",
         "停止分发 NapCat（catalog / OneClick profile / 离线验收 / 用户文档）",
-        "online 安装器 WebView2 改 embedBootstrapper；offline NSIS 压缩定为 none"
+        "online 安装器 WebView2 改 embedBootstrapper；offline NSIS 压缩定为 none",
+        "llama.cpp backend 缓存（.github/actions/llama-cpu-backend）、desktop crate-type 仅 rlib、大 artifact compression-level 0、release-llama.yml UI 版本钉住"
       ],
       "done_criteria": [
         "workflow_dispatch 实测：tauri-cli 安装步骤 <1 分钟，四条 build-installer 腿与 install-test 全部通过",
@@ -2500,6 +2501,10 @@
         {
           "report": "progress.md 2026-11-21 Release CI 耗时压缩",
           "result": "Dispatch 44907469739 (cold, zlib) and 44909779625 (warm, none) reached the build job in 20m07s / 16m41s; both failed only the online size gate (WebView2 offline runtime grew to 280.5 MB on 2026-11-19). After online embedBootstrapper + offline none, dispatch 44911478831 succeeded end to end in 17m29s (v6.3.0: 42m03s): installer legs 3m32s-5m20s, online installers 16-18 MB, offline 1123-1125 MB, all 4 install-tests pass."
+        },
+        {
+          "report": "progress.md 2026-11-22 Release CI 耗时压缩（第二轮）",
+          "result": "Warm workflow 44966694885 succeeded (rust 5m32s, llama backend 4m32s, cache saved). Release dispatch 44967247863 succeeded end to end in 12m00s: backend 24s (cache hit), rust-cache full match on the warm-saved key, stella-desktop 2m12s-2m45s, payload upload 8s (was 36s), installer upload 15s (was 47s)."
         }
       ]
     }
