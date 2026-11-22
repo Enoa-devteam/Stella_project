@@ -36,14 +36,15 @@ You decide where the models come from.
 
 > Note: With the all-local deployment mode, the data truly stays off the network. Networked tools (such as weather and anime lookups) send requests and return actual data themselves, while deciding whether to use a tool, compressing its result into a summary, and rendering plugin cards as images all happen locally.
 
-## 6.3.0 Release
+## 6.4.0 Release
 
-- Stella 6.3.0 adds the Corona / Nucleus dual-process runtime and supervisor. The legacy entrypoint remains the default; no default switch has been made.
-- Windows Job Object process-tree management, private data-directory ACLs, HTTP/WebSocket proxying, and shutdown-budget behavior passed local regression checks. The installer harness passed in a disposable Windows Sandbox, and the Docker image build plus isolated container smoke passed.
-- The release workflow builds the public assets and checks their contents. GUI first boot, online component downloads, upgrade/rollback, Compose, and clean-VM behavior have not been accepted locally. Build and container health do not establish QQ, WebChat, or real-model acceptance.
-- The memory schema remains 19 and the Rust backend API remains 3; this release introduces no business-database schema migration.
+- Memory schema 22 → 24 (backed up and migrated on first start); the Rust backend is API 4 / schema 24. Rolling back requires restoring the pre-migration backup.
+- NapCat is no longer bundled, stella CLI packages are no longer published, and only the OneBot V11 adapter is installed for now.
+- Online installers download WebView2 when it is missing; use an Offline installer (about 1.1 GB) on machines without internet access.
+- Proactive participation is context-first and limited by `PROACTIVE_FREQUENCY`; QQ and WebChat use the shared ingress by default.
+- The legacy entrypoint remains the default. Clean VM, GUI first boot, complete online component installation, over-install upgrade, real QQ and real models have not been accepted.
 
-Back up the complete data root before upgrading, and run `python -m deploy migrate --dry-run` against a copy first. See the [documentation index](docs/README.en.md) for bilingual guides, defaults, and acceptance boundaries.
+Back up the complete data root before upgrading; when importing from an old directory, first run `python -m deploy migrate --from <old-install> --dry-run`. See the [release notes](release_assets/RELEASE_NOTES_TEMPLATE.md) and the [documentation index](docs/README.en.md).
 
 ## 🔌 Three Deployment Modes
 
@@ -185,7 +186,7 @@ pip install -r requirements.txt
 
 | Component | Requirement |
 |---|---|
-| OS | Windows 10/11 x64 (OneClick installers bundle an offline WebView2 runtime installer, so machines without WebView2 are covered; Standalone relies on the system-provided runtime) |
+| OS | Windows 10/11 x64 (without WebView2: OneClick Offline bundles an offline installer, OneClick Online downloads it; Standalone relies on the system-provided runtime) |
 | Python | 3.10+ (OneClick installers bundle the embedded Python; Standalone archives require your own installation) |
 | Framework | [NoneBot 2](https://nonebot.dev/) |
 | QQ protocol endpoint | [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation (install it and log in by QR code yourself; installers no longer bundle NapCat since 2026-11) |

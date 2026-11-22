@@ -34,14 +34,15 @@ Stella 的设计前提是上下文窗口很小 —— 基准上限是 **8192 tok
 
 > 注：选择全本地部署运行的模式时，数据不出网是彻底的。需要联网的工具（查天气、查番剧）由插件自己发送请求和返回实际的数据，而判断该不该用工具、把结果压缩成摘要、把插件卡片渲染成图片，全部在本地完成。
 
-## 6.3.0 发布说明
+## 6.4.0 发布说明
 
-- Stella 6.3.0 加入 Corona / Nucleus 双进程运行与监管能力；legacy 仍是默认入口，尚未切换默认运行路径。
-- Windows Job Object 进程树托管、私有目录 ACL、HTTP/WebSocket 代理与关闭预算已完成本机回归；安装器 EXE 已在一次性 Windows Sandbox 通过安装器 harness，Docker 镜像构建与隔离容器烟测也已通过。
-- 完整发布工作流会构建公开资产并执行资产校验。本机尚未验收 GUI 首启、在线组件下载、升级回滚、Compose 与干净 VM；QQ、WebChat 和真实模型验收也不由构建或容器健康状态替代。
-- 记忆 schema 保持 19，Rust backend API 保持 3；本版本没有引入业务数据库 schema 迁移。
+- 记忆 schema 22 → 24（首次启动自动备份并迁移），Rust backend 为 API 4 / schema 24；回退须恢复迁移前备份。
+- 不再内置 NapCat，不再发布 stella CLI 包；暂时只安装 OneBot V11 适配器。
+- Online 安装器在缺少 WebView2 时需联网下载；离线机器请使用 Offline 安装器（约 1.1 GB）。
+- 主动参与改为上下文优先并由 `PROACTIVE_FREQUENCY` 限频；QQ / WebChat 默认走共享入站。
+- legacy 仍是默认入口。干净 VM、GUI 首启、完整在线组件安装、覆盖升级、真实 QQ 与模型均未验收。
 
-升级前备份完整数据根，并先在副本运行 `python -m deploy migrate --dry-run`。完整中英文指南、默认值与验收边界见 [文档索引](docs/README.md)。
+升级前备份完整数据根；从旧目录导入时先运行 `python -m deploy migrate --from <旧目录> --dry-run`。完整变更见 [发布说明](release_assets/RELEASE_NOTES_TEMPLATE.md)，指南与默认值见 [文档索引](docs/README.md)。
 
 ## 🔌 三种部署模式
 
@@ -184,7 +185,7 @@ pip install -r requirements.txt
 
 | 组件 | 要求 |
 |---|---|
-| 操作系统 | Windows 10/11 x64（OneClick 安装包已内置 WebView2 运行时离线安装器，无 WebView2 的电脑也能装；Standalone 需系统自带） |
+| 操作系统 | Windows 10/11 x64（缺 WebView2 时：OneClick Offline 内置离线安装器，OneClick Online 联网下载；Standalone 需系统自带） |
 | Python | 3.10+（OneClick 安装包内置嵌入式 Python；Standalone 解压版需自装） |
 | 框架 | [NoneBot 2](https://nonebot.dev/) |
 | QQ 协议端 | [NapCat](https://github.com/NapNeko/NapCatQQ) 或其他 OneBot V11 实现（需自行安装并扫码登录；安装包自 2026-11 起不再内置 NapCat） |

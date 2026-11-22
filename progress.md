@@ -1,3 +1,13 @@
+## 2026-11-22 — v6.4.0 发布准备
+
+- Scope：维护者要求从 main 发布 6.4.0。授权：#139、#140 与发布准备 PR 在各自 CI 通过后由 agent 用 admin bypass 合并（仅限这三个），随后推 tag 并验证。
+- Findings：① `deploy migrate --dry-run` 经全局 `DB_PATH` 在目标造库，随后真实导入跳过用户记忆库且报告成功（12af2da 引入，未随任何版本发布）→ #140。② 安装器内嵌 catalog 指向 `candidate-<run>`，v6.0.1–v6.3.0 全部 404 → #139 改正式 Release URL、资产不可替换、删除候选作业。③ `release-memory-rust.yml` 写死 API 2 / schema 18，v6.2.0、v6.3.0 均缺资产 → #139。
+- 发布阻断 ④（#141 CI 发现）：playwright 未钉版本，1.64.1 → 1.65.2 自带 node 依赖 libatomic1，Docker 镜像构建失败（tag 会同样失败）→ Dockerfile 补装；本机隔离构建 + 断网中文渲染通过。
+- Corrections：此前「候选被删不影响已发布安装器」的结论错误（只查了 Release 页的 catalog）；#138 中「4 个失败均在干净 main 或 stash 后复现」过强（第 4 个只是单独运行通过）；「crate-type 改动不改变发布 exe」是推断，未比对二进制；此前 breaking changes 漏了 schema 22→24、适配器停用、主动参与与共享入站的默认变化。v6.3.0 说明中的 schema 19 / API 3 有误，实际 22 / 4。
+- Verification：见 #139、#140；发布结果以 tag 工作流与发布后回读为准。
+- Not verified：干净 VM、GUI 首启、完整在线组件安装、缺 WebView2、v6.3.0 覆盖升级、真实 QQ / 模型，保持 NOT READY。
+- Next：三个 PR CI 通过并合并 → main CI 与 cache warm 通过 → 推 v6.4.0 → 验证 Release、Rust 资产、Docker、公开 URL。待单独处理：旧版会静默打开 v24 库（无降级保护）；`_migrate` 的 `suppress(OperationalError)` 会吞掉建表失败。
+
 ## 2026-11-22 — Release CI 耗时压缩（第二轮）
 
 - Scope：继续 `RELEASE-CI-SPEEDUP`（分支 `ci/release-speedup`）。维护者要求把可优化项尽量做完再提 PR。

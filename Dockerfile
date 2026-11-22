@@ -35,9 +35,10 @@ LABEL org.opencontainers.image.title="Stella" \
 # tzdata：主动搭话、消息新鲜度判定都依赖本地时间语义（TZ），容器默认 UTC 会错；
 # fonts-noto-cjk：playwright 渲染插件卡片的中文字体——--with-deps 只装浏览器系统库
 #   不装字体，缺了中文渲染成豆腐块；
+# libatomic1：playwright >= 1.65 自带的 node 链接它，slim 镜像没有；必须先于 playwright install。
 # curl：HEALTHCHECK 先探 Corona 回环存活端点，迁移期间再兼容 legacy /stella/status。
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tzdata fonts-noto-cjk curl \
+    && apt-get install -y --no-install-recommends tzdata fonts-noto-cjk curl libatomic1 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
