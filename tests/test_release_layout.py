@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -91,6 +92,10 @@ def test_release_assets_keep_python_name_and_add_separate_rust_name():
         in rust
     )
     assert "gh release create" not in rust
+    # 合同值只能来自 memory_rust/backend.py（写死的 2 / 18 让两个版本缺失资产）
+    assert "Get-Content 'memory_rust/backend.py'" in rust
+    assert not re.search(r"(BACKEND_API_VERSION|MEMORY_SCHEMA_VERSION) == \d", rust)
+    assert not re.search(r"(Backend API|Memory schema): \d", rust)
     assert "校验主 Python 与 CLI 版本" in rust
     assert "pyproject.toml" in rust and "cli/Cargo.toml" in rust
 

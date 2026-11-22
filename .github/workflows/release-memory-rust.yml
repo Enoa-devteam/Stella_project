@@ -61,6 +61,17 @@ jobs:
             throw "主版本不一致: pyproject=$pythonVersion cli/Cargo.toml=$cliVersion release=$env:RELEASE_VERSION"
           }
 
+      # 期望值只从源码合同读：写死的 2 / 18 让 v6.2.0、v6.3.0 都没发出这个资产。
+      - name: 读取 Rust backend 合同
+        shell: pwsh
+        run: |
+          $contract = Get-Content 'memory_rust/backend.py' -Raw
+          foreach ($name in @('BACKEND_API_VERSION', 'MEMORY_SCHEMA_VERSION')) {
+            $match = [regex]::Match($contract, "(?m)^$name\s*=\s*(\d+)")
+            if (-not $match.Success) { throw "memory_rust/backend.py is missing $name" }
+            "EXPECTED_$name=$($match.Groups[1].Value)" >> $env:GITHUB_ENV
+          }
+
       - name: 校验 Rust distribution 元数据
         shell: pwsh
         run: |
@@ -155,8 +166,8 @@ jobs:
             "Stella Rust memory engine release"
             "Release: $env:RELEASE_REF"
             "Distribution: stella-memory-rust"
-            "Backend API: 2"
-            "Memory schema: 18"
+            "Backend API: $env:EXPECTED_BACKEND_API_VERSION"
+            "Memory schema: $env:EXPECTED_MEMORY_SCHEMA_VERSION"
             "Launcher: start.bat"
             "The launcher installs the bundled wheel and selects MEMORY_BACKEND=rust."
           ) | Set-Content "$root\VERSION.txt" -Encoding utf8
@@ -193,7 +204,8 @@ jobs:
             --target $wheelVerify $wheelPath
           Push-Location $wheelVerify
           try {
-            python -c "import memory_rust._native as native; assert native.BACKEND_API_VERSION == 2; assert native.MEMORY_SCHEMA_VERSION == 18"
+            python -c "import os, memory_rust._native as native; assert native.BACKEND_API_VERSION == int(os.environ['EXPECTED_BACKEND_API_VERSION']); assert native.MEMORY_SCHEMA_VERSION == int(os.environ['EXPECTED_MEMORY_SCHEMA_VERSION'])"
+            if ($LASTEXITCODE -ne 0) { throw "Rust wheel contract does not match memory_rust/backend.py" }
           } finally {
             Pop-Location
           }

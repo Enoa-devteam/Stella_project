@@ -1285,12 +1285,9 @@ def _migrate(conn: sqlite3.Connection, dry_run: bool = False) -> int:
         with contextlib.suppress(sqlite3.OperationalError):
             from aoede.budget import ProactiveBudgetStore
 
-            conn2 = sqlite3.connect(str(DB_PATH))
-            try:
-                ProactiveBudgetStore(str(DB_PATH)).ensure_tables(conn2)
-                conn2.commit()
-            finally:
-                conn2.close()
+            # 必须用传入的连接：被迁移的库不一定是 DB_PATH（预演跑在临时副本上）。
+            # 另开连接会在预演时造出目标库，让随后的真实导入跳过用户数据。
+            ProactiveBudgetStore(str(DB_PATH)).ensure_tables(conn)
     for table, column, ddl in _ADDITIVE_COLUMNS:
         if _column_exists(cursor, table, column):
             continue
