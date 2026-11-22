@@ -146,6 +146,18 @@ if (Test-Path -LiteralPath $metaPath) {
         Add-Check "bundled catalog hash matches release metadata" `
             ($catalogHash -eq $meta.catalog_sha256.ToLowerInvariant())
     }
+    # The URL embedded in the installed EXE must be a versioned Release, never a
+    # disposable candidate prerelease. The catalog on the Release page is a
+    # different file and does not prove this.
+    if (Test-Path -LiteralPath $catalogPath) {
+        $catalog = Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $llamaSource = [string](($catalog.packages | Where-Object { $_.id -eq "llama-cpu" }).source)
+        Add-Check "bundled llama source is a versioned Release asset" `
+            ($llamaSource -match '^https://github\.com/[^/]+/[^/]+/releases/download/v\d+\.\d+\.\d+/') `
+            "source=$llamaSource"
+    } else {
+        Add-Check "bundled catalog present" -Passed $false "missing $catalogPath"
+    }
 } else {
     Add-Check "release metadata present" -Passed $false `
         "missing .stella-release-metadata.json (pre-contract build?)"

@@ -457,12 +457,14 @@ def test_release_workflow_resolves_version_once():
     # S11 Phase 2 双轨：workflow 有 VERSIONED_LAYOUT 开关且默认 '0'
     workflow_text = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     assert "VERSIONED_LAYOUT: '0'" in workflow_text, "版本化布局默认必须为关（双轨）"
-    # S14/WP14：不可变候选通道——安装器/离线负载的 catalog 引用候选 URL；
-    # 晋升不删候选（保留 6 个）。
-    assert "publish-candidate" in jobs, "缺少候选通道发布作业"
-    assert "publish-candidate" in jobs["build-installer"]["needs"]
-    assert "publish-candidate" in jobs["build-offline-payload"]["needs"]
-    assert "--asset-base-url" in workflow_text, "catalog 构建必须引用候选 URL"
+    # 2026-11-22：候选预发布全部丢失、已装安装器 404——catalog 改指正式 Release。
+    assert "publish-candidate" not in jobs, "不得再依赖会被删除的候选预发布"
+    assert "--asset-base-url" not in workflow_text, "catalog 必须使用正式 Release URL"
+    assert "gh release delete" not in workflow_text, "发布工作流不得删除任何 Release"
+    assert "build-oneclick-catalog-backend" in jobs["build-offline-payload"]["needs"]
+    guard = workflow_text.index("- name: 已发布 llama backend 不可替换")
+    assert guard < workflow_text.index("- name: 发布 Release（新建或覆盖同版本 asset）")
+    assert guard < workflow_text.index("- name: 发布 Release（手工覆盖同版本）")
     # S14/WP14：签名管道——build 之后、上传之前签名；tag 无凭据硬失败；
     # install-test 验收签名后字节。
     assert "签名安装器" in workflow_text
@@ -480,8 +482,6 @@ def test_release_workflow_resolves_version_once():
     assert "本版本安装器未经代码签名" in workflow_text
     # S15/WP15：体积门禁接入发布作业
     assert "check_installer_size.py" in workflow_text, "缺少安装器体积门禁"
-    assert "--prerelease" in workflow_text, "候选必须为预发布"
-    assert "startswith(\"candidate-\")" in workflow_text or "startswith('candidate-')" in workflow_text
     # WP02：最终 EXE 安装验收是发布硬门禁——构建与发布之间必须有 install-test，
     # 且发布作业必须核对发布字节与验收字节一致。
     assert "install-test" in jobs, "缺少最终 EXE 安装验收作业"

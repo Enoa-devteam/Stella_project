@@ -151,62 +151,12 @@ jobs:
   # OneClick Offline 的随包负载：把安装期本要联网下载的所有产物在发布时预取齐
   # （Python 运行时 / get-pip / 依赖 wheel 闭包 / catalog 组件 / playwright 内核），
   # 安装期由 python.rs 与 deploy.bootstrap 的本地优先路径就地取用，零联网。
-  # 不可变候选通道（S14/WP14）：llama-cpu 的 catalog source 自指最终
-  # Release，而构建时它还不存在。候选预发布先于安装器构建落地，安装器
-  # 与离线负载的 catalog 全部引用它；晋升（正式发布）不删除候选——已发布
-  # 的安装器永远依赖这些 URL。保留最近 6 个候选，更早且无引用的由本作业
-  # 尾部清理。
-  publish-candidate:
-    needs: [resolve-release, build-oneclick-catalog-backend]
-    runs-on: ubuntu-latest
-    outputs:
-      candidate_tag: ${{ steps.publish.outputs.candidate_tag }}
-      asset_base_url: ${{ steps.publish.outputs.asset_base_url }}
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 下载 backend
-        uses: actions/download-artifact@v8
-        with:
-          name: stella-oneclick-catalog-backend
-          path: candidate
-
-      - id: publish
-        name: 发布不可变候选预发布
-        shell: bash
-        run: |
-          set -e
-          TAG="candidate-${{ needs.resolve-release.outputs.build_id }}"
-          ASSET_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
-          cd candidate
-          sha256sum *.zip > SHA256SUMS.txt
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "候选 $TAG 已存在（同 build_id 重跑），校验并复用"
-            gh release upload "$TAG" *.zip SHA256SUMS.txt --clobber
-          else
-            gh release create "$TAG" *.zip SHA256SUMS.txt \
-              --prerelease --title "候选构建 $TAG" \
-              --notes "不可变候选通道：安装器验收引用。请勿删除或覆盖。"
-          fi
-          echo "candidate_tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "asset_base_url=$ASSET_URL" >> "$GITHUB_OUTPUT"
-
-      - name: 清理超过保留代数的旧候选（保留最近 6 个）
-        shell: bash
-        run: |
-          set -e
-          gh api "repos/${{ github.repository }}/releases?per_page=100" \
-            --jq '.[] | select(.prerelease) | select(.tag_name | startswith("candidate-")) | .tag_name' \
-            | tail -n +7 \
-            | while read -r old; do
-                echo "删除过期候选：$old"
-                gh release delete "$old" --cleanup-tag --yes || true
-              done
-
+  # catalog 里 llama-cpu 的 source = 本版本正式 Release 的资产（2026-11-22）。
+  # 此前指向 candidate-<run> 预发布：v6.0.1–v6.3.0 的候选全部丢失（404），已装的
+  # online 安装器随之失效。构建期不需要该 URL 可达：离线负载用 --local-artifacts，
+  # online 安装验收不下载组件。代价是该资产一经发布不可替换（见发布作业的门禁）。
   build-offline-payload:
-    needs: [resolve-release, publish-candidate]
+    needs: [resolve-release, build-oneclick-catalog-backend]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -249,7 +199,6 @@ jobs:
             --backend-asset $backend[0].FullName `
             --release-ref "v$env:RELEASE_VERSION" `
             --repository "${{ github.repository }}" `
-            --asset-base-url "${{ needs.publish-candidate.outputs.asset_base_url }}" `
             --output offline-stage/package-catalog-windows-amd64.json
           # 浏览器内核默认随负载安装（--skip-browsers 才跳过）。
           # --local-artifacts：llama-cpu 的 source 是自指 Release URL，payload
@@ -287,7 +236,7 @@ jobs:
   # payload 维度：online 走安装期联网（现状），offline 嵌入 build-offline-payload
   # 的随包负载。两者同一 profile、同一份代码，只差 resources 里有没有 offline/。
   build-installer:
-    needs: [resolve-release, publish-candidate, build-rust-wheel, build-oneclick-catalog-backend, build-offline-payload, build-dashboard]
+    needs: [resolve-release, build-rust-wheel, build-oneclick-catalog-backend, build-offline-payload, build-dashboard]
     strategy:
       fail-fast: false
       matrix:
@@ -364,7 +313,6 @@ jobs:
             --backend-asset $backend[0].FullName `
             --release-ref "v$env:RELEASE_VERSION" `
             --repository "${{ github.repository }}" `
-            --asset-base-url "${{ needs.publish-candidate.outputs.asset_base_url }}" `
             --output package-catalog-windows-amd64.json
           if ('${{ matrix.profile }}' -eq 'oneclick-rust') {
             New-Item -ItemType Directory -Force -Path wheels | Out-Null
@@ -936,6 +884,27 @@ jobs:
         run: |
           set -e
           python scripts/check_installer_size.py --products dist/products
+
+      # 已发布安装器内嵌了这个资产的 URL + sha256：换一个字节，它们全部安装失败。
+      # 必须在任何上传之前拦住；查询失败同样中止，不能当成「尚未发布」。
+      # 只重跑失败的作业会复用同一份 artifact，字节相同，可以通过。
+      - name: 已发布 llama backend 不可替换
+        if: github.event_name == 'push' || inputs.overwrite_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          asset="Stella-llama-${RELEASE_REF}-windows-x86_64-cpu.zip"
+          names=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate \
+            --jq '.[] | select(.tag_name == env.RELEASE_REF) | .assets[].name')
+          if grep -Fxq "$asset" <<<"$names"; then
+            published=$(mktemp -d)
+            gh release download "$RELEASE_REF" --repo "$GITHUB_REPOSITORY" -p "$asset" -D "$published"
+            if ! cmp -s "$published/$asset" "dist/products/$asset"; then
+              echo "::error::$RELEASE_REF 已发布的 $asset 不可替换（已有安装器钉住其 sha256）；请发布新版本"
+              exit 1
+            fi
+          fi
 
       # —— 核心改进：支持在同版本 Release 已存在时覆盖 asset ——
       # 旧逻辑仅执行 `gh release create`，若 Release 已存在则直接报错失败，
