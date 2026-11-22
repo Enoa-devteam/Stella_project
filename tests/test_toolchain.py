@@ -52,6 +52,32 @@ def test_toolchain_llama_commit_matches_release_workflow():
     assert match.group(1) == toolchain["llama_cpp_commit"]
 
 
+def test_release_workflow_pins_llama_ui_assets():
+    # 不钉时浅克隆推导出不存在的 b1 并回退浮动 latest（run 44905135423 失败）
+    toolchain = _toolchain()
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    match = re.search(r"LLAMA_CPP_UI_VERSION: (b\d+)\n", workflow)
+    assert match, "llama.cpp UI 资产版本必须钉住"
+    assert match.group(1) == toolchain["llama_cpp_ui_version"]
+    assert "ui-version: ${{ env.LLAMA_CPP_UI_VERSION }}" in workflow
+    action = (REPO_ROOT / ".github" / "actions" / "llama-cpu-backend" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "HF_UI_VERSION: ${{ inputs.ui-version }}" in action
+
+
+def test_llama_backend_cache_key_covers_all_inputs():
+    action = (REPO_ROOT / ".github" / "actions" / "llama-cpu-backend" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    key_part = action.split("- id: restore")[0]
+    for token in ("INPUT_COMMIT", "INPUT_UI_VERSION", "build_llama_package.py",
+                  "verify_llama_package.py", "OPENSSL_RUNTIME_DIR"):
+        assert token in key_part, f"缓存键缺少输入 {token}"
+    verify_step = action.split("- name: 校验 Windows CPU backend")[1].split("- name:")[0]
+    assert "if:" not in verify_step, "命中缓存也必须重跑校验"
+
+
 def test_product_profiles_pin_embedding_to_toolchain_commit():
     toolchain = _toolchain()
     commit = toolchain["embedding_commit"]
@@ -70,8 +96,11 @@ def test_product_profiles_pin_embedding_to_toolchain_commit():
 def test_release_workflow_consumes_toolchain_locks():
     workflow = RELEASE_YML.read_text(encoding="utf-8")
     assert "toolchain.json" in workflow, "release.yml 必须从 toolchain.json 读锁定值"
-    assert "--version $toolchain.tauri_cli" in workflow, (
-        "tauri-cli 必须按锁定版本安装（替换 ^2 浮动）"
+    assert "uses: ./.github/actions/install-tauri-cli" in workflow, (
+        "tauri-cli 必须经锁定版本的安装 action 安装（替换 ^2 浮动）"
+    )
+    assert "cargo install tauri-cli" not in workflow, (
+        "tauri-cli 不再源码编译（每条矩阵腿 ~10 分钟），改用校验过的官方预编译包"
     )
     assert "maturin==$($toolchain.maturin)" in workflow, (
         "maturin 必须按锁定版本安装（替换 --upgrade 浮动）"
@@ -83,3 +112,36 @@ def test_release_workflow_consumes_toolchain_locks():
     assert workflow.count("$LASTEXITCODE -ne 0") >= 3, (
         "Windows 关键 native 命令后必须立即检查退出码（防后续成功命令盖掉失败）"
     )
+
+
+def test_tauri_cli_install_action_verifies_pinned_prebuilt():
+    toolchain = _toolchain()
+    assert re.fullmatch(r"[0-9a-f]{64}", toolchain["tauri_cli_windows_sha256"]), (
+        "tauri-cli 预编译包必须钉住 sha256"
+    )
+    action = (REPO_ROOT / ".github" / "actions" / "install-tauri-cli" / "action.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "tauri-cli-v$version" in action and "$toolchain.tauri_cli" in action
+    assert "$toolchain.tauri_cli_windows_sha256" in action, "必须校验预编译包哈希"
+    assert '"tauri-cli $version"' in action, "必须校验二进制自报版本"
+
+
+def test_nsis_compression_is_pinned_per_payload():
+    toolchain = _toolchain()
+    allowed = {"none", "zlib", "bzip2", "lzma"}
+    assert set(toolchain["nsis_compression"]) == {"online", "offline"}
+    assert set(toolchain["nsis_compression"].values()) <= allowed
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    assert "$toolchain.nsis_compression" in workflow
+    assert "--config $override" in workflow, "压缩算法必须经 --config 传给 tauri build"
+
+
+def test_webview_install_mode_is_offline_safe():
+    # offline 必须零联网（2026-09 用户反馈）；online 用引导器避开 280MB 离线运行时
+    toolchain = _toolchain()
+    modes = toolchain["webview_install_mode"]
+    assert modes == {"online": "embedBootstrapper", "offline": "offlineInstaller"}
+    workflow = RELEASE_YML.read_text(encoding="utf-8")
+    assert "$toolchain.webview_install_mode" in workflow
+    assert "offline 安装器必须内嵌 WebView2 离线安装包" in workflow, "offline 腿必须硬校验"

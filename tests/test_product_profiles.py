@@ -55,7 +55,8 @@ def test_oneclick_has_only_qwen_embedding_as_default_model(profile_id):
     profile = load_profiles()[profile_id]
     assert profile["default_models"] == [ONECLICK_DEFAULT_EMBEDDING]
     assert "llama-cpu" in profile["included_components"]
-    assert "napcat" in profile["included_components"]
+    # NapCat 停止随 OneClick 分发（2026-11-21：上游下载源失效）
+    assert "napcat" not in profile["included_components"]
 
 
 @pytest.mark.parametrize("profile_id", ["standalone-python", "standalone-rust"])

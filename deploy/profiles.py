@@ -153,8 +153,10 @@ def validate_profile(payload: Any) -> dict[str, Any]:
         for key, expected in ONECLICK_DEFAULT_EMBEDDING.items():
             if model.get(key) != expected:
                 raise ProfileError(f"默认 embedding 元数据不匹配：{key}")
-        if "llama-cpu" not in components or "napcat" not in components:
-            raise ProfileError("OneClick 必须声明 llama-cpu 和 napcat")
+        # NapCat 自 2026-11-21 起不再随 OneClick 分发（上游下载源已失效）；
+        # 旧版已安装 profile 仍可能列出 napcat，这里只放宽、不拒绝，避免升级失败。
+        if "llama-cpu" not in components:
+            raise ProfileError("OneClick 必须声明 llama-cpu")
     else:
         if models:
             raise ProfileError("Standalone 不得声明默认模型")

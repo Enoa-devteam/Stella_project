@@ -155,8 +155,9 @@ def test_oneclick_installs_declared_components_and_only_embedding(
 
     assert result["state"] == "complete"
     assert (data_root / ".stella" / "components" / "llama-cpu" / "4.0.1").is_dir()
-    assert napcat.status(data_root)["state"] == "not_logged_in"
-    assert napcat.status(data_root)["unattended"] is False
+    # NapCat 自 2026-11-21 起不随 OneClick 分发：catalog 里即便还有旧记录，
+    # profile 未声明就不得安装（不得再触发已失效的上游下载）。
+    assert napcat.status(data_root)["state"] == "not_installed"
     registry = packages.read_registry(data_root)
     assert registry["active"]["embedding"] == "qwen3-embedding-0.6b@q8_0"
     assert not any(
@@ -219,7 +220,7 @@ def test_oneclick_is_idempotent_without_redownloading(tmp_path, monkeypatch):
     )
 
     assert result["resumed"] is True
-    assert calls == 3
+    assert calls == 2  # llama-cpu + embedding；NapCat 不再下载
 
 
 def test_completed_oneclick_refreshes_stale_catalog_components(
@@ -257,7 +258,7 @@ def test_completed_oneclick_refreshes_stale_catalog_components(
 
     assert result["state"] == "complete"
     assert result.get("resumed") is None
-    assert calls == 4
+    assert calls == 3  # 首装 2 次 + 刷新 llama-cpu 1 次；NapCat 不再下载
     assert (
         data_root / ".stella" / "components" / "llama-cpu" / "4.0.2"
     ).is_dir()

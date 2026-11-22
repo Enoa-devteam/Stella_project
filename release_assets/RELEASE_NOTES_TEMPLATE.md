@@ -51,7 +51,7 @@ The application version is 6.3.0. The launcher, runtime-manager, native wheel, a
 | Standalone / Python | `Stella-Standalone-Python-v6.3.0-windows-amd64.zip` |
 | Standalone / Rust | `Stella-Standalone-Rust-v6.3.0-windows-amd64.zip` |
 
-Additional assets include Windows/Linux CLI packages, the CPU backend, native wheel, package catalog, release manifest, and `SHA256SUMS.txt`. OneClick includes the offline WebView2 runtime; Offline also bundles Python, dependencies, components, the default embedding model, and the rendering kernel. A chat model must still be configured, and QQ still requires account login.
+Additional assets include the CPU backend, native wheel, package catalog, release manifest, and `SHA256SUMS.txt`. OneClick includes the offline WebView2 runtime; Offline also bundles Python, dependencies, components, the default embedding model, and the rendering kernel. A chat model must still be configured, and QQ still requires account login.
 
 ## Known Boundaries
 

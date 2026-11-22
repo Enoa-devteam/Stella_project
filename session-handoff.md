@@ -1,3 +1,12 @@
+## Current Handoff — Release CI 耗时压缩（2026-11-21）
+
+- Current Objective：`RELEASE-CI-SPEEDUP`（blocked，非唯一 in_progress 槽位）。分支 `ci/release-speedup`，worktree `E:\stella\stella_project-release-speedup`（主 checkout 因未跟踪文件冲突无法切换）。CI 实测全绿：dispatch 44967247863，12m00s（v6.3.0 为 42m03s）；预热工作流 44966694885 通过，backend 与 Rust 缓存均命中。
+- Files：`.github/workflows/release.yml`、`.github/workflows/release-cache-warm.yml`、`.github/actions/install-tauri-cli/action.yml`、`release_assets/toolchain.json`、`scripts/build_release_catalog.py`、`deploy/profiles.py`、`deploy/init_wizard.py`、OneClick product profiles、`scripts/test_nsis_install.ps1`、`desktop/src-tauri/installer-hooks.nsh`、README / 快速开始 / 发布与配置文档、对应测试，以及状态文件。删除 `release_assets/README-CLI-快速开始.txt`。
+- Verification Evidence：见 progress.md 同日条目；本地定向测试通过，check_docs ok，每次提交前 detect-changes low / 0 processes。actionlint 未运行（权限拒绝）。
+- Recovery Notes：每次 workflow_dispatch 会创建公开 `candidate-<run_id>` 预发布（与正式流程相同）。GitNexus 需对 worktree 单独 `analyze --index-only`，repo 参数用绝对路径。仓库已转移到 `Enoa-devteam/stella_project`，本地 remote 仍指旧名（重定向可用）。
+- Blockers：PR #138 待审阅合并；缓存预热需合并到 main 后才生效；clean VM 缺 WebView2 场景未验；下一版发布说明需列 breaking changes（NapCat、CLI、WebView2 引导器）。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — memory write-path fix and PR #130 close-out (2026-11-21)
 
 - Current Objective：写侧最小修复与 M6 复测已完成；用户计划在本提交后合并 PR #130，未闭环项转入 GitHub follow-up issue。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`。

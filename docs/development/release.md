@@ -2,7 +2,11 @@
 
 中文 | [English](release.en.md) · [文档总览](../README.md)
 
-打 tag 后 CI（`.github/workflows/release.yml`）自动打包并发布，产出六类 Windows 产品资产：`Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe`（单文件安装器）、`Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe`（离线安装器，见下）与 `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip`（仅本体的解压包），另有 CLI、llama backend 等独立资产。
+打 tag 后 CI（`.github/workflows/release.yml`）自动打包并发布，产出六类 Windows 产品资产：`Stella-OneClick-Python/Rust-vX.Y.Z-windows-amd64.exe`（单文件安装器）、`Stella-OneClick-Python/Rust-Offline-vX.Y.Z-windows-amd64.exe`（离线安装器，见下）与 `Stella-Standalone-Python/Rust-vX.Y.Z-windows-amd64.zip`（仅本体的解压包），另有 llama backend 等独立资产。自 2026-11 起不再发布 Stella CLI 包（WebUI 已覆盖其用途；`cli/` 源码与 CI 门禁保留）。
+
+### 发布耗时与工具链缓存
+
+`build-installer` 是关键路径。tauri-cli 使用 `tauri-apps/tauri` 官方预编译包（版本与 sha256 钉在 `release_assets/toolchain.json` 的 `tauri_cli` / `tauri_cli_windows_sha256`，实现见 `.github/actions/install-tauri-cli`），不再 `cargo install` 源码编译。Rust 依赖经 `Swatinem/rust-cache`（`shared-key: desktop-installer`）缓存；tag 触发的运行只能读默认分支的缓存，因此由 `.github/workflows/release-cache-warm.yml` 在 main 上预热。NSIS 压缩算法按 online / offline 分别取 `toolchain.json` 的 `nsis_compression`；手工触发可用 `offline_nsis_compression` 输入覆盖 offline 腿做实测。
 
 ### OneClick Offline 的离线负载
 
@@ -14,7 +18,7 @@ Offline 变体与在线版**同一份代码、同一个 profile id**，只是 NS
 - 嵌入式 Python 运行时 zip（哈希从 `python.rs` 的 `PY_VER`/`PY_SHA256` 解析，单一事实来源）；
 - `get-pip.py`（`MANIFEST.json` 记录 sha256，安装器校验后配合 `--no-index` 离线装 pip）；
 - requirements.txt 的完整 wheel 闭包（`pip wheel` 现场构建，含只有 sdist 的包，如 `qrcode_terminal`）；
-- package catalog 声明的全部组件（llama.cpp backend / NapCat / 默认 embedding 模型，文件名 = catalog 的 `artifact` 字段，校验走与在线安装同一条 catalog checksum 路径）；
+- package catalog 声明的全部组件（llama.cpp backend / 默认 embedding 模型；NapCat 自 2026-11-21 起不再分发，文件名 = catalog 的 `artifact` 字段，校验走与在线安装同一条 catalog checksum 路径）；
 - playwright 的 chromium-headless-shell（`PLAYWRIGHT_BROWSERS_PATH` 指向随包内核，渲染零下载）。
 
 WebView2 运行时不在负载里，而是由 Tauri 的
@@ -22,7 +26,9 @@ WebView2 运行时不在负载里，而是由 Tauri 的
 安装时先检测注册表，已有 WebView2 则跳过，没有则静默装内嵌的离线安装包，
 同样零联网。默认的 `downloadBootstrapper` 需要联网下载运行时，在无 WebView2
 的离线机器上 GUI 起不来（2026-09 真实用户反馈），`embedBootstrapper` 也仍需
-联网——必须用 `offlineInstaller`。
+联网——Offline 必须用 `offlineInstaller`。
+
+Online 安装器自 2026-11-21 起改用 `embedBootstrapper`（由 CI 按 `release_assets/toolchain.json` 的 `webview_install_mode` 覆盖，`tauri.conf.json` 仍为 `offlineInstaller`）：Online 安装本就需联网装组件；而 Tauri 内嵌的离线运行时不钉版本，微软 2026-11-19 版已达 280.5MB，内嵌它会让 Online 安装器超出 300MB 预算。release.yml 对 offline 腿硬校验必须是 `offlineInstaller`。
 
 **修改安装期组件时必须同步检查**：新增 catalog 组件 → 无需改负载脚本（按 catalog 遍历）；
 新增 Python 依赖 → 确认 `pip wheel` 能构建出 wheel；升级 playwright → 负载里的内核

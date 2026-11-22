@@ -116,7 +116,7 @@ def test_catalog_rejects_invalid_backend(tmp_path):
         packages.build_catalog(tmp_path)
 
 
-def test_release_catalog_contains_windows_cpu_napcat_and_embedding(tmp_path):
+def test_release_catalog_contains_windows_cpu_and_embedding_only(tmp_path):
     package = tmp_path / "Stella-llama-v4.0.1-windows-x86_64-cpu.zip"
     with zipfile.ZipFile(package, "w") as bundle:
         bundle.writestr(
@@ -140,12 +140,11 @@ def test_release_catalog_contains_windows_cpu_napcat_and_embedding(tmp_path):
         repository="owner/repo",
     )
     ids = {item["id"] for item in catalog["packages"]}
-    assert ids == {"llama-cpu", "napcat", "qwen3-embedding-0.6b"}
+    # NapCat 已停止分发（2026-11-21：上游 NapCatQQ-Desktop 归档、MSI 不可下载）
+    assert ids == {"llama-cpu", "qwen3-embedding-0.6b"}
     assert catalog["packages"][0]["source"].startswith(
         "https://github.com/owner/repo/releases/download/v4.0.1/"
     )
-    napcat = next(item for item in catalog["packages"] if item["id"] == "napcat")
-    assert napcat["path"] == napcat["artifact"]
     for item in catalog["packages"]:
         packages._validate_record(item)
     assert not any(

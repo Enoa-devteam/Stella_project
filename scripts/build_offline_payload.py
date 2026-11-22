@@ -8,7 +8,7 @@ OneClick Offline 把「安装期要联网下载的所有产物」在发布时预
 - get-pip.py（自带完整 pip wheel，安装器配合 --no-index 离线装 pip）；
 - requirements.txt 的完整 wheel 闭包（`pip wheel` 现场构建——不能用
   `pip download --only-binary`，因为存在只有 sdist 的依赖，如 qrcode_terminal）；
-- package catalog 声明的全部组件（llama.cpp backend / NapCat / 默认 embedding 模型）；
+- package catalog 声明的全部组件（llama.cpp backend / 默认 embedding 模型；NapCat 自 2026-11-21 起不再分发）；
 - playwright 的 chromium-headless-shell（随包内核，运行期零下载）。
 
 产物目录布局（由 build_release_package.py --offline-payload 原样拷进安装包

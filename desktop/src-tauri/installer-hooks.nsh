@@ -2,8 +2,8 @@
 ; ---------------------------------------------------------------
 ; NSIS 解压完成后，立即在**安装阶段**完成全部装载：
 ;   Python 运行时 zip 校验 → 解压 → ._pth 补丁 → pip 离线引导 →
-;   依赖闭包安装 → Rust wheel（如随包）→ 组件装载（NapCat / embedding
-;   模型 / llama.cpp 后端，读 offline/packages）。
+;   依赖闭包安装 → Rust wheel（如随包）→ 组件装载（embedding 模型 /
+;   llama.cpp 后端，读 offline/packages；NapCat 自 2026-11-21 起不再分发）。
 ; GUI 首启因此只剩配置向导与秒级启动——不再有「后端未运行」与假卡死。
 ;
 ; 在线变体（负载模式声明为 online）不触发本钩子：保持 GUI 内引导下载
@@ -139,11 +139,11 @@
 
     ; 4) 装载收尾（._pth 补丁 / pip 离线引导 / 依赖闭包 / Rust wheel /
     ;    组件装载）——逻辑与 GUI 的 prepare_runtime 同源（deploy.bootstrap）
-    DetailPrint "安装 Python 依赖与组件（NapCat / embedding 模型 / llama 后端）…"
+    DetailPrint "安装 Python 依赖与组件（embedding 模型 / llama 后端）…"
     nsExec::ExecToLog '"$INSTDIR\resources\stella\runtime\python.exe" "$INSTDIR\resources\stella\deploy\nsis_bootstrap_helper.py" "$INSTDIR\resources\stella"'
     Pop $2
     ${If} $2 != 0
-      Abort "组件装载失败（退出码 $2）：NapCat / embedding 模型可能未就绪。"
+      Abort "组件装载失败（退出码 $2）：embedding 模型 / llama 后端可能未就绪。"
     ${EndIf}
 
     DetailPrint "装载完成。"

@@ -109,7 +109,7 @@ Stella 的设计前提是上下文窗口很小 —— 基准上限是 **8192 tok
 
 - 第一步：到 [Releases](https://github.com/Eternal-Wanderer-Vegetable/Stella_project/releases) 选一种 Windows 产品下载。按「要不要帮你把运行环境装好」分两条产品线：
 
-  - **OneClick 一键安装（推荐）**：`Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`，单文件安装程序，双击安装。首次启动会自动准备嵌入式 Python、`llama.cpp` CPU 后端、NapCat 与 `qwen3-embedding-0.6b` 向量模型——**NapCat 无需单独安装**，但登录仍需人工扫码（程序不会代扫码）。想用 Rust 记忆引擎就下载 `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe`，引擎在安装阶段一并就绪。
+  - **OneClick 一键安装（推荐）**：`Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`，单文件安装程序，双击安装。首次启动会自动准备嵌入式 Python、`llama.cpp` CPU 后端与 `qwen3-embedding-0.6b` 向量模型。**自 2026-11 起安装包不再内置 NapCat**（上游安装包下载源已失效），QQ 协议端需自行安装（见下方「接入 QQ」）。想用 Rust 记忆引擎就下载 `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe`，引擎在安装阶段一并就绪。
   - **OneClick 一键安装·离线版**：`Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe`（Rust 版为 `Stella-OneClick-Rust-Offline-*`）。安装流程与在线版完全相同，但嵌入式 Python、全部 Python 依赖、`llama.cpp` CPU 后端、NapCat、向量模型与浏览器渲染内核**全部随包内置，安装与渲染全程不需要联网**——适合国内网络受限或内网环境。代价是安装包体积约 1GB。
   - **Standalone 解压版**：`Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip`，解压即用，**只包含 Stella 本体**——需要自备 Python 3.10+ 与 NapCat，也不会自动下载 `llama.cpp` 或任何模型。Rust 版（`Stella-Standalone-Rust-*.zip`）额外附带 Rust 记忆引擎 wheel，首次启动自动离线安装并启用。
 
@@ -121,7 +121,7 @@ Stella 的设计前提是上下文窗口很小 —— 基准上限是 **8192 tok
 
 - 第二步：按使用场景准备其余组件：
 
-  - 接入 QQ：OneClick 版的 NapCat 已随装就绪，扫码登录后，在 NapCat WebUI 的「网络配置」里添加「WebSocket 客户端」指向 Bot（反向 WS，地址 `ws://127.0.0.1:8080/onebot/v11/ws`）；Standalone 版请先自行安装 [NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop)，再按同样方式配置反向 WS。
+  - 接入 QQ：OneClick 与 Standalone 都需先自行安装并登录 [NapCat](https://github.com/NapNeko/NapCatQQ) 或其他 OneBot V11 实现（登录需人工扫码），再在 NapCat WebUI 的「网络配置」里添加「WebSocket 客户端」指向 Bot（反向 WS，地址 `ws://127.0.0.1:8080/onebot/v11/ws`）。
   - 如果要使用本地聊天模型：安装 [LM Studio](https://lmstudio.ai/) 并加载模型（OneClick 已内置 `llama.cpp` CPU 后端与向量模型）。使用在线模型时不需要安装 LM Studio。
 
 > **小提示**：首次运行会下载并运行 Python，此行为可能会被您电脑上的安全防护软件报告为可疑操作并拦截，需加入信任列表。
@@ -187,7 +187,7 @@ pip install -r requirements.txt
 | 操作系统 | Windows 10/11 x64（OneClick 安装包已内置 WebView2 运行时离线安装器，无 WebView2 的电脑也能装；Standalone 需系统自带） |
 | Python | 3.10+（OneClick 安装包内置嵌入式 Python；Standalone 解压版需自装） |
 | 框架 | [NoneBot 2](https://nonebot.dev/) |
-| QQ 协议端 | [NapCat](https://github.com/NapNeko/NapCatQQ) 或其他 OneBot V11 实现（OneClick 安装包已内置 NapCat，扫码登录即可；Standalone 推荐用 [NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop) 安装并登录） |
+| QQ 协议端 | [NapCat](https://github.com/NapNeko/NapCatQQ) 或其他 OneBot V11 实现（需自行安装并扫码登录；安装包自 2026-11 起不再内置 NapCat） |
 | 模型服务 | 可选的本地 [LM Studio](https://lmstudio.ai/) / `llama.cpp` Runtime，或任意 OpenAI 兼容的在线 API（填地址 + API key 即可），两者可混用；也可以关闭 AI |
 
 ### 配置

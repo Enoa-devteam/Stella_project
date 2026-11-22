@@ -111,7 +111,7 @@ Back up the complete data root before upgrading, and run `python -m deploy migra
 
 - Step 1: Choose a Windows product from [Releases](https://github.com/Eternal-Wanderer-Vegetable/Stella_project/releases). They come in two product lines, split by "does it set up the runtime for you":
 
-  - **OneClick installer (recommended)**: `Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`, a single-file installer — double-click to install. On first launch it automatically prepares the embedded Python, the `llama.cpp` CPU backend, NapCat, and the `qwen3-embedding-0.6b` embedding model — **no separate NapCat installation is needed**, although login still requires scanning the QR code yourself (the program never scans or confirms for you). To use the Rust memory engine, download `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe` instead; the engine is prepared during installation.
+  - **OneClick installer (recommended)**: `Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`, a single-file installer — double-click to install. On first launch it automatically prepares the embedded Python, the `llama.cpp` CPU backend, and the `qwen3-embedding-0.6b` embedding model. **Since 2026-11 the installers no longer bundle NapCat** (its upstream download source is gone); install a QQ protocol endpoint yourself (see "Connecting QQ" below). To use the Rust memory engine, download `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe` instead; the engine is prepared during installation.
   - **OneClick installer (offline)**: `Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe` (Rust variant: `Stella-OneClick-Rust-Offline-*`). The installation flow is identical to the online installer, but the embedded Python, all Python dependencies, the `llama.cpp` CPU backend, NapCat, the embedding model, and the browser rendering kernel **are all bundled — installation and rendering require no network access at all** — ideal for restricted or offline networks. The trade-off is a download size of roughly 1 GB.
   - **Standalone archive**: `Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip`, extract and run. It contains **only Stella itself** — you provide Python 3.10+ and NapCat yourself, and it does not auto-download `llama.cpp` or any model. The Rust variant (`Stella-Standalone-Rust-*.zip`) additionally bundles the Rust memory-engine wheel, which is installed offline automatically on first launch.
 
@@ -123,7 +123,7 @@ Back up the complete data root before upgrading, and run `python -m deploy migra
 
 - Step 2: Prepare the remaining components for your setup:
 
-  - Connecting QQ: with OneClick, NapCat is already in place — after scanning the QR code to log in, add a "WebSocket client" under Network in the NapCat WebUI pointing at the Bot (reverse WS, address `ws://127.0.0.1:8080/onebot/v11/ws`). With Standalone, first install [NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop) yourself, then configure the reverse WS the same way.
+  - Connecting QQ: for both OneClick and Standalone, first install and log in to [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation yourself (login requires scanning the QR code), then add a "WebSocket client" under Network in the NapCat WebUI pointing at the Bot (reverse WS, address `ws://127.0.0.1:8080/onebot/v11/ws`).
   - If you use a local chat model: install [LM Studio](https://lmstudio.ai/) and load a model (OneClick already bundles the `llama.cpp` CPU backend and the embedding model). LM Studio is not required for online-only setups.
 
 > **Tip**: The first run downloads and executes Python. Your computer's security software may report this as suspicious activity and block it; add it to the trusted list if necessary.
@@ -188,7 +188,7 @@ pip install -r requirements.txt
 | OS | Windows 10/11 x64 (OneClick installers bundle an offline WebView2 runtime installer, so machines without WebView2 are covered; Standalone relies on the system-provided runtime) |
 | Python | 3.10+ (OneClick installers bundle the embedded Python; Standalone archives require your own installation) |
 | Framework | [NoneBot 2](https://nonebot.dev/) |
-| QQ protocol endpoint | [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation (OneClick installers bundle NapCat — just scan the QR code to log in; for Standalone, installing and logging in with [NapCatQQ Desktop](https://github.com/NapNeko/NapCatQQ-Desktop) is recommended) |
+| QQ protocol endpoint | [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation (install it and log in by QR code yourself; installers no longer bundle NapCat since 2026-11) |
 | Model service | Optional local [LM Studio](https://lmstudio.ai/) / `llama.cpp` Runtime, or any OpenAI-compatible online API (provide the address + API key); the two can be mixed, and AI can be disabled |
 
 ### Configuration

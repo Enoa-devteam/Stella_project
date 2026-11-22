@@ -359,7 +359,7 @@ def test_bootstrap_failure_leaves_event_trail(tmp_path, monkeypatch):
     """组件失败 → 事件流必须有 component failed + install_end failed。"""
     import zipfile as zf
 
-    from deploy import bootstrap, napcat
+    from deploy import bootstrap, packages
 
     def fake_download(record, data_root, **_kwargs):
         target = tmp_path / f"{record['id']}.zip"
@@ -369,14 +369,12 @@ def test_bootstrap_failure_leaves_event_trail(tmp_path, monkeypatch):
 
     monkeypatch.setattr(bootstrap, "_download_record", fake_download)
 
+    # NapCat 已不随 OneClick 安装（2026-11-21），失败注入改到仍会装载的
+    # 默认 embedding 组件。
     def explode(*_args, **_kwargs):
-        raise napcat.NapCatError("install_failed", "MSI 爆炸")
+        raise packages.PackageError("install_failed", "模型装载爆炸")
 
-    monkeypatch.setattr(bootstrap.acquire, "install_napcat", explode)
-    monkeypatch.setattr(
-        bootstrap.acquire, "install_default_embedding",
-        lambda model, root, **_kwargs: {"id": model["id"]},
-    )
+    monkeypatch.setattr(bootstrap.acquire, "install_default_embedding", explode)
     data_root = tmp_path / "data"
     with pytest.raises(bootstrap.BootstrapError):
         bootstrap.install_profile(

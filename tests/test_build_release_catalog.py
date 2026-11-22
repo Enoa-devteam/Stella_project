@@ -62,9 +62,8 @@ def test_catalog_candidate_channel_overrides_source(backend_asset):
         "https://github.com/owner/repo/releases/download/"
         "candidate-123-1/Stella-llama-v5.0.0-windows-x86_64-cpu.zip"
     )
-    # 候选通道只改自指来源：NapCat（固定上游）与 embedding（钉提交）不变
-    napcat = next(p for p in payload["packages"] if p["id"] == "napcat")
-    assert "candidate" not in napcat["source"]
+    # 候选通道只改自指来源：embedding（钉提交）不变；NapCat 已停止分发（2026-11-21）
+    assert all(p["id"] != "napcat" for p in payload["packages"])
     embedding = next(
         p for p in payload["packages"] if p["id"] == "qwen3-embedding-0.6b"
     )

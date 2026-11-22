@@ -57,8 +57,7 @@ cargo build --release     # 产物 target/release/stellacli[.exe]，约 1MB
 ```
 
 CI：`.github/workflows/ci.yml` 的 `cli` job 跑同一套门禁；
-发布：`.github/workflows/release.yml` 在打 `v*` tag 时产出
-`Stella-CLI-version-v{ver}-linux-amd64.tar.gz`（musl 静态）与
-`Stella-CLI-version-v{ver}-windows-amd64.zip`，挂到 Release 的独立 assets。
+发布：自 2026-11 起 Release 不再产出 `Stella-CLI-version-*` 包（WebUI 已覆盖其用途）；
+需要时按上面的命令从源码构建。
 
 版本号（Cargo.toml）必须与 pyproject.toml 一致，release CI 有校验。

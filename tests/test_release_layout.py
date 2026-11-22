@@ -63,11 +63,16 @@ def test_release_assets_keep_python_name_and_add_separate_rust_name():
     assert "build-oneclick-catalog-backend:" in main
     assert "LLAMA_CPP_COMMIT: 4a89937354190cef5a97baf8eeb17336105eb72d" in main
     assert "stella-oneclick-catalog-backend" in main
-    assert "准备 Windows OpenSSL runtime" in main
-    assert "choco install openssl --yes --no-progress" in main
-    assert "libcrypto-3-x64.dll" in main
-    assert "libssl-3-x64.dll" in main
-    assert "--runtime-dir $env:OPENSSL_RUNTIME_DIR" in main
+    # backend 构建（含 OpenSSL runtime 准备）已收进带缓存的复合 action
+    backend = (
+        PROJECT_ROOT / ".github" / "actions" / "llama-cpu-backend" / "action.yml"
+    ).read_text(encoding="utf-8")
+    assert "uses: ./.github/actions/llama-cpu-backend" in main
+    assert "准备 Windows OpenSSL runtime" in backend
+    assert "choco install openssl --yes --no-progress" in backend
+    assert "libcrypto-3-x64.dll" in backend
+    assert "libssl-3-x64.dll" in backend
+    assert "--runtime-dir $env:OPENSSL_RUNTIME_DIR" in backend
     assert 'cp "${catalog_backends[0]}" dist/products/' in main
     assert "python scripts/build_release_catalog.py" in main
     assert "products/package-catalog-windows-amd64.json" in main

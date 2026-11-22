@@ -1,0 +1,87 @@
+name: Release cache warm
+
+# 为 release.yml 预热两份缓存：build-installer 的 Rust 依赖，以及
+# build-oneclick-catalog-backend 的 llama.cpp CPU backend 包。
+# 原因：tag 触发的运行只能读取「默认分支」与「本 tag」作用域的缓存，
+# 而每个 tag 只发布一次——release 自己保存的缓存永远不会被下一次发布命中。
+# 本工作流在 main 上用与 build-installer 相同的 shared-key / workspace /
+# 构建命令（cargo tauri build，含相同 feature 集）编译一次依赖并保存。
+# GitHub 缓存 7 天未访问即被淘汰，所以另加每周两次的定时预热。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/src-tauri/Cargo.toml'
+      - 'desktop/src-tauri/Cargo.lock'
+      - 'desktop/src-tauri/build.rs'
+      - 'release_assets/toolchain.json'
+      - '.github/workflows/release-cache-warm.yml'
+      - '.github/actions/install-tauri-cli/**'
+      - '.github/actions/llama-cpu-backend/**'
+      - 'scripts/build_llama_package.py'
+      - 'scripts/verify_llama_package.py'
+  schedule:
+    - cron: '17 3 * * 1,4'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-cache-warm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  warm-desktop-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Tauri CLI（精确锁定版本，官方预编译）
+        uses: ./.github/actions/install-tauri-cli
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+          shared-key: desktop-installer
+
+      # tauri_build 只要求 frontendDist 与 resources 路径存在；预热只为依赖
+      # 编译产物，放占位即可（resources/stella 已有 git 跟踪的占位文件）。
+      - name: 准备占位前端产物
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path desktop/dashboard-dist | Out-Null
+          Set-Content -LiteralPath desktop/dashboard-dist/index.html -Value '<!doctype html><title>warm</title>'
+
+      - name: 编译依赖（不打包）
+        shell: pwsh
+        working-directory: desktop/src-tauri
+        run: |
+          cargo tauri build --no-bundle
+          if ($LASTEXITCODE -ne 0) { throw "tauri build 失败（退出码 $LASTEXITCODE）" }
+
+  # llama.cpp CPU backend（release.yml build-oneclick-catalog-backend 的同一 action）：
+  # 键由提交 / UI 版本 / 脚本 / runner OpenSSL 决定，命中后发布省 ~4.5 分钟。
+  warm-llama-backend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 读取锁定的 llama.cpp 提交与 UI 版本
+        id: pins
+        shell: pwsh
+        run: |
+          $toolchain = Get-Content 'release_assets/toolchain.json' -Raw | ConvertFrom-Json
+          "commit=$($toolchain.llama_cpp_commit)" >> $env:GITHUB_OUTPUT
+          "ui_version=$($toolchain.llama_cpp_ui_version)" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 构建并缓存 Windows CPU backend
+        uses: ./.github/actions/llama-cpu-backend
+        with:
+          commit: ${{ steps.pins.outputs.commit }}
+          ui-version: ${{ steps.pins.outputs.ui_version }}
+          package-dir: dist/llama-cpu-package
