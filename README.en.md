@@ -38,7 +38,7 @@ You decide where the models come from.
 
 ## 6.4.1 Release
 
-- Fixes the desktop app and the bundled llama.cpp backend failing to start on Windows without the Visual C++ runtime (v6.2.0-v6.4.0 are affected).
+- Fixes the desktop app and the bundled llama.cpp backend failing to start on Windows without the Visual C++ runtime (confirmed on v6.3.0 and v6.4.0), and the first start of a new installation always failing.
 - Offline installers are compressed again (about 1.2 GB); Online installers download WebView2 when it is missing.
 - Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
 - Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only the OneBot V11 adapter for now.

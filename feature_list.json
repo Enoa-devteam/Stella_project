@@ -2518,6 +2518,10 @@
         {
           "report": "progress.md 2026-11-22 GUI 首启更正",
           "result": "CORRECTION: the earlier 6.4.1 GUI first-boot pass was judged from the health endpoint only. The window was stuck on the starting screen (first-start control-record bug plus a crash in the page's catch). Fixed in code; installer retest pending."
+        },
+        {
+          "report": "progress.md 2026-11-22 GUI 首启复测",
+          "result": "Build 45002223547 (ff613af), judged by screenshots in Windows Sandbox: Python/Rust offline and over-install from v6.3.0 open the setup panel; an online download failure shows its error. Online end-to-end, start.bat, Windows 10 not run."
         }
       ]
     }
