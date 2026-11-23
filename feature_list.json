@@ -2466,7 +2466,7 @@
     {
       "id": "RELEASE-CI-SPEEDUP",
       "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）及发布阻断修复",
-      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：分支 CI 实测全绿（44967247863，12m00s）；待 PR 审阅合并、合并后 main 预热缓存、下一版发布说明写明 breaking changes，以及 clean VM 验证 online 安装器在缺 WebView2 机器上的引导器路径。",
+      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：v6.4.1 已发布（14m16s）；Online 安装器在干净 Windows 上组件下载证书校验失败，待修复与复测；缺 WebView2 机器上的引导器路径仍未验证。",
       "status": "blocked",
       "dependencies": [],
       "scope": [
@@ -2522,6 +2522,10 @@
         {
           "report": "progress.md 2026-11-22 GUI 首启复测",
           "result": "Build 45002223547 (ff613af), judged by screenshots in Windows Sandbox: Python/Rust offline and over-install from v6.3.0 open the setup panel; an online download failure shows its error. Online end-to-end, start.bat, Windows 10 not run."
+        },
+        {
+          "report": "progress.md 2026-11-22 v6.4.1 发布后验收",
+          "result": "v6.4.1 (204fdaf) released in 14m16s; assets, Rust package and public GHCR verified. Public Python Offline EXE passed in a clean no-network Windows 11 Sandbox. Both public Online EXEs FAILED component installation. CORRECTION: not only network timeouts: 36 of 62 final errors in the Rust retry were CERTIFICATE_VERIFY_FAILED. A cold-root-store control confirmed urllib default trust fails where certifi and truststore pass. Not fixed; Online end-to-end remains NOT READY."
         }
       ]
     }
