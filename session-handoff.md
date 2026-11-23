@@ -1,3 +1,11 @@
+## Current Handoff — v6.4.2 已发布（2026-11-23）
+
+- Current Objective：v6.4.2 发布与发布后验收完成，下文 v6.4.2 / v6.4.1 准备与发布后、v6.4.0、Release CI 耗时各条 handoff 可归档。`RELEASE-CI-SPEEDUP` 为 done；`AOEDE-MNEME-BENCH-IMPL` 仍为唯一 in_progress。
+- Verification Evidence：progress.md 同日「v6.4.2 发布与发布后验收」。
+- Blockers：无发布阻断。开放问题 #142、#143、#145、#146、#149；安装器未签名（SAC 拦截）。
+- Recommended Next Step：无新任务时不自行启动旧计划。Online 验收须在全新 Sandbox、测试前不发 HTTPS 请求，并记录 TCP 可达性以区分网络窗口与产品问题。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.2 准备（2026-11-23）
 
 - Current Objective：PR #150 待维护者审阅合并并打 `v6.4.2`；无合并 / tag 授权。`RELEASE-CI-SPEEDUP` 保持 `blocked`。

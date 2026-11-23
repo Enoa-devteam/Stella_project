@@ -1,3 +1,14 @@
+## 2026-11-23 — v6.4.2 发布与发布后验收
+
+- Current State：v6.4.2 已发布并为 Latest（维护者授权由 agent 打 tag → 5001639；Release 45105719013 13m34s、Docker 45105719004、Rust 资产 45107059530 均成功，13 个资产）。`SHA256SUMS` 10 项与公开下载一致；Rust 包 VERSION.txt 为 v6.4.2 / API 4 / schema 24；GHCR `6.4.2`、`6.4`、`latest` 匿名均解析到 `sha256:d1a4d995…`。
+- 公开安装器（干净 Win11 Sandbox，SAC 仅 guest 内关闭，测试前不发 HTTPS 请求，按截图判定）：
+  ① Rust Online 通过：llama-cpu 与 639MB 模型安装完成，初始化面板打开，core ready，171 秒。② Python Online 通过：前两次安装 WinError 10060，应用重开 1 次后完成，585 秒。③ Python Offline 通过（断网）。三者 0 证书错误。
+- 更正：此前推测「bootstrap 进程本身导致连接失败」不成立。guest 内 TCP 采样显示 GitHub / Hugging Face 有整段不可达窗口（Python Online 期间 github.com 22 次采样 16 次失败），失败安装均落在这些窗口内。
+- What's Done：v6.4.1 警告改为「已在 v6.4.2 修复」；v6.0.1–v6.4.0 页面改指 v6.4.2；v6.4.2 说明的「Online 全链路未验证」改为实测结果。均回读确认只改正文、Latest 为 v6.4.2。`RELEASE-CI-SPEEDUP` 五项 done criteria 均有证据，标为 done。
+- Not verified：Rust Offline 公开 EXE（同代码测试构建通过）、`start.bat`、Windows 10、缺 WebView2、真实 QQ / 模型。
+- Next：#149（镜像）、#145（Online 首启提示）、#146、#142、#143 待维护者排期；安装器签名。
+- Files：`progress.md`、`session-handoff.md`、`feature_list.json`。
+
 ## 2026-11-23 — v6.4.2 准备（Online 证书修复）
 
 - Scope：维护者授权按建议处理：v6.4.1 页加警告、删除本地 candidate tag、开镜像 issue（#149）、修复并准备 v6.4.2（PR #150，待维护者合并与打 tag）。
