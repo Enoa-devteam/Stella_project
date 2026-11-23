@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -33,6 +34,11 @@ PINNED_REVISION = "ed956dea41521fc4499acbc63f966e0fd3c053ba"
 DEFAULT_BASE = "https://huggingface.co"
 FALLBACK_BASE = "https://hf-mirror.com"
 # 只取检索层评测需要的文件（全库 4.58GB 不镜像）
+# 下载重试：HF 偶发中途断流（2026-11-23 main CI：42MB 的 benchmark.csv 收到 235KB 即断开）。
+# 网络错误与 429/5xx 按退避重试并以 Range 续传；其余 HTTP 状态立即失败。
+DOWNLOAD_ATTEMPTS = 4
+DOWNLOAD_BACKOFF_SECONDS = (2.0, 5.0, 10.0)
+RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 FILES = (
     "README.md",
     "column_descriptions.md",
@@ -60,16 +66,48 @@ def _bases() -> list[str]:
     return bases
 
 
+class _IncompleteDownloadError(Exception):
+    """服务器在 Content-Length 之前结束了响应体。"""
+
+
+def _download_once(url: str, part: Path) -> None:
+    import httpx
+
+    resume_from = part.stat().st_size if part.is_file() else 0
+    headers = {"Range": f"bytes={resume_from}-"} if resume_from else {}
+    with httpx.stream("GET", url, headers=headers, timeout=120, follow_redirects=True) as r:
+        r.raise_for_status()
+        appending = bool(resume_from) and r.status_code == 206
+        expected = r.headers.get("Content-Length")
+        received = 0
+        with part.open("ab" if appending else "wb") as f:
+            for chunk in r.iter_bytes(1 << 20):
+                f.write(chunk)
+                received += len(chunk)
+    if expected is not None and received < int(expected):
+        raise _IncompleteDownloadError(f"received {received} of {expected} bytes")
+
+
 def _download(base: str, revision: str, remote: str, dest: Path) -> None:
+    """下载到 ``<dest>.part``，完整后再改名；断流/429/5xx 有限重试并续传。"""
     import httpx
 
     url = f"{base}/datasets/bowen-upenn/PersonaMem-v2/resolve/{revision}/{remote}"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    with httpx.stream("GET", url, timeout=120, follow_redirects=True) as r:
-        r.raise_for_status()
-        with dest.open("wb") as f:
-            for chunk in r.iter_bytes(1 << 20):
-                f.write(chunk)
+    part = dest.with_name(dest.name + ".part")
+    part.unlink(missing_ok=True)
+    for attempt in range(DOWNLOAD_ATTEMPTS):
+        try:
+            _download_once(url, part)
+            part.replace(dest)
+            return
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code not in RETRYABLE_STATUS or attempt == DOWNLOAD_ATTEMPTS - 1:
+                raise
+        except (httpx.TransportError, _IncompleteDownloadError):
+            if attempt == DOWNLOAD_ATTEMPTS - 1:
+                raise
+        time.sleep(DOWNLOAD_BACKOFF_SECONDS[min(attempt, len(DOWNLOAD_BACKOFF_SECONDS) - 1)])
 
 
 def write_notice(out_dir: Path, revision: str, base_used: str) -> Path:

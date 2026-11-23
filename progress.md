@@ -1,3 +1,9 @@
+## 2026-11-23 — main CI memory-benchmark-public 偶发失败
+
+- 现象：#151 合并后 main CI 45117112777 仅 `memory-benchmark-public` 失败：`fetch_personamem.py` 下载 42MB `benchmark.csv` 时 HF 中途断开（收到 235,778 字节），脚本无重试，非 #151 改动引起。重跑失败作业后通过。
+- 修复：`_download` 写入 `.part`，网络错误 / 提前断开 / 429·5xx 退避重试（4 次）并 Range 续传，完整后改名；其他 HTTP 状态立即失败。4 个新测试在旧代码失败、新代码通过；真实下载 + `--check` 通过；ruff 通过。
+- 同类：`scripts/fetch_locomo.py` 同样无重试，但不在 CI 中，未改。
+
 ## 2026-11-23 — v6.4.2 发布与发布后验收
 
 - Current State：v6.4.2 已发布并为 Latest（维护者授权由 agent 打 tag → 5001639；Release 45105719013 13m34s、Docker 45105719004、Rust 资产 45107059530 均成功，13 个资产）。`SHA256SUMS` 10 项与公开下载一致；Rust 包 VERSION.txt 为 v6.4.2 / API 4 / schema 24；GHCR `6.4.2`、`6.4`、`latest` 匿名均解析到 `sha256:d1a4d995…`。

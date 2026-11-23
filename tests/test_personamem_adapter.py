@@ -129,3 +129,107 @@ def test_fetch_network_unreachable_is_explicit_skip(tmp_path, monkeypatch, capsy
     payload = json.loads(capsys.readouterr().err)
     assert payload["status"] == "skipped_network_unreachable"
     assert payload["attempts"]
+
+
+class _FakeStream:
+    """Minimal stand-in for ``httpx.stream(...)``: yields chunks, optionally dies mid-body."""
+
+    def __init__(self, status, body, length, error=None):
+        self.status_code = status
+        self.headers = {"Content-Length": str(length)}
+        self._body = body
+        self._error = error
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import httpx
+
+            request = httpx.Request("GET", "https://example.invalid/x")
+            raise httpx.HTTPStatusError("boom", request=request,
+                                        response=httpx.Response(self.status_code, request=request))
+
+    def iter_bytes(self, _size):
+        if self._body:
+            yield self._body
+        if self._error is not None:
+            raise self._error
+
+
+def test_download_resumes_after_peer_closes_mid_body(tmp_path, monkeypatch):
+    """main CI 2026-11-23: HF closed the connection after 235 KB of 42 MB."""
+    import httpx
+
+    payload = b"0123456789" * 50
+    calls = []
+
+    def fake_stream(method, url, headers=None, **_kwargs):
+        calls.append((headers or {}).get("Range"))
+        if len(calls) == 1:
+            return _FakeStream(200, payload[:120], len(payload),
+                               httpx.RemoteProtocolError("peer closed connection"))
+        return _FakeStream(206, payload[120:], len(payload) - 120)
+
+    monkeypatch.setattr(httpx, "stream", fake_stream)
+    monkeypatch.setattr(fetch_mod.time, "sleep", lambda _s: None)
+    dest = tmp_path / "benchmark.csv"
+    fetch_mod._download("https://example.invalid", "rev", "benchmark.csv", dest)
+
+    assert dest.read_bytes() == payload
+    assert calls == [None, "bytes=120-"]
+    assert not dest.with_name("benchmark.csv.part").exists()
+
+
+def test_download_retries_a_short_body_without_transport_error(tmp_path, monkeypatch):
+    import httpx
+
+    payload = b"abcdefghij" * 10
+    bodies = iter([_FakeStream(200, payload[:30], len(payload)),
+                   _FakeStream(206, payload[30:], len(payload) - 30)])
+    monkeypatch.setattr(httpx, "stream", lambda *a, **k: next(bodies))
+    monkeypatch.setattr(fetch_mod.time, "sleep", lambda _s: None)
+    dest = tmp_path / "f.csv"
+    fetch_mod._download("https://example.invalid", "rev", "f.csv", dest)
+    assert dest.read_bytes() == payload
+
+
+def test_download_does_not_retry_not_found_and_publishes_nothing(tmp_path, monkeypatch):
+    import httpx
+    import pytest
+
+    calls = []
+
+    def fake_stream(*_a, **_k):
+        calls.append(1)
+        return _FakeStream(404, b"", 0)
+
+    monkeypatch.setattr(httpx, "stream", fake_stream)
+    monkeypatch.setattr(fetch_mod.time, "sleep", lambda _s: None)
+    dest = tmp_path / "f.csv"
+    with pytest.raises(httpx.HTTPStatusError):
+        fetch_mod._download("https://example.invalid", "rev", "f.csv", dest)
+    assert calls == [1]
+    assert not dest.exists()
+
+
+def test_download_gives_up_after_bounded_attempts(tmp_path, monkeypatch):
+    import httpx
+    import pytest
+
+    calls = []
+
+    def fake_stream(*_a, **_k):
+        calls.append(1)
+        raise httpx.ConnectError("unreachable")
+
+    monkeypatch.setattr(httpx, "stream", fake_stream)
+    monkeypatch.setattr(fetch_mod.time, "sleep", lambda _s: None)
+    with pytest.raises(httpx.ConnectError):
+        fetch_mod._download("https://example.invalid", "rev", "f.csv", tmp_path / "f.csv")
+    assert len(calls) == fetch_mod.DOWNLOAD_ATTEMPTS
+
