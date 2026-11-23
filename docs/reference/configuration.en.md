@@ -233,6 +233,21 @@ When both tiers are empty the role's model is an empty string: a local endpoint 
 
 > **“Empty means inherit” requires a genuinely empty setting.** Writing an inheritance-based key as `KEY=` (nothing after the equals sign) is **not equivalent** to omitting the line: the empty string is treated as an explicit value and cuts the inheritance chain at that point. Before 2026-08-28, this is how `MEMORY_EXTRACT_LM_STUDIO_BASE_URL` became an empty string, causing Stage 2 to construct a URL without a scheme every time and fail. When editing `.env` manually, **delete the whole line** instead of clearing the value after the equals sign. The GUI handles this for you and does not write empty inheritance-based keys to `.env`.
 
+### Three Deployment Modes
+
+| Mode | Chat model | Memory consolidation | Best for |
+|---|---|---|---|
+| **All local** | Local (LM Studio, etc.) | Local | Users with a graphics card who care about privacy and do not want to pay |
+| **Hybrid** (recommended) | Online API | Local | Users who want better conversation quality without paying for tokens for frequent small tasks (the machine must still be able to run a small model) |
+| **All online** | Online API | Online API | Users without a graphics card, lightweight servers, or anyone who wants to get it running quickly to see how it works |
+
+- All three modes share the same memory, personality, and plugin configuration. Switching modes only changes configuration and does not lose data. The configuration UI provides one-click presets for all three modes (`纯本地` / `混合（对话在线 · 整合本地）` / `纯在线（双 key）`); one click configures the six always-on roles, after which they can still be fine-tuned individually (a seventh role, `VISION`, handles image captioning; it is unbound by default, not part of the presets, and can be assigned in advanced configuration when needed).
+- When using online models, **conversation generation and memory consolidation each use an independent API key**. Their prefix caches do not evict each other, and capability routing follows the chat endpoint and reuses the same prefix.
+- Vector search (embedding) always runs locally and is not part of the mode switch. Changing the embedding model means changing the vector dimensions, so every vector in the database must be recalculated; it cannot drift with a decision such as "use online today." When it is not enabled, search falls back to SQLite full-text indexing.
+- If you choose an online model, the chat content for that step will be sent to the service provider you select. Note that **stella is zero-network only when both the chat and memory sides use local models.**
+
+The role bindings for each mode are listed under "Three Typical Scenarios" below.
+
 ### Three Typical Scenarios
 
 Only the `LLM_ROLE_*_ENDPOINT` settings of the six always-on roles need to change; the GUI provides three corresponding one-click presets. `MEMORY_EMBEDDING_GATE` remains `auto` in all three scenarios.

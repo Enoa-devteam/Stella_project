@@ -44,7 +44,7 @@
   NAPCAT_IMAGE=mlikiowa/napcat-docker@sha256:<摘要>   # 没有摘要至少也要钉版本 tag，不要用 :latest
   ```
   不设的话 `docker compose up` 会直接报 `NAPCAT_IMAGE must be a pinned NapCat image reference` 拒绝启动。
-- 想清楚模型端点（三种模式的取舍见 [README · 三种部署模式](../../README.md#-三种部署模式)）：
+- 想清楚模型端点（三种模式的取舍见 [配置参考 · 三种部署模式](../reference/configuration.md#三种部署模式)）：
   - **全在线**：填在线 API 地址即可，最简单；
   - **混合/全本地**：LM Studio 跑在同一台宿主机上时，端点填 `http://host.docker.internal:1234`（compose 已配好 `host-gateway`）；跑在其他机器上就直接填它的内网地址。
 

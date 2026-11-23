@@ -6,6 +6,7 @@
 
 | Symptom | Check |
 |---|---|
+| It is unclear what is broken | `python -m deploy doctor` |
 | Incorrect reply content | `logs/stella_thought_logs.md` (complete prompt / raw output / internal reasoning) |
 | Plugin not loaded / capability not registered | `logs/boot_debug.log` (cleared and rewritten at every startup; reflects only the most recent startup) |
 | Memory not generated | `logs/memory_consolidation_log.md` (raw output and candidate count for each consolidation batch) |

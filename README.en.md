@@ -36,32 +36,6 @@ You decide where the models come from.
 
 > Note: With the all-local deployment mode, the data truly stays off the network. Networked tools (such as weather and anime lookups) send requests and return actual data themselves, while deciding whether to use a tool, compressing its result into a summary, and rendering plugin cards as images all happen locally.
 
-## 6.4.2 Release
-
-- Fixes Online installers failing to download components on a clean Windows installation with `CERTIFICATE_VERIFY_FAILED` (v6.0.1–v6.4.1 are affected); an interrupted download now resumes.
-- Since 6.4.1: the desktop app and the bundled llama.cpp backend start on Windows without the Visual C++ runtime, and the first start of a new installation no longer fails.
-- Online installers download components from GitHub and Hugging Face, with no mirror yet; where they are not reliably reachable, use an Offline installer (about 1.2 GB).
-- Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
-- Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only the OneBot V11 adapter for now.
-
-Back up the complete data root before upgrading; when importing from an old directory, first run `python -m deploy migrate --from <old-install> --dry-run`. See the [release notes](release_assets/RELEASE_NOTES_TEMPLATE.md) and the [documentation index](docs/README.en.md).
-
-## 🔌 Three Deployment Modes
-
-| Mode | Chat model | Memory consolidation | Best for |
-|---|---|---|---|
-| **All local** | Local (LM Studio, etc.) | Local | Users with a graphics card who care about privacy and do not want to pay |
-| **Hybrid** (recommended) | Online API | Local | Users who want better conversation quality without paying for tokens for frequent small tasks (the machine must still be able to run a small model) |
-| **All online** | Online API | Online API | Users without a graphics card, lightweight servers, or anyone who wants to get it running quickly to see how it works |
-
-- All three modes share the same memory, personality, and plugin configuration. Switching modes only changes configuration and does not lose data. The configuration UI provides one-click presets for all three modes (`纯本地` / `混合（对话在线 · 整合本地）` / `纯在线（双 key）`); one click configures the six always-on roles, after which they can still be fine-tuned individually (a seventh role, `VISION`, handles image captioning; it is unbound by default, not part of the presets, and can be assigned in advanced configuration when needed).
-
-- When using online models, **conversation generation and memory consolidation each use an independent API key**. Their prefix caches do not evict each other, and capability routing follows the chat endpoint and reuses the same prefix.
-
-- Vector search (embedding) always runs locally and is not part of the mode switch. Changing the embedding model means changing the vector dimensions, so every vector in the database must be recalculated; it cannot drift with a decision such as "use online today." When it is not enabled, search falls back to SQLite full-text indexing.
-
-- If you choose an online model, the chat content for that step will be sent to the service provider you select. Note that **Stella is zero-network only when both the chat and memory sides use local models.**
-
 ## ✨ Features
 
 ### Works within an **8192-token** context budget
@@ -102,168 +76,14 @@ Back up the complete data root before upgrading; when importing from an old dire
 
 - **🧪 Verifiable** -- Unit and integration tests cover memory promotion, cross-user isolation, two-layer ownership, anti-fabrication safeguards, routing fallback, and tool isolation. After connecting an online endpoint, there is also a layer of **vendor-neutral contract tests** (an extra field in the request body fails the test; parameter differences may adapt only to error wording and may not use a vendor whitelist) and a prefix-cache guard. Probe scripts also perform regression checks against real models (including a case specifically reproducing "missing information in a noisy environment"), along with a benchmark quantifying four types of routing errors.
 
-## 🚀 Quick Start
-
-> This section covers **Windows desktop** deployment. For Linux / remote servers, see the [Docker Deployment Guide](docs/guides/deployment-docker.en.md).
->
-> **v2 control plane (current UI)**: point a browser at the bot's own port for the full management panel (auth / config / plugins / MCP / knowledge base / cron / live logs — see [docs/webui.en.md](docs/guides/webui.en.md)); the desktop shell (Tauri 2) embeds the same panel. The legacy native UI is retired, frozen at tag `gui-v1-final`.
-
-### 📦 Download & Install (regular users)
-
-- Step 1: Choose a Windows product from [Releases](https://github.com/Eternal-Wanderer-Vegetable/Stella_project/releases). They come in two product lines, split by "does it set up the runtime for you":
-
-  - **OneClick installer (recommended)**: `Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`, a single-file installer — double-click to install. On first launch it automatically prepares the embedded Python, the `llama.cpp` CPU backend, and the `qwen3-embedding-0.6b` embedding model. **Since 2026-11 the installers no longer bundle NapCat** (its upstream download source is gone); install a QQ protocol endpoint yourself (see "Connecting QQ" below). To use the Rust memory engine, download `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe` instead; the engine is prepared during installation.
-  - **OneClick installer (offline)**: `Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe` (Rust variant: `Stella-OneClick-Rust-Offline-*`). The installation flow is identical to the online installer, but the embedded Python, all Python dependencies, the `llama.cpp` CPU backend, NapCat, the embedding model, and the browser rendering kernel **are all bundled — installation and rendering require no network access at all** — ideal for restricted or offline networks. The trade-off is a download size of roughly 1 GB.
-  - **Standalone archive**: `Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip`, extract and run. It contains **only Stella itself** — you provide Python 3.10+ and NapCat yourself, and it does not auto-download `llama.cpp` or any model. The Rust variant (`Stella-Standalone-Rust-*.zip`) additionally bundles the Rust memory-engine wheel, which is installed offline automatically on first launch.
-
-  Both product lines offer a `Stella.exe` graphical interface (recommended) and a `start.bat` command-line flow. `Stella.exe` runs an environment check on launch: if not configured, it opens the Configuration page; if there are blocking issues, it opens the Environment Check page; if everything is normal, it goes directly to the Run Status page. `start.bat` opens the command-line configuration wizard and starts the Bot. **Do not install both product lines into the same directory.**
-
-> **About the "Unknown publisher" prompt**: current Windows installers are not code-signed yet (enforced signing will return once the certificate is in place), so SmartScreen may show an "Unknown publisher" warning — this is expected. Every release ships a `SHA256SUMS.txt` so you can verify your download; the release page notes and the release workflow are the only sources of truth.
-
-> AI can be disabled. When AI is disabled or a local model is unavailable, the basic Bot, OneBot diagnostics, and deployment management remain available.
-
-- Step 2: Prepare the remaining components for your setup:
-
-  - Connecting QQ: for both OneClick and Standalone, first install and log in to [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation yourself (login requires scanning the QR code), then add a "WebSocket client" under Network in the NapCat WebUI pointing at the Bot (reverse WS, address `ws://127.0.0.1:8080/onebot/v11/ws`).
-  - If you use a local chat model: install [LM Studio](https://lmstudio.ai/) and load a model (OneClick already bundles the `llama.cpp` CPU backend and the embedding model). LM Studio is not required for online-only setups.
-
-> **Tip**: The first run downloads and executes Python. Your computer's security software may report this as suspicious activity and block it; add it to the trusted list if necessary.
-
-- Step 3:
-  - 1. After opening `Stella.exe` for the first time, the configuration UI appears. First fill in the **listening port** (the reverse WS port configured in NapCat in Step 2) and the **group number** that Stella should join.
-  - 2. Scroll down to the Model Services section, choose a **one-click preset** according to your deployment mode, and fill in the corresponding endpoint cards:
-    - **All local** -> Click `纯本地`, then fill in the address and model ID for an OpenAI-compatible local endpoint such as LM Studio or llama.cpp. The Test Connection button reads back the service's model list.
-    - **All online / Hybrid** -> Click `纯在线（双 key）` or `混合（对话在线 · 整合本地）`, then fill in the provider address, API key, and model ID once in each of the two online cards. **The two keys must be different**; see [Three Deployment Modes](#-three-deployment-modes) for why.
-  - 3. After configuration is complete, click "Save and Check". The program automatically switches to the Run Status page. Click "Start".
-
-> Have a problem? Join the developer's QQ group: 263402786, and @ the (currently sole) developer Eternal-Wanderer-Vegetable in the group.
-
-### ⬆️ Upgrading from an older version
-
-1. Run `stop.bat` to stop the program.
-2. OneClick: run the new version's installer directly. Standalone: extract the new version into a new directory.
-3. Double-click `Stella.exe` (or `start.bat`) -> confirm "Import Configuration".
-
-Configuration, memories, personality, space settings, and installed plugins are moved automatically; the database is upgraded automatically, and `runtime/` is reused automatically (saving one approximately 100 MB download). The old directory is **read-only throughout**. Regardless of success or failure, the old installation remains runnable in place, so you can safely retry. The import report is written to the current `STELLA_HOME/migration_report.md`. Command-line equivalents:
-
-```bash
-python -m deploy migrate --dry-run   # Preview first (runs once on a database copy)
-python -m deploy migrate             # Execute
-```
-
-OneClick installs additionally support **atomic versioned upgrades**: `python -m deploy upgrade <extracted-new-version-dir> --version X.Y.Z` verifies and then flips the activation record; if anything goes wrong, `python -m deploy upgrade --rollback` flips back to the retained previous version tree (works both ways).
-
-Upgrading from 2.x also does not require losing memories: the old database is migrated automatically (columns are renamed, records are reassigned by shared space, and each user profile is placed in the space containing the most of that user's messages).
-
-**Where user data lives** depends on the product line and installation history (`python -m deploy paths` shows the actual location and which rule matched):
-
-- **Fresh OneClick installs**: the data root defaults to a location **outside the program directory**, `%LOCALAPPDATA%\Stella\Data`, recorded in the machine-level pointer file `%LOCALAPPDATA%\Stella\home.txt` — reinstalling, uninstalling, or upgrading never touches the data. An existing data root (old sibling directory, portable directory, or pointer target) is always reused, **never migrated**.
-- **Standalone and manual deployments**: data defaults to `StellaData/`, **at the same level as** the program directory:
-
-```text
-D:\your-directory\
-  Stella\                <- Program directory (replace the whole directory when upgrading; safe
-                            to delete. Standalone archives have no inner folder — the extract
-                            target *is* this directory)
-  StellaData\            <- Your data (untouched during upgrades)
-```
-
-- **Portable mode (both product lines)**: to make the program and data self-contained (for copying the whole setup to a USB drive), manually create a `StellaData\` subdirectory in the program directory. The program will prefer it, but the cost is that it will be replaced or deleted along with the program directory; import or back up your data before upgrading.
-
-After that, upgrading only requires replacing the program directory; the data does not need to be touched. Cleaning up old version folders will not affect the data.
-Use `python -m deploy paths` to check the actual data directory location and which rule matched.
-Use `python -m deploy paths` to see the actual data directory and which rule selected it.
-
-### Developer Testing
-
-```bash
-git clone https://github.com/Eternal-Wanderer-Vegetable/Stella_project.git
-cd Stella_project
-pip install -r requirements.txt
-```
-
-### Requirements
-
-| Component | Requirement |
-|---|---|
-| OS | Windows 10/11 x64 (without WebView2: OneClick Offline bundles an offline installer, OneClick Online downloads it; Standalone relies on the system-provided runtime) |
-| Python | 3.10+ (OneClick installers bundle the embedded Python; Standalone archives require your own installation) |
-| Framework | [NoneBot 2](https://nonebot.dev/) |
-| QQ protocol endpoint | [NapCat](https://github.com/NapNeko/NapCatQQ) or another OneBot V11 implementation (install it and log in by QR code yourself; installers no longer bundle NapCat since 2026-11) |
-| Model service | Optional local [LM Studio](https://lmstudio.ai/) / `llama.cpp` Runtime, or any OpenAI-compatible online API (provide the address + API key); the two can be mixed, and AI can be disabled |
-
-### Configuration
-
-It is recommended to make changes through the built-in Advanced Options form in `Stella.exe`. **Manually editing .env is not recommended.**
-
-See the **[Configuration Documentation](docs/reference/configuration.en.md)** for all configuration options and their descriptions.
-
-### Starting
-
-**Regular users**: Click "Start" on the Run Status page in `Stella.exe` (it first runs the doctor check), or double-click `start.bat` to use the command-line flow.
-
-**Developers**:
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-# 2. Generate configuration
-python -m deploy init
-# 3. Use NapCatQQ Desktop to install and log in to NapCat (QR scanning is required and must be done manually),
-#    then add a "WebSocket client" in NapCat WebUI's network settings pointing to the Bot (reverse WS):
-#    ws://127.0.0.1:8080/onebot/v11/ws
-#    (For forward WS, configure ONEBOT_WS_URLS in .env instead.)
-# 4. Start Stella (it first runs the doctor check)
-python -m deploy start
-```
-
-@ the Bot in a group to start a conversation.
-
-### 🔗 Installing plugins (optional)
-
-Stella can run plugins from the [AstrBot](https://github.com/AstrBotDevs/AstrBot) ecosystem directly, **without changing plugin source code**:
-
-```
-Place the entire plugin directory in  data/plugins/<plugin-name>/
-If the plugin includes requirements.txt, install its dependencies
-Restart Stella
-```
-
-The directory name does not need to be changed: an `xxx-master` / `xxx-main` suffix extracted by GitHub's "Download ZIP" works as-is. However, **the archive itself must be extracted first**; `.zip` files under `data/plugins/` will not be loaded.
-
-After startup, check `logs/boot_debug.log`. It records which plugins were found, whether loading succeeded or failed, and the reason for any failure.
-
-Plugin `@command` commands (default prefix `/`) work immediately after installation. Function tools registered with `@llm_tool` additionally need a capability declaration before chat can trigger them -- and a plugin written to the [Plugin Integration Specification](docs/reference/plugin-spec.en.md) **ships its own** `capability.toml`, so that kind of plugin is complete on arrival and needs no configuration from you.
-
-When a plugin ships none (most existing AstrBot plugins do not), or the one it ships does not suit how you use it, add or override an entry in `config/capabilities/<domain>.toml` -- declarations in the user directory have the highest precedence, and once one of them claims a tool the plugin's own entry is skipped entirely. The repository contains a real example (`config/capabilities/entertainment.toml`) that you can copy; see `config/capabilities/information.toml.example` for the format, and [Plugin Integration Specification §6.3](docs/reference/plugin-spec.en.md#63-how-to-write-examples) for how to write one that actually routes.
-
-> Why the declaration is needed: a plugin's tool description is an instruction sentence for a decision-maker that chooses while looking at all tools, whereas Stella's router calculates semantic similarity between it and the user's **question**. The two purposes require different text forms, and using the description directly makes similar tools compete with one another. See [Capability System](docs/architecture/capability-system.en.md#declaration-priority-why-automatically-derived-capabilities-do-not-participate-in-routing) for measured data and the trade-offs.
-
-Writing a plugin, or unsure whether a declaration is right? Run `python -m deploy plugin-check <plugin dir>`: 16 checks, and zero errors is the bar. If you would rather not write `examples` from scratch, run `python -m deploy plugin-scaffold <plugin dir>` first to generate a draft (`capability.toml.draft`); it also computes a quantified report with the real embedding model telling you how well that corpus actually routes. The draft needs a human review, a rename, and `reviewed = true` before it takes effect -- unreviewed corpus never reaches the Router.
-
-To see whether it actually made it into the routing set, three places print the same list: @-mention the bot in a group and ask "what can you do", run `python -m deploy capabilities`, or open the "Plugins" page of `Stella.exe` and click the plugin (a green dot means a declaration has claimed that tool, so chat can trigger it automatically). All of them show which capabilities chat can trigger automatically, which cannot, and why not (no declaration / misspelled tool name / claimed by a higher tier / implementation backing off). Quicker than reading the boot log.
-
-While developing a plugin you can turn on hot reload (`ASTRBOT_PLUGIN_HOT_RELOAD_ENABLED=true`, **off by default**) and pick up code changes without a restart by sending "@Stella 重载插件 &lt;plugin directory&gt;" in a group. It is **not a restart** — tasks started with a bare `asyncio.create_task`, threads a plugin started and monkeypatches are not reclaimed, so restart whenever you suspect the state is unclean. Details in [Plugin Specification §13](docs/reference/plugin-spec.en.md#13-debugging).
-
-Plugin cards are rendered by local Chromium. **The first time an image is needed, it automatically downloads about 270 MB of browser engine in the background**; the plugin continues to return plain text during the download, and takes effect automatically once installation finishes without requiring a restart.
-
-### 🔍 Where to look when something goes wrong
-
-All runtime logs are in `logs/`:
-
-| Symptom | Check this |
-|---|---|
-| The reply content is wrong | `logs/stella_thought_logs.md` (complete prompt, raw output, routing decisions, and tool results) |
-| A plugin did not load / a tool is never called | `logs/boot_debug.log` |
-| No memories are generated | `logs/memory_consolidation_log.md` |
-| It is unclear what is broken | `python -m deploy doctor` |
-
 ## 📖 Documentation
 
 Use the [documentation index](docs/README.en.md) for guides, architecture, reference, development and archives. Coding agents start at [AGENTS.md](AGENTS.md). Current branch compatibility is in [Source contracts](docs/development/contracts.en.md).
 
 | Document | Contents |
 |---|---|
+| [Windows install, upgrade, and start](docs/guides/windows-install.en.md) | Download and install, first configuration, upgrade, data location (start here) |
+| [Installing plugins](docs/guides/plugins.en.md) | Install AstrBot plugins, add capability declarations, confirm routing |
 | [Architecture](docs/architecture/README.en.md) | Directory structure, message-processing flow, module responsibilities, and the AstrBot compatibility layer |
 | [Memory System](docs/architecture/memory-system.en.md) | Rationale for two-layer filtering, promotion rules, and search strategy |
 | [Capability System](docs/architecture/capability-system.en.md) | Capability Router and Comes: how tools execute outside the chat context |
@@ -273,65 +93,6 @@ Use the [documentation index](docs/README.en.md) for guides, architecture, refer
 | [Development Guide](docs/development/README.en.md) | Tests, probe scripts, CI, and contribution workflow |
 
 > Design process records (specification drafts, checkpoints, defect reports, and test checklists) are in [`design_docs/`](design_docs).
-
-## 🧠 Memory Formation Flow
-
-```mermaid
-graph LR
-    A[Group chat messages] --> B[Short-term summary]
-    B --> C[Memory candidates]
-    C -->|Insufficient evidence| C
-    C -->|Confidence + cross-validation| D[Long-term memory]
-    D --> E[Policy filtering]
-    E --> F[Partitioned Prompt injection]
-    D -->|Expired / low value| G[Archive]
-```
-
-Three design principles:
-
-1. **Capture broadly, promote strictly.** Allow uncertain information to enter the candidate pool first and label its confidence honestly, but only information confirmed by repetition or high-density evidence becomes long-term memory. Filtering in the prompt is unauditable, leaves no data behind, and cannot be improved. Small models also overreact to positive and negative prompts set by filtering requirements, making this approach of no practical value.
-2. **Valuable information will not be abundant.** Each user's long-term memories have a clear, adjustable quantity limit. Once it is reached, a new memory must displace the weakest one.
-3. **Relevant does not mean it should be used.** Retrieved memories must also pass three layers of filtering -- pattern matching, purpose compatibility, and visibility -- before entering a reply.
-
-Consolidation runs in two stages, each using a suitable model:
-
-| Stage | Task | Role | All-local model |
-|---|---|---|---|
-| Stage 1 | Short-term summary + user profile + determining whether "this batch contains self-disclosure" | `CONSOLIDATION` | Small model on the CPU |
-| Stage 2 | Precise extraction of memory candidates | `EXTRACT` | Main chat model on the GPU |
-
-Both roles can independently point to online endpoints (Stage 2 is especially suitable for switching to a stronger model), at the cost of sending the original group-chat text for this step to the service provider.
-
-Stage 2 is awakened only when Stage 1 determines that self-disclosure is present. Routine message flooding and small talk therefore consume neither GPU resources nor online tokens. This split exists because a small model can summarize a topic but may return an empty candidate array when extracting candidates in a noisy environment (in testing, information clearly appeared in the summary it had written itself, but the candidate result was empty).
-
-> See the [Memory System Documentation](docs/architecture/memory-system.en.md) for details.
-
-## 🛠 Technology Stack
-
-**Bot backend**: `NoneBot 2` · `OneBot V11` · `SQLite (FTS5)` · OpenAI-compatible APIs · `APScheduler` · `httpx`
-
-**Optional Runtime**: Rust `runtime-manager` · `llama.cpp` / `llama-server` · Runtime manifest/state contract
-
-**Plugin compatibility and rendering**: `Jinja2` · `Playwright` (local Chromium, used only to render plugin cards as images)
-
-**Desktop installer**: `Tauri 2` · `Rust`. v1 (`stella-installer/`, native HTML/JS, frozen at tag `gui-v1-final`); v2 (`desktop/` shell + `dashboard/` panel, Vue 3 + Vuetify 3 — see `docs/webui.en.md`).
-
-**Containerized deployment**: `Docker` · `docker compose` (`Dockerfile` + two-container stella/napcat orchestration, with an optional `llama` profile; Chromium and CJK fonts are baked into the image; see the [Docker Deployment Guide](docs/guides/deployment-docker.en.md))
-
-**Development and verification**: `pytest` · `ruff` · `pyright`
-
-### Local Models Used in Development
-
-- Language models: `google/gemma-4-26b-a4b-qat` (chat, running on the GPU), `google/gemma-4-e4b` (memory consolidation, running on the CPU)
-- Vector model: `text-embedding-qwen3-embedding-0.6b`
-
-The key is **division of labor and deployment**: set GPU Offload = 0 for the consolidation model to use pure CPU inference, while the chat/extraction model exclusively uses the GPU. Both remain resident simultaneously without competing for VRAM, so memory consolidation and chat can truly run in parallel. This is the prerequisite that makes the two-stage approach viable.
-
-The application layer gives each model a serial gate (LM Studio itself does not limit concurrency; multiple simultaneous requests to the same model only slow one another down).
-
-> The configuration above is based on the developer's own hardware and is provided only as supplemental context for understanding the codebase; it **does not constitute a configuration recommendation**. If you discover a better approach, PRs and issues are welcome.
->
-> Models used for testing during development may change; specific changes will be noted in release descriptions.
 
 ## 📄 License
 
@@ -354,6 +115,3 @@ This project received encouragement and support from many people and organizatio
   - **Open-source repositories**: [nonebot2](https://github.com/nonebot/nonebot2), [NapCatQQ](https://github.com/NapNeko/NapCatQQ), and all third-party libraries referenced in the source code. Salute to all developers and maintainers involved. This project also aims to follow in the footsteps of [AstrBot](https://github.com/AstrBotDevs/AstrBot) and [MaiBot](https://github.com/Mai-with-u/MaiBot), creating a genuine AI friend that can complete the entire loop locally without handing over group-chat information and personal privacy.
   - **Developer community**: [Linux Do](https://linux.do)
 - Special thanks to Freya; this work is dedicated to you. My journey of exploration began with your gift, and it is time to offer an imperfect return gift.
-
-
-The versioned upgrade tool and default installer layout are separate: release CI uses `VERSIONED_LAYOUT=0`, leaving launcher relocation disabled. See [development](docs/development/README.en.md) for conditions.

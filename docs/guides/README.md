@@ -6,6 +6,8 @@
 
 | 正文 | 适用任务 |
 | --- | --- |
+| [Windows 安装、升级与启动](windows-install.md) | 下载安装、首次配置、升级与数据位置 |
+| [插件安装](plugins.md) | 安装 AstrBot 插件、补能力声明、确认路由 |
 | [Docker 部署](deployment-docker.md) | 部署容器、迁移与备份 |
 | [WebUI 管理](webui.md) | 管理面板、鉴权与首启排查 |
 | [NoneBot 平台适配器](platforms.md) | 选择平台、配置适配器与查看预装/屏蔽策略 |

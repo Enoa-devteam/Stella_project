@@ -6,6 +6,8 @@ Choose the page matching your task; these are maintained documents, not dated ac
 
 | Page | When to read |
 | --- | --- |
+| [Windows install, upgrade, and start](windows-install.en.md) | Download and install, first configuration, upgrade, data location |
+| [Installing plugins](plugins.en.md) | Install AstrBot plugins, add capability declarations, confirm routing |
 | [Docker deployment](deployment-docker.en.md) | Deploy containers, migrate or back up |
 | [WebUI administration](webui.en.md) | Administer the panel, auth or first-run issues |
 | [NoneBot platform adapters](platforms.en.md) | Select platforms, configure adapters, and review bundle/blocking policy |

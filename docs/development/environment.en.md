@@ -62,3 +62,47 @@ Convention: `webui/` is a leaf package and must **never import
 directory, sync `COMMON_DIRS` in `scripts/build_release_package.py` — a
 missing payload directory cascades into a WebUI mount failure (2026-09-24
 incident).
+
+## Starting a development instance
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+# 2. Generate configuration
+python -m deploy init
+# 3. Use NapCatQQ Desktop to install and log in to NapCat (QR scanning is required and must be done manually),
+#    then add a "WebSocket client" in NapCat WebUI's network settings pointing to the Bot (reverse WS):
+#    ws://127.0.0.1:8080/onebot/v11/ws
+#    (For forward WS, configure ONEBOT_WS_URLS in .env instead.)
+# 4. Start stella (it first runs the doctor check)
+python -m deploy start
+```
+
+@ the Bot in a group to start a conversation. For end-user install and start, see [Windows install, upgrade, and start](../guides/windows-install.en.md).
+
+## Technology Stack
+
+**Bot backend**: `NoneBot 2` · `OneBot V11` · `SQLite (FTS5)` · OpenAI-compatible APIs · `APScheduler` · `httpx`
+
+**Optional Runtime**: Rust `runtime-manager` · `llama.cpp` / `llama-server` · Runtime manifest/state contract
+
+**Plugin compatibility and rendering**: `Jinja2` · `Playwright` (local Chromium, used only to render plugin cards as images)
+
+**Desktop installer**: `Tauri 2` · `Rust`. v1 (`stella-installer/`, native HTML/JS, frozen at tag `gui-v1-final`); v2 (`desktop/` shell + `dashboard/` panel, Vue 3 + Vuetify 3 — see [WebUI management](../guides/webui.en.md)).
+
+**Containerized deployment**: `Docker` · `docker compose` (`Dockerfile` + two-container stella/napcat orchestration, with an optional `llama` profile; Chromium and CJK fonts are baked into the image; see the [Docker Deployment Guide](../guides/deployment-docker.en.md))
+
+**Development and verification**: `pytest` · `ruff` · `pyright`
+
+### Local Models Used in Development
+
+- Language models: `google/gemma-4-26b-a4b-qat` (chat, running on the GPU), `google/gemma-4-e4b` (memory consolidation, running on the CPU)
+- Vector model: `text-embedding-qwen3-embedding-0.6b`
+
+The key is **division of labor and deployment**: set GPU Offload = 0 for the consolidation model to use pure CPU inference, while the chat/extraction model exclusively uses the GPU. Both remain resident simultaneously without competing for VRAM, so memory consolidation and chat can truly run in parallel. This is the prerequisite that makes the two-stage approach viable.
+
+The application layer gives each model a serial gate (LM Studio itself does not limit concurrency; multiple simultaneous requests to the same model only slow one another down).
+
+> The configuration above is based on the developer's own hardware and is provided only as supplemental context for understanding the codebase; it **does not constitute a configuration recommendation**. If you discover a better approach, PRs and issues are welcome.
+>
+> Models used for testing during development may change; specific changes will be noted in release descriptions.
