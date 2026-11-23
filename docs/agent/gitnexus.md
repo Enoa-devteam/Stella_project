@@ -22,7 +22,7 @@ docker exec stella-gitnexus gitnexus status
 docker exec stella-gitnexus gitnexus query "message ingress" --repo Stella_project
 ```
 
-陈旧索引需要刷新。普通分析用 `analyze --index-only`；已有 PDG 或需要安全/数据依赖分析时保留 `--pdg`。刷新后复查根入口，防止生成上下文引入重复规则。runner 缺失时按 `.claude/skills/gitnexus-cli/SKILL.md` 引导安装。
+陈旧索引需要刷新。普通分析用 `analyze --index-only`；已有 PDG 或需要安全/数据依赖分析时保留 `--pdg`。刷新后复查根入口，防止生成上下文引入重复规则。runner 缺失时按本机 `.claude/skills/gitnexus-cli/SKILL.md` 引导安装。
 
 ## 编辑前
 
@@ -48,4 +48,4 @@ node .gitnexus/run.cjs detect-changes --scope compare --base-ref main --repo Ste
 
 MCP 使用 `detect_changes({scope: "all"})`；compare 增加 `base_ref: "main"`。`partial: true` / `truncated: true` 需重跑补齐，零结果不能代表未扫描的变更不受影响。
 
-资源：`gitnexus://repo/Stella_project/context`、`clusters`、`processes`、`process/{name}`。CLI 专题技能在 `.claude/skills/`：exploring、impact-analysis、debugging、refactoring、guide、cli，按任务加载对应 `SKILL.md`。
+资源：`gitnexus://repo/Stella_project/context`、`clusters`、`processes`、`process/{name}`。CLI 专题技能在 `.claude/skills/`：exploring、impact-analysis、debugging、refactoring、guide、cli，按任务加载对应 `SKILL.md`。该目录由 `gitnexus analyze`（不带 `--index-only`）在本机生成，已在 `.gitignore` 中排除、不入库；缺失时先运行一次完整 analyze。
