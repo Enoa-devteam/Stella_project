@@ -89,7 +89,7 @@ def test_remote_napcat_acquisition_verifies_before_activation(monkeypatch, tmp_p
     monkeypatch.setattr(
         acquire.urllib.request,
         "urlopen",
-        lambda url, timeout: archive.open("rb"),
+        lambda url, timeout, context=None: archive.open("rb"),
     )
     result = acquire.install_napcat(manifest, tmp_path / "data")
     assert result["login"]["unattended"] is False
@@ -103,7 +103,7 @@ def test_remote_napcat_checksum_failure_does_not_activate(monkeypatch, tmp_path)
     monkeypatch.setattr(
         acquire.urllib.request,
         "urlopen",
-        lambda url, timeout: archive.open("rb"),
+        lambda url, timeout, context=None: archive.open("rb"),
     )
     with pytest.raises(acquire.AcquireError) as error:
         acquire.install_napcat(manifest, tmp_path / "data")

@@ -2466,7 +2466,7 @@
     {
       "id": "RELEASE-CI-SPEEDUP",
       "name": "Release CI 耗时压缩（tauri-cli 预编译 / Rust 依赖缓存 / offline NSIS 压缩 / 停发 CLI 包）及发布阻断修复",
-      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：v6.4.1 已发布（14m16s）；Online 安装器在干净 Windows 上组件下载证书校验失败，待修复与复测；缺 WebView2 机器上的引导器路径仍未验证。",
+      "description": "v6.1.0–v6.3.0 Release 约 42–47 分钟，关键路径为 build-installer offline 腿（tauri-cli 源码编译 10m19s、Rust 编译 6m、makensis 9m45s）。独立于 AOEDE-MNEME-BENCH-IMPL，在 ci/release-speedup 分支推进。 状态 blocked：v6.4.1 已发布（14m16s）；Online 证书校验失败已在 PR #150（v6.4.2）修复，待合并、发布与发布后复测；缺 WebView2 机器上的引导器路径仍未验证。",
       "status": "blocked",
       "dependencies": [],
       "scope": [
@@ -2526,6 +2526,10 @@
         {
           "report": "progress.md 2026-11-22 v6.4.1 发布后验收",
           "result": "v6.4.1 (204fdaf) released in 14m16s; assets, Rust package and public GHCR verified. Public Python Offline EXE passed in a clean no-network Windows 11 Sandbox. Both public Online EXEs FAILED component installation. CORRECTION: not only network timeouts: 36 of 62 final errors in the Rust retry were CERTIFICATE_VERIFY_FAILED. A cold-root-store control confirmed urllib default trust fails where certifi and truststore pass. Not fixed; Online end-to-end remains NOT READY."
+        },
+        {
+          "report": "progress.md 2026-11-23 v6.4.2 准备（Online 证书修复）",
+          "result": "PR #150: truststore TLS context for downloads and catalog, read-phase resume, numeric llama version order. 9 new tests fail on main and pass; dispatch 45095731235 green (artifacts only). Sandbox: cold-store downloader fetches GitHub and HF assets; Python Offline panel opens; Online installs show 0 certificate errors, installed runtime verified a real asset. v6.4.2 Online end-to-end NOT verified (URL exists only after publication; guest network intermittent)."
         }
       ]
     }

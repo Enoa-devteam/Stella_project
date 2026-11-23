@@ -1,3 +1,12 @@
+## 2026-11-23 — v6.4.2 准备（Online 证书修复）
+
+- Scope：维护者授权按建议处理：v6.4.1 页加警告、删除本地 candidate tag、开镜像 issue（#149）、修复并准备 v6.4.2（PR #150，待维护者合并与打 tag）。
+- What's Done：`deploy/acquire.tls_context()` 用 truststore（不可用时回退 stdlib），用于组件下载与远程 catalog；`truststore>=0.10.0` 入 requirements.txt。读阶段网络错误与提前断开改为 Range 续传重试。llama-server 按数值版本选择（#147）。版本 6.4.2。
+- Verification：9 个新测试在 main 失败、本分支通过；定向 156 passed；较大选集 532 passed / 3 failed（main 同样失败，本机子进程缺 fastapi）；ruff、check_docs、flow manifest 通过。dispatch 45095731235 全绿 13m51s（仅 artifact，未建 Release）。
+- Sandbox（干净 Win11，SAC 仅 guest 内关闭，测试前不发任何 HTTPS 请求）：① 冷根存储直接运行新 `download_verified`：stdlib 对照两源均 `CERTIFICATE_VERIFY_FAILED`；truststore 下 llama zip 与 639MB 模型均校验通过。② Python Offline 安装器：截图确认初始化面板、core ready、llama 可用。③ Python / Rust Online：安装与依赖成功，0 证书错误；llama 下载全部为 WinError 10060（TCP 连不上 github.com），未走到预期的 v6.4.2 404。④ 安装后运行时：truststore 0.10.5 生效，经安装的 `deploy.acquire` 下载 v6.4.1 llama 资产校验通过（前 5 次为网络超时/断开）。
+- Not verified：v6.4.2 Online 全链路（URL 发布后才存在；guest 直连 GitHub 间歇不通）、`start.bat`、Windows 10、缺 WebView2、真实 QQ / 模型。
+- Next：维护者审阅合并 #150 → 打 v6.4.2 → 发布后用公开 Online 安装器在冷根存储 Sandbox 复测，并把 v6.4.1 页警告改为指向 v6.4.2。
+
 ## 2026-11-22 — v6.4.1 发布后验收
 
 - Current State：v6.4.1 已发布并为 Latest（tag → 204fdaf；Release 45019644302 14m16s、Docker 45019644267、Rust 资产 45020827813 均成功）。`SHA256SUMS` 所列 10 项与公开下载一致。GHCR 已由维护者改为 Public，匿名可解析 `6.4.1` / `6.4` / `latest`。

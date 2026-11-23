@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from packaging.version import InvalidVersion, Version
 
 from config import LLM_ENDPOINT_CHAT_BASE_URL, STELLA_HOME
 
@@ -43,6 +44,14 @@ def _endpoint_ready(base_url: str) -> bool:
         return False
 
 
+def _version_key(value: str) -> tuple[int, Version | str]:
+    """Sort key for component versions; unparsable versions sort first, by text."""
+    try:
+        return (1, Version(value))
+    except InvalidVersion:
+        return (0, value)
+
+
 def _server_path() -> Path | None:
     candidates: list[tuple[str, Path]] = []
     try:
@@ -61,7 +70,8 @@ def _server_path() -> Path | None:
             candidates.append((str(record.get("version") or ""), executable))
     if not candidates:
         return None
-    candidates.sort(key=lambda item: item[0])
+    # 按数值比较版本：字符串排序会让 6.4.9 排在 6.4.10 之后（#147）
+    candidates.sort(key=lambda item: _version_key(item[0]))
     return candidates[-1][1]
 
 

@@ -10,6 +10,8 @@ the existing atomic activation boundary.
 from __future__ import annotations
 
 import hashlib
+import http.client
+import ssl
 import time
 import urllib.error
 import urllib.parse
@@ -27,6 +29,24 @@ DOWNLOAD_MAX_ATTEMPTS = 4
 DOWNLOAD_BACKOFF_SECONDS = (1.0, 3.0, 9.0)
 
 ProgressCallback = Callable[[int, int | None], None]
+
+
+def tls_context() -> ssl.SSLContext:
+    """Verify HTTPS against the operating system's trust store.
+
+    ``ssl.create_default_context()`` only loads the roots already present in the
+    Windows certificate store. A clean Windows installation downloads most roots
+    on demand, so on a new machine github.com, huggingface.co and their CDNs
+    failed with ``CERTIFICATE_VERIFY_FAILED`` (v6.0.1–v6.4.1, reproduced in
+    Windows Sandbox). truststore verifies through the platform verifier, which
+    fetches missing roots and also honours enterprise roots. Falls back to the
+    stdlib default when truststore is unavailable.
+    """
+    try:
+        import truststore
+    except ImportError:
+        return ssl.create_default_context()
+    return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
 
 class AcquireError(ValueError):
@@ -83,7 +103,9 @@ def _download_once(
     if resume_from:
         request.add_header("Range", f"bytes={resume_from}-")
     try:
-        response = urllib.request.urlopen(request, timeout=timeout)
+        response = urllib.request.urlopen(
+            request, timeout=timeout, context=tls_context()
+        )
     except urllib.error.HTTPError as exc:
         if exc.code in RETRYABLE_HTTP_STATUS:
             raise _RetryableDownloadError(f"HTTP {exc.code}") from exc
@@ -108,13 +130,20 @@ def _download_once(
             if length is not None:
                 total = int(length) + (resume_from if appending else 0)
             while True:
-                chunk = response.read(1024 * 1024)
+                try:
+                    chunk = response.read(1024 * 1024)
+                except (OSError, http.client.HTTPException) as exc:
+                    # 读取中途断线/超时与连接失败同属网络抖动：保留 .part，续传重试
+                    raise _RetryableDownloadError(str(exc) or repr(exc)) from exc
                 if not chunk:
                     break
                 output.write(chunk)
                 downloaded += len(chunk)
                 if progress is not None:
                     progress(downloaded, total)
+    if total is not None and downloaded < total:
+        # 连接提前关闭：已收到的部分保留在 .part，续传补齐
+        raise _RetryableDownloadError(f"连接提前关闭（{downloaded}/{total} 字节）")
     # 进度回调可抛 AcquireError("cancelled") 取消本次下载；此处不捕获，
     # .part 保留为可验证的续传片段。
 
@@ -298,5 +327,6 @@ __all__ = [
     "download_verified",
     "install_default_embedding",
     "install_napcat",
+    "tls_context",
     "verify_local_artifact",
 ]
