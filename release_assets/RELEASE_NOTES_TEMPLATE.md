@@ -44,7 +44,8 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 
 - The legacy runtime remains the default.
 - Online installers download from GitHub and Hugging Face and have no mirror ([#149](https://github.com/Enoa-devteam/stella_project/issues/149)). Where either is not reliably reachable, use an Offline installer.
-- VERIFICATION_PLACEHOLDER
+- Tested before publication in a clean Windows 11 Sandbox (no VC++ runtime, Smart App Control off): the Python Offline installer opens the setup panel without network access. The Online installers install the runtime and dependencies; from that installed runtime, the downloader verified a real release asset on a machine whose root certificates had not been fetched yet, which failed with `CERTIFICATE_VERIFY_FAILED` before this release.
+- Not verified: a complete Online installation of this version (its download URL exists only after publication, and direct access to GitHub from the test network was intermittent), Standalone `start.bat`, WebView2 installation on a machine without it, Windows 10, real QQ/OneBot delivery, and chat-model acceptance.
 - During the first start of an Online installer, the window says the backend is not running while the runtime and components are still downloading ([#145](https://github.com/Enoa-devteam/stella_project/issues/145)). Wait for it to finish; this can take several minutes.
 - An over-install from v6.3.0 or earlier leaves the old `memory/participation/` directory, which shadows the compatibility alias `memory.participation` for plugins that import it ([#146](https://github.com/Enoa-devteam/stella_project/issues/146)). stella itself imports `aoede.participation`. A clean program directory avoids this.
 - Known issues: #142 (a failed table creation during migration is not reported) and #143 (no downgrade guard; restore the pre-migration backup to roll back).

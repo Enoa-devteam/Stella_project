@@ -1,3 +1,11 @@
+## Current Handoff — v6.4.2 准备（2026-11-23）
+
+- Current Objective：PR #150 待维护者审阅合并并打 `v6.4.2`；无合并 / tag 授权。`RELEASE-CI-SPEEDUP` 保持 `blocked`。
+- Verification Evidence：progress.md 同日条目；PR #150。
+- Blockers：发布后才能验证 Online 全链路；本机网络下 guest 直连 GitHub 间歇超时（#149 镜像未定）。安装器未签名。
+- Recommended Next Step：发布后在全新 Sandbox（测试前不发 HTTPS 请求）跑公开 Online 安装器；看截图与全部错误行；然后更新 v6.4.1 页警告。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.1 发布后（2026-11-22）
 
 - Current Objective：v6.4.1 已发布；下文 v6.4.0 / v6.4.1 准备与 CI 耗时三条 handoff 可归档。`RELEASE-CI-SPEEDUP` 保持 `blocked`。
