@@ -62,6 +62,8 @@ httpx>=0.24.0
 pydantic>=1.10,<3
 pyyaml>=6.0
 packaging>=23.0
+# 组件下载按系统信任库校验 HTTPS：干净 Windows 的根证书按需下载，stdlib 默认上下文看不到（deploy/acquire.py）。
+truststore>=0.10.0
 mcp>=2.0.0
 bilibili-api-python>=17.4.1
 curl_cffi>=0.14.0

@@ -435,3 +435,23 @@ def test_corrupt_offline_package_fails_strict_without_online_fallback(
     )
     assert result["state"] == "complete"
     assert (data_root / ".stella" / "components" / "llama-cpu" / "4.0.1").is_dir()
+
+
+def test_remote_catalog_is_fetched_with_system_trust_store(tmp_path, monkeypatch):
+    catalog, _files = _catalog(tmp_path)
+    monkeypatch.setattr(bootstrap, "PROJECT_ROOT", tmp_path / "no-bundled-catalog")
+    sentinel = object()
+    contexts = []
+    monkeypatch.setattr(bootstrap.acquire, "tls_context", lambda: sentinel)
+
+    def fake_urlopen(source, timeout=None, context=None):
+        contexts.append(context)
+        return catalog.open("rb")
+
+    monkeypatch.setattr(bootstrap.urllib.request, "urlopen", fake_urlopen)
+    profile = {"id": "oneclick-python", "catalog_url": "https://example.invalid/catalog.json"}
+
+    loaded = bootstrap._load_catalog(profile, None)
+
+    assert loaded["schema_version"] == 1
+    assert contexts == [sentinel]

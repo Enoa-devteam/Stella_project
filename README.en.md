@@ -36,10 +36,11 @@ You decide where the models come from.
 
 > Note: With the all-local deployment mode, the data truly stays off the network. Networked tools (such as weather and anime lookups) send requests and return actual data themselves, while deciding whether to use a tool, compressing its result into a summary, and rendering plugin cards as images all happen locally.
 
-## 6.4.1 Release
+## 6.4.2 Release
 
-- Fixes the desktop app and the bundled llama.cpp backend failing to start on Windows without the Visual C++ runtime (confirmed on v6.3.0 and v6.4.0), and the first start of a new installation always failing.
-- Offline installers are compressed again (about 1.2 GB); Online installers download WebView2 when it is missing.
+- Fixes Online installers failing to download components on a clean Windows installation with `CERTIFICATE_VERIFY_FAILED` (v6.0.1–v6.4.1 are affected); an interrupted download now resumes.
+- Since 6.4.1: the desktop app and the bundled llama.cpp backend start on Windows without the Visual C++ runtime, and the first start of a new installation no longer fails.
+- Online installers download components from GitHub and Hugging Face, with no mirror yet; where they are not reliably reachable, use an Offline installer (about 1.2 GB).
 - Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
 - Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only the OneBot V11 adapter for now.
 

@@ -11,7 +11,9 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
+import sys
 
 import pytest
 
@@ -35,7 +37,7 @@ class _FakeResponse(io.BytesIO):
 def _install_urlopen(monkeypatch, responder):
     monkeypatch.setattr(
         acquire.urllib.request, "urlopen",
-        lambda request, timeout=None: responder(request),
+        lambda request, timeout=None, context=None: responder(request),
     )
 
 
@@ -204,3 +206,91 @@ def test_corrupted_resume_part_is_caught_by_checksum(tmp_path, monkeypatch):
         )
     assert not destination.exists()
     assert not destination.with_name(destination.name + ".part").exists()
+
+
+class _DroppingResponse(_FakeResponse):
+    """Delivers ``keep`` bytes, then fails the next read like a stalled or dropped connection."""
+
+    def __init__(self, content: bytes, keep: int, error: BaseException | None):
+        super().__init__(content[:keep])
+        self.headers = {"Content-Length": str(len(content))}
+        self._error = error
+        self._sent = False
+
+    def read(self, size=-1):
+        if self._sent:
+            if self._error is not None:
+                raise self._error
+            return b""
+        self._sent = True
+        return super().read()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [TimeoutError("The read operation timed out"), ConnectionResetError(10054, "reset"),
+     http.client.IncompleteRead(b"")],
+    ids=["read-timeout", "connection-reset", "incomplete-read"],
+)
+def test_error_while_reading_body_resumes_instead_of_failing(tmp_path, monkeypatch, error):
+    destination = tmp_path / "artifact.bin"
+    monkeypatch.setattr(acquire.time, "sleep", lambda _s: None)
+    seen_ranges: list[str | None] = []
+
+    def responder(request):
+        seen_ranges.append(request.headers.get("Range"))
+        if len(seen_ranges) == 1:
+            return _DroppingResponse(PAYLOAD, keep=10, error=error)
+        return _FakeResponse(PAYLOAD[10:], status=206)
+
+    _install_urlopen(monkeypatch, responder)
+    acquire.download_verified(
+        "https://example.invalid/artifact.bin", destination, checksum=_sha(PAYLOAD)
+    )
+    assert destination.read_bytes() == PAYLOAD
+    assert seen_ranges == [None, "bytes=10-"]
+
+
+def test_connection_closed_early_resumes_instead_of_discarding(tmp_path, monkeypatch):
+    destination = tmp_path / "artifact.bin"
+    monkeypatch.setattr(acquire.time, "sleep", lambda _s: None)
+    seen_ranges: list[str | None] = []
+
+    def responder(request):
+        seen_ranges.append(request.headers.get("Range"))
+        if len(seen_ranges) == 1:
+            return _DroppingResponse(PAYLOAD, keep=10, error=None)
+        return _FakeResponse(PAYLOAD[10:], status=206)
+
+    _install_urlopen(monkeypatch, responder)
+    acquire.download_verified(
+        "https://example.invalid/artifact.bin", destination, checksum=_sha(PAYLOAD)
+    )
+    assert destination.read_bytes() == PAYLOAD
+    assert seen_ranges == [None, "bytes=10-"]
+
+
+def test_download_verifies_tls_with_system_trust_store(tmp_path, monkeypatch):
+    """Clean Windows lacks most roots until the OS fetches them; stdlib defaults never do."""
+    truststore = pytest.importorskip("truststore")
+    contexts = []
+
+    def fake_urlopen(request, timeout=None, context=None):
+        contexts.append(context)
+        return _FakeResponse(PAYLOAD)
+
+    monkeypatch.setattr(acquire.urllib.request, "urlopen", fake_urlopen)
+    acquire.download_verified(
+        "https://example.invalid/artifact.bin", tmp_path / "a.bin", checksum=_sha(PAYLOAD)
+    )
+    assert len(contexts) == 1
+    assert isinstance(contexts[0], truststore.SSLContext)
+
+
+def test_tls_context_falls_back_to_stdlib_without_truststore(monkeypatch):
+    monkeypatch.setitem(sys.modules, "truststore", None)
+    context = acquire.tls_context()
+    assert isinstance(context, acquire.ssl.SSLContext)
+    assert context.verify_mode == acquire.ssl.CERT_REQUIRED
+    assert context.check_hostname is True
+

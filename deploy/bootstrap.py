@@ -113,7 +113,9 @@ def _load_catalog(profile: dict[str, Any], catalog_path: Path | None) -> dict[st
                 "invalid_catalog_source", "OneClick catalog 必须是固定 HTTPS URL"
             )
         try:
-            with urllib.request.urlopen(source, timeout=CATALOG_TIMEOUT) as response:
+            with urllib.request.urlopen(
+                source, timeout=CATALOG_TIMEOUT, context=acquire.tls_context()
+            ) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except (OSError, ValueError, TypeError, urllib.error.URLError) as exc:
             raise BootstrapError(

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from deploy import llama, runtime
@@ -100,3 +101,24 @@ def test_missing_server_is_reported_without_starting(monkeypatch, tmp_path):
     result = llama.ensure_local_embedding_service(preferred_url="http://lm:1234")
 
     assert result == {"ok": False, "message": "未找到已安装的 llama-server。"}
+
+
+def test_server_path_picks_highest_version_numerically(monkeypatch, tmp_path):
+    """Two-digit components: 6.4.10 must beat 6.4.9 (#147)."""
+    name = "llama-server.exe" if os.name == "nt" else "llama-server"
+    records = []
+    for version in ("6.4.9", "6.4.10", "6.3.0"):
+        root = tmp_path / "components" / f"llama-cpu-{version}"
+        root.mkdir(parents=True)
+        (root / name).write_bytes(b"")
+        records.append({"kind": "component", "id": "llama-cpu", "version": version,
+                        "path": f"components/llama-cpu-{version}"})
+    monkeypatch.setattr(llama, "STELLA_HOME", tmp_path)
+    monkeypatch.setattr(llama.packages, "read_registry", lambda _home: {"packages": records})
+
+    assert llama._server_path() == tmp_path / "components" / "llama-cpu-6.4.10" / name
+
+
+def test_version_key_orders_numerically_and_tolerates_unparsable():
+    versions = ["6.10.0", "garbage", "6.4.10", "6.9.0", "6.4.9"]
+    assert sorted(versions, key=llama._version_key) == ["garbage", "6.4.9", "6.4.10", "6.9.0", "6.10.0"]
