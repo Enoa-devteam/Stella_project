@@ -1,3 +1,10 @@
+## 2026-11-23 — 仓库文档整理：归档会话计划、停止跟踪本地技能
+
+- Scope：维护者要求 ① 停止跟踪 `.claude/skills/`；② 把 `.zcode/plans/` 移入 `docs/plans/` 归档并删除 `.zcode/`；③ 同步工作区与远端，清理本地开发 worktree 目录。
+- What's Done：`.claude/skills/`（6 个 GitNexus `SKILL.md`）从索引移除、本机文件保留；`.gitignore` 排除 `.claude/skills/` 与 `.zcode/`。两份会话计划按日期归档为 [2026-09-29 三代配置键合并 Phase 1](docs/plans/2026-09-29-config-key-generation-merge-phase1.md) 与 [2026-11-02 证据合同扩展 P1](docs/plans/2026-11-02-evidence-contract-expansion-p1.md)，仅加归档说明、正文未改。`docs/agent/gitnexus.md` 注明技能目录由完整 `gitnexus analyze` 在本机生成、不入库。
+- Verification：`python scripts/check_docs.py`、`git diff --check`、GitNexus detect-changes 见本轮 PR。
+- Not changed：AGENTS.md / CLAUDE.md 的 GitNexus 生成段仍引用 `.claude/skills/...`（由 analyze 重写，本机路径有效）；历史记录中提到 `.zcode/` 的原文保留。
+- Files：`.gitignore`、`docs/agent/gitnexus.md`、`docs/plans/` 两份新归档、`progress.md`。
 ## 2026-11-23 — main CI memory-benchmark-public 偶发失败
 
 - 现象：#151 合并后 main CI 45117112777 仅 `memory-benchmark-public` 失败：`fetch_personamem.py` 下载 42MB `benchmark.csv` 时 HF 中途断开（收到 235,778 字节），脚本无重试，非 #151 改动引起。重跑失败作业后通过。

@@ -126,3 +126,7 @@ memory_rust/dist/
 
 # PersonaMem 等公开测试集原始数据与适配用例（CC-BY-4.0，不入库；sha256 清单见 fetch 脚本）
 memory/benchmark/_public/
+
+# AI 编码工具的本地产物：GitNexus 技能由 `gitnexus analyze` 在本机生成；会话计划归档到 docs/plans/
+.claude/skills/
+.zcode/
