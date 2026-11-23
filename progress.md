@@ -1,3 +1,10 @@
+## 2026-11-23 — README 压缩：功能说明移入 docs
+
+- Scope：README.md / README.en.md 只保留简介与特性、文档索引、许可证、致谢；其余功能说明移入 docs 对应正文。
+- What's Done：6.4.2 注意事项、环境要求、下载安装、配置、启动、升级、数据位置 → 新增 [Windows 安装、升级与启动](docs/guides/windows-install.md)；插件安装 → 新增 [插件安装](docs/guides/plugins.md)；三种部署模式 → [配置参考](docs/reference/configuration.md#三种部署模式)；记忆形成流程与两阶段整合 → [记忆系统](docs/architecture/memory-system.md)；开发者启动、技术栈、开发用本地模型 → [环境准备](docs/development/environment.md)；`deploy doctor` 排查行 → [排查问题](docs/development/troubleshooting.md)；`VERSIONED_LAYOUT` 说明 → 安装指南升级节。三种部署模式与记忆三原则在 docs 已有的部分未重复搬运。Docker 指南指向 README 锚点的链接改指配置参考。中英文同步，正文按原文移动，未改事实。
+- Verification：`python scripts/check_docs.py` ok（131 files, 0 errors）、`git diff --check` 通过、全仓无其他指向 README 章节锚点的链接。
+- Files：README.md、README.en.md、docs/guides/{windows-install,plugins}{,.en}.md、docs/guides/README{,.en}.md、docs/guides/deployment-docker{,.en}.md、docs/reference/configuration{,.en}.md、docs/architecture/memory-system{,.en}.md、docs/development/{environment,troubleshooting}{,.en}.md、progress.md。
+
 ## 2026-11-23 — 仓库文档整理：归档会话计划、停止跟踪本地技能
 
 - Scope：维护者要求 ① 停止跟踪 `.claude/skills/`；② 把 `.zcode/plans/` 移入 `docs/plans/` 归档并删除 `.zcode/`；③ 同步工作区与远端，清理本地开发 worktree 目录。

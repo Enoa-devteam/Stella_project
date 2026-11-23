@@ -45,7 +45,7 @@ Hence two ground rules: **upgrade = swap the image, data stays put**; **backup =
   NAPCAT_IMAGE=mlikiowa/napcat-docker@sha256:<digest>   # if not a digest, at least pin a version tag — never :latest
   ```
   Without it, `docker compose up` fails immediately with `NAPCAT_IMAGE must be a pinned NapCat image reference`.
-- Decide on model endpoints (trade-offs between the three modes: see [README · Three Deployment Modes](../../README.en.md#-three-deployment-modes)):
+- Decide on model endpoints (trade-offs between the three modes: see [Configuration Reference · Three Deployment Modes](../reference/configuration.en.md#three-deployment-modes)):
   - **All-online**: just fill in online API addresses -- simplest;
   - **Hybrid / all-local**: if LM Studio runs on the same host, fill in `http://host.docker.internal:1234` as the endpoint (compose already configures `host-gateway`); if it runs on another machine, use that machine's internal address directly.
 

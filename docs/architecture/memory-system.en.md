@@ -85,6 +85,32 @@ memories                Long-term memories
 Partitioned Prompt injection          Chat material / behavioral constraints
 ```
 
+### Memory formation overview
+
+```mermaid
+graph LR
+    A[Group chat messages] --> B[Short-term summary]
+    B --> C[Memory candidates]
+    C -->|Insufficient evidence| C
+    C -->|Confidence + cross-validation| D[Long-term memory]
+    D --> E[Policy filtering]
+    E --> F[Partitioned Prompt injection]
+    D -->|Expired / low value| G[Archive]
+```
+
+### Two-stage consolidation
+
+Consolidation runs in two stages, each using a suitable model:
+
+| Stage | Task | Role | All-local model |
+|---|---|---|---|
+| Stage 1 | Short-term summary + user profile + determining whether "this batch contains self-disclosure" | `CONSOLIDATION` | Small model on the CPU |
+| Stage 2 | Precise extraction of memory candidates | `EXTRACT` | Main chat model on the GPU |
+
+Both roles can independently point to online endpoints (Stage 2 is especially suitable for switching to a stronger model), at the cost of sending the original group-chat text for this step to the service provider.
+
+Stage 2 is awakened only when Stage 1 determines that self-disclosure is present. Routine message flooding and small talk therefore consume neither GPU resources nor online tokens. This split exists because a small model can summarize a topic but may return an empty candidate array when extracting candidates in a noisy environment (in testing, information clearly appeared in the summary it had written itself, but the candidate result was empty).
+
 ## Capture Layer: Uncertainty Allowed, Fabrication Forbidden
 
 The consolidation prompt (`memory/consolidation_prompt.py`) does not apply hard confidence filtering, but retains three **anti-fabrication** clauses—which are unrelated to strictness and must not be removed under any circumstances:

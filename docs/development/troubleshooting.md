@@ -6,6 +6,7 @@
 
 | 现象 | 查看 |
 |---|---|
+| 说不清哪里坏了 | `python -m deploy doctor` |
 | 回复内容不对 | `logs/stella_thought_logs.md`（完整 prompt / 原始输出 / 内部思考） |
 | 插件没加载 / 能力没注册 | `logs/boot_debug.log`（每次启动清空重写，只反映最近一次启动） |
 | 记忆没生成 | `logs/memory_consolidation_log.md`（每批整合的原始输出与候选数） |
