@@ -78,7 +78,7 @@ mcp = [
 # 自带 cli-bin 实录验证），升级必须重跑 M0 探针——事件契约随版本漂移，钉死
 # 等号防协议面漂移。安装需官方源（-i https://pypi.org/simple）。
 cometa = [
-    "openai-codex==0.159.2",
+    "openai-codex==0.171.0",
 ]
 
 [tool.setuptools.packages.find]
