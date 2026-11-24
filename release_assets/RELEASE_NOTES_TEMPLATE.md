@@ -7,6 +7,7 @@ This patch release builds on [v6.4.2](https://github.com/Enoa-devteam/stella_pro
 ### Bug Fixes
 
 - **The first start of an Online installer no longer says the backend is not running while it is still downloading.** Reading the configuration prepares the runtime, and on a first start that is the whole download of the runtime, dependencies and components. The window entered its loading view only afterwards, so for several minutes it showed "后端未运行" (backend not running) with a Retry button, and users reasonably concluded the installation had failed. The loading view, with live component progress and elapsed time, now appears before that step ([#145](https://github.com/Enoa-devteam/stella_project/issues/145)).
+- **The loading view shows live progress again.** Since v5.1.x the desktop app read component progress from `.stella/.bootstrap-progress.json` while the component installer writes `.stella/.bootstrap-progress`, and read runtime progress from the data directory while it is written in the program directory. The live line (for example "正在安装组件：llama-cpu") therefore never appeared, and the loading view only rotated generic hints. Both files are now read where they are written.
 
 ### Improvements
 
@@ -47,7 +48,6 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 - The legacy runtime remains the default.
 - Online installers download from GitHub and Hugging Face and have no mirror ([#149](https://github.com/Enoa-devteam/stella_project/issues/149)). Where either is not reliably reachable, use an Offline installer.
 - Tested before publication in a clean Windows 11 Sandbox (Smart App Control off in the guest only; no HTTPS request before the test): the Python Online installer's first start showed the loading view for the whole runtime, dependency and component download (about nine minutes, including `llama-cpu` in progress) and never the "backend not running" card. That build was made before this release existed, so its component download ended with the expected HTTP 404. The Sandbox's own WebView2 registration was broken on the test host, so the WebView2 location was set through `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`; the installer and the app were otherwise unchanged.
-- The loading view shows rotating hints instead of the live component progress line: the shell reads `.stella/.bootstrap-progress.json`, while the component installer writes `.stella/.bootstrap-progress` (since v5.1.x).
 - Not verified: a complete Online installation of this version (its component URLs exist only after publication), the Rust and Offline installers, Windows 10, real QQ/OneBot delivery, and chat-model acceptance.
 - An over-install from v6.3.0 or earlier leaves the old `memory/participation/` directory, which shadows the compatibility alias `memory.participation` for plugins that import it ([#146](https://github.com/Enoa-devteam/stella_project/issues/146)). stella itself imports `aoede.participation`. A clean program directory avoids this.
 - Known issues: #142 (a failed table creation during migration is not reported) and #143 (no downgrade guard; restore the pre-migration backup to roll back).
@@ -56,6 +56,7 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 ## 中文摘要
 
 - **修复：Online 安装器首次启动下载期间显示「后端未运行」**（#145）。读取配置会准备运行时，首次启动时这一步就是整段运行时、依赖与组件下载；过去窗口在这之后才进入加载视图，几分钟里一直显示「后端未运行」与重试按钮，用户会以为安装失败。现在这一步之前就显示加载视图，带组件实时进度与已用时。
+- **修复：加载视图的实时进度行从未显示**（自 v5.1.x）。桌面程序读 `.stella/.bootstrap-progress.json`，组件安装器写的是 `.stella/.bootstrap-progress`；运行时进度又按数据目录去读，实际写在程序目录。现在两个文件都按写入位置读取，加载视图会显示「正在安装组件：llama-cpu」等实时进度，而不只是轮播提示。
 - 加载视图使用新的 stella 动态 Logo（由原 3D 模型生成）。
 - Online 安装器的组件来自 GitHub 与 Hugging Face，尚无镜像（#149）；无法稳定访问时请使用 Offline 安装器。
 - **注意：安装器未经代码签名。开启「智能应用控制」的 Windows 11 会直接拦截，且没有「仍要运行」选项**；其他系统会显示 SmartScreen 未知发布者提示。

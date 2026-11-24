@@ -70,26 +70,28 @@ pub async fn wait_bot_ready(timeout_secs: Option<u64>) -> Result<String, String>
     .map_err(|e| format!("等待任务失败：{e}"))?
 }
 
-/// 读取首启进度（加载视图轮询用，2026-09-25 用户要求：启动不能只有一句
-/// 「正在启动」而无真实反馈）。
-///
-/// 两个进度源都是**文件**（进程内不用 IPC 就能拿到）：
-/// - `deploy bootstrap install` 写 `.stella/.bootstrap-progress.json`
-///   （state/current/completed/error，NapCat、embedding 模型等组件逐个推进）；
-/// - `prepare_runtime` 写 `runtime/.bootstrap-progress`（运行时下载 / pip / 
-///   依赖安装的文本消息）。
-/// 任一缺失返回 null——文件不存在是常态（还没跑到那一步）。
-#[tauri::command]
-pub fn read_start_progress() -> Result<String, String> {
-    let root = python::data_root();
-    let bootstrap_path = root.join(".stella").join(".bootstrap-progress.json");
-    let prepare_path = root.join("runtime").join(".bootstrap-progress");
+/// `deploy bootstrap install` 的进度文件名，写在 `<data_root>/.stella/` 下。
+/// 必须与 `deploy/bootstrap.py` 的 `PROGRESS_FILENAME` 一致（跨语言合同，见
+/// tests::bootstrap_progress_name_matches_python）。2026-09-25 起这里曾读
+/// `.bootstrap-progress.json`，与写方不一致，加载视图的组件进度行从未显示。
+pub(crate) const BOOTSTRAP_PROGRESS_FILE: &str = ".bootstrap-progress";
 
-    let bootstrap = std::fs::read_to_string(&bootstrap_path)
+/// 首启两个进度文件的位置：组件进度在数据根，运行时进度在程序目录。
+fn start_progress_paths(data_root: &Path, project_root: &Path) -> (PathBuf, PathBuf) {
+    (
+        data_root.join(".stella").join(BOOTSTRAP_PROGRESS_FILE),
+        project_root
+            .join("runtime")
+            .join(python::RUNTIME_PROGRESS_FILE),
+    )
+}
+
+fn read_start_progress_from(bootstrap_path: &Path, prepare_path: &Path) -> Result<String, String> {
+    let bootstrap = std::fs::read_to_string(bootstrap_path)
         .ok()
         .filter(|text| serde_json::from_str::<serde_json::Value>(text).is_ok())
         .unwrap_or_else(|| "null".into());
-    let prepare = std::fs::read_to_string(&prepare_path)
+    let prepare = std::fs::read_to_string(prepare_path)
         .map(|text| text.trim().to_owned())
         .ok();
 
@@ -98,6 +100,22 @@ pub fn read_start_progress() -> Result<String, String> {
     Ok(format!(
         r#"{{"bootstrap": {bootstrap}, "prepare": {prepare_json}}}"#
     ))
+}
+
+/// 读取首启进度（加载视图轮询用，2026-09-25 用户要求：启动不能只有一句
+/// 「正在启动」而无真实反馈）。
+///
+/// 两个进度源都是**文件**（进程内不用 IPC 就能拿到）：
+/// - `deploy bootstrap install` 写 `<data_root>/.stella/.bootstrap-progress`
+///   （JSON：state/current/completed/error，llama 后端、embedding 模型等组件逐个推进）；
+/// - `prepare_runtime` 写 `<project_root>/runtime/.bootstrap-progress`（运行时下载 / pip /
+///   依赖安装的文本消息）。Python 就绪后 data_root 解析为 STELLA_HOME，与程序目录不同。
+/// 任一缺失返回 null——文件不存在是常态（还没跑到那一步）。
+#[tauri::command]
+pub fn read_start_progress() -> Result<String, String> {
+    let (bootstrap_path, prepare_path) =
+        start_progress_paths(&python::data_root(), &python::project_root());
+    read_start_progress_from(&bootstrap_path, &prepare_path)
 }
 
 #[tauri::command]
@@ -1077,8 +1095,9 @@ fn runtime_failure(envelope: &serde_json::Value, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        canonical_plain, deploy_start_arguments, extract_json, resolve_log_path, runtime_failure,
-        runtime_message,
+        canonical_plain, deploy_start_arguments, extract_json, read_start_progress_from,
+        resolve_log_path, runtime_failure, runtime_message, start_progress_paths,
+        BOOTSTRAP_PROGRESS_FILE,
     };
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -1095,6 +1114,70 @@ mod tests {
         ));
         fs::create_dir_all(&root).unwrap();
         root
+    }
+
+    /// 跨语言合同：壳读的组件进度文件名 == deploy/bootstrap.py 写的 PROGRESS_FILENAME。
+    #[test]
+    fn bootstrap_progress_name_matches_python() {
+        let py_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("deploy")
+            .join("bootstrap.py");
+        // 精简检出可能没有 deploy/，与 start.bat 同步测试一样跳过
+        let Ok(source) = fs::read_to_string(&py_path) else {
+            eprintln!("跳过：未找到 {}", py_path.display());
+            return;
+        };
+        let value = source
+            .lines()
+            .find_map(|line| line.trim().strip_prefix("PROGRESS_FILENAME = "))
+            .expect("deploy/bootstrap.py 应定义 PROGRESS_FILENAME")
+            .trim()
+            .trim_matches('"');
+        assert_eq!(value, BOOTSTRAP_PROGRESS_FILE);
+    }
+
+    /// 安装后的真实布局（2026-11-24 Sandbox）：数据根与程序目录不同。
+    /// 旧实现两条路径都按 data_root 拼且组件文件名多了 .json，两项都读不到。
+    #[test]
+    fn start_progress_reads_files_where_writers_put_them() {
+        let base = test_root("start-progress");
+        let data_root = base.join("StellaData");
+        let project_root = base.join("stella");
+        fs::create_dir_all(data_root.join(".stella")).unwrap();
+        fs::create_dir_all(project_root.join("runtime")).unwrap();
+        fs::write(
+            data_root.join(".stella").join(".bootstrap-progress"),
+            r#"{"completed": [], "current": "llama-cpu", "profile": "oneclick-python", "schema_version": 1, "state": "running"}"#,
+        )
+        .unwrap();
+        fs::write(
+            project_root.join("runtime").join(".bootstrap-progress"),
+            "正在安装依赖（首次约 1-2 分钟）…\n",
+        )
+        .unwrap();
+
+        let (bootstrap_path, prepare_path) = start_progress_paths(&data_root, &project_root);
+        let text = read_start_progress_from(&bootstrap_path, &prepare_path).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(value["bootstrap"]["current"], "llama-cpu");
+        assert_eq!(value["bootstrap"]["state"], "running");
+        assert_eq!(value["prepare"], "正在安装依赖（首次约 1-2 分钟）…");
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn start_progress_missing_files_are_null() {
+        let base = test_root("start-progress-missing");
+        let (bootstrap_path, prepare_path) =
+            start_progress_paths(&base.join("data"), &base.join("program"));
+        let text = read_start_progress_from(&bootstrap_path, &prepare_path).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert!(value["bootstrap"].is_null());
+        assert!(value["prepare"].is_null());
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]
