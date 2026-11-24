@@ -1,3 +1,14 @@
+## 2026-11-24 — v6.4.3 发布与发布后验收
+
+- Scope：PR #177 合并（8b77dc8，树与 Sandbox 验证的 ca55ce0 一致）→ 打 `v6.4.3` → 发布后用公开 Python Online 安装器在 Sandbox 验收完整组件安装。
+- 发布前门禁：ca55ce0 测试构建 45406349131 Sandbox 通过（#145 全程加载视图；依赖阶段显示「正在安装依赖（首次约 1-2 分钟）…」、组件阶段显示「正在安装组件：llama-cpu（已完成 0 项）」）；main 8b77dc8 上 CI、Dashboard CI、Release cache warm 全绿。
+- 发布：annotated tag `v6.4.3`（→ 8b77dc8，仅推此 tag）；release.yml 45412499338 成功；Release「stella v6.4.3」为 Latest，非 draft / 非预发布，12 个资产 + 随后由 release-memory-rust 45415177905 附上 `Stella-Rust_engine_version-v6.4.3-win64.zip`。
+- 发布后验收（**通过**）：公开 `Stella-OneClick-Python-v6.4.3-windows-amd64.exe` 对 SHA256SUMS 校验 OK；全新 Sandbox，SAC 仅 guest 内关闭，测试前不发 HTTPS。t=22 pip → t=107 依赖 → t=421 组件 llama-cpu → t=506 llama-cpu 完成、开始 qwen3-embedding-0.6b → t=1392 `state: complete` → t=1404 Bot 在线（连续 6 次）。t=900 截图为加载视图 +「正在安装组件：qwen3-embedding-0.6b（已完成 1 项）」；结束截图进入控制台首次初始化（创建管理员账号，未填写）。全程未见「后端未运行」。网络期间多次 TCP 不可达（t=301 全部 FAIL），下载最终完成。
+- 环境：Sandbox WebView2 注册损坏在主机 WebView2 升到 158.0.4370.33 后仍在（不加变通时仍为「Could not find the WebView2 Runtime」）；验收以 `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向磁盘运行时目录，安装器与应用未改。
+- 未验证：Rust Online / 两个 Offline 安装器的本版实装、Standalone、Windows 10、QQ / OneBot 实连与对话模型验收。
+- 开放：`get_config` 同样返回 JSON 文本、前端当对象用（「修改基础配置」按钮不显示、向导回填为空、端口探测回落 8080）——需单独变更与验收；#147 已在 v6.4.2 修复但仍 OPEN；开放问题 #142、#143、#146、#149。
+- Next：维护者决定是否更新 v6.4.3 Release 页面「Not verified」一行（完整 Online 安装已验证）；为 get_config 问题开 issue。
+
 ## 2026-11-24 — v6.4.3 发布前 Sandbox 验收（#145）
 
 - Scope：release/v6.4.3（01d5558）版本号与发布说明；测试构建 45368956727（workflow_dispatch，未勾 overwrite_release，未创建 Release / 预发布）的 Python Online 安装器在 Windows Sandbox 验证 #145。

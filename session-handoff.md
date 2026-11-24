@@ -1,3 +1,12 @@
+## Current Handoff — v6.4.3 已发布（2026-11-24）
+
+- Current Objective：v6.4.3 发布与发布后验收完成（#145 修复、加载视图动态 Logo、实时进度行三处修复、Dependabot）。下文 v6.4.2 各条 handoff 可归档。
+- Verification Evidence：progress.md 同日「v6.4.3 发布与发布后验收」「v6.4.3 发布前 Sandbox 验收（#145）」；PR #156、#177。
+- Blockers：无发布阻断。开放：`get_config` 返回 JSON 文本被前端当对象用（基础配置向导不可达 / 回填为空），须单独变更并验收向导回填对空间的影响；#147 已修但仍 OPEN；#142、#143、#146、#149；安装器未签名（SAC 拦截）。
+- Recommended Next Step：为 get_config 问题开 issue；维护者决定是否更新 v6.4.3 Release 页面「Not verified」一行。Sandbox 验收沿用：全新 Sandbox、测试前不发 HTTPS、记录 TCP 可达性；本机 Sandbox WebView2 注册损坏，须设 `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向 `C:\Program Files (x86)\Microsoft\EdgeWebView\Application\<版本>` 再启动应用。
+- Recovery Notes：安装器只在 Sandbox 运行；不创建 candidate 预发布；不要 `git push --tags`（本地有 candidate tag）。`wsb start` 后须 `wsb connect` 才有用户会话，`wsb exec -r ExistingLogin` 才能截图。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.2 已发布（2026-11-23）
 
 - Current Objective：v6.4.2 发布与发布后验收完成，下文 v6.4.2 / v6.4.1 准备与发布后、v6.4.0、Release CI 耗时各条 handoff 可归档。`RELEASE-CI-SPEEDUP` 为 done；`AOEDE-MNEME-BENCH-IMPL` 仍为唯一 in_progress。
