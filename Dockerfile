@@ -14,7 +14,7 @@
 #   * 容器内 PORT 固定 8080，对外换端口用端口映射，别改 .env 里的 PORT
 #     （否则健康检查与 NapCat 反向 WS 地址都会失配）。
 
-FROM node:24-slim AS dashboard-build
+FROM node:25-slim AS dashboard-build
 
 WORKDIR /dashboard
 RUN npm install --global pnpm@10
