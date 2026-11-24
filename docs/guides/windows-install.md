@@ -6,9 +6,10 @@
 
 > **v2 控制面（现行界面）**：浏览器直接访问 Bot 同端口即是完整管理面板（鉴权/配置/插件/MCP/知识库/定时任务/实时日志，详见 [WebUI 管理](webui.md)）；桌面壳（Tauri 2）内嵌同一套面板。旧版原生界面已淘汰，冻结于 tag `gui-v1-final`。
 
-## 当前版本注意事项（6.4.2）
+## 当前版本注意事项（6.4.3）
 
-- 修复 Online 安装器在干净的 Windows 上下载组件报 `CERTIFICATE_VERIFY_FAILED`（v6.0.1–v6.4.1 受影响），下载中途断线改为续传重试。
+- 6.4.3：Online 安装器首次启动下载运行时与组件期间显示加载视图（动态 Logo、实时进度与已用时），不再显示「后端未运行」与重试按钮（[#145](https://github.com/Enoa-devteam/stella_project/issues/145)）。
+- 6.4.2 起：修复 Online 安装器在干净的 Windows 上下载组件报 `CERTIFICATE_VERIFY_FAILED`（v6.0.1–v6.4.1 受影响），下载中途断线改为续传重试。
 - 6.4.1 起：没有 Visual C++ 运行库的 Windows 上桌面程序与随包 llama.cpp 后端可以启动，全新安装首次启动不再失败。
 - Online 安装器从 GitHub 与 Hugging Face 下载组件，尚无镜像；无法稳定访问时请使用 Offline 安装器（约 1.2 GB）。
 - 安装器未经代码签名：开启「智能应用控制」的 Windows 11 会直接拦截。

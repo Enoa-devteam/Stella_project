@@ -18,6 +18,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::RwLock;
 
+/// `prepare_runtime` 的进度文件名，写在 `project_root()/runtime/` 下。
+/// 写方（Windows 专属的 runtime_bootstrap）与读方（commands::read_start_progress）
+/// 共用此常量；读方不能按 data_root 拼路径——Python 就绪后 data_root 解析为
+/// STELLA_HOME，而运行时始终在程序目录。
+pub const RUNTIME_PROGRESS_FILE: &str = ".bootstrap-progress";
+
 #[cfg(windows)]
 mod runtime_bootstrap {
     use std::fs::{self, File, OpenOptions};
@@ -43,7 +49,7 @@ mod runtime_bootstrap {
     const PIP_MIRROR: &str = "https://pypi.tuna.tsinghua.edu.cn/simple";
     const DEPS_MARKER: &str = ".stella-deps-ready";
     const RUST_MARKER: &str = ".stella-rust-ready";
-    const PROGRESS_FILE: &str = ".bootstrap-progress";
+    const PROGRESS_FILE: &str = super::RUNTIME_PROGRESS_FILE;
     const PROFILE_MARKER_PREFIX: &str = ".stella-profile-ready-";
     const PROFILE_CATALOG_FILENAME: &str = "package-catalog-windows-amd64.json";
     const MIN_ZIP_SIZE: u64 = 1_048_576;

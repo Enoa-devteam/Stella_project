@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 import { isTauri, tauriBridge } from '@/api/tauri';
 import { useAuthStore } from '@/stores/auth';
 import { errorText } from '@/utils/errorText';
+import { parseStartProgress, startProgressLine, type StartProgress } from '@/utils/startProgress';
 // 动态 Logo 的唯一来源是 assets/pic（由 scripts/build_loading_logo.py 生成），
 // 按 PlatformsPage 引用适配器目录的同一方式跨出 dashboard 根引用，不复制副本。
 // SVG 自带 SMIL/CSS 动画与 prefers-reduced-motion 处理，<img> 内即可播放。
@@ -54,37 +55,21 @@ let elapsedTimer: number | null = null;
 let progressTimer: number | null = null;
 let botProbeTimer: number | null = null;
 
-// 真实进度（2026-09-25 用户要求）：bootstrap 组件安装（NapCat / embedding
+// 真实进度（2026-09-25 用户要求）：bootstrap 组件安装（llama 后端 / embedding
 // 模型逐个推进，失败时 state=failed + error）与 prepare_runtime 的文本进度
 // （运行时下载 / pip / 依赖安装）。都读不到时才回落轮播提示。
-interface BootProgress {
-  state?: string;
-  current?: string;
-  completed?: string[];
-  error?: string;
-}
-const liveProgress = ref<{ bootstrap: BootProgress | null; prepare: string | null } | null>(null);
+// 解析与文案在 utils/startProgress（Rust 返回的是 JSON 文本，须先解析）。
+const liveProgress = ref<StartProgress | null>(null);
 const bootstrapFailed = computed(
   () => liveProgress.value?.bootstrap?.state === 'failed',
 );
-const liveLine = computed(() => {
-  const lp = liveProgress.value;
-  if (!lp) return '';
-  if (lp.bootstrap?.state === 'failed') {
-    return `组件安装失败：${lp.bootstrap.error || lp.bootstrap.current || '未知原因'}`;
-  }
-  if (lp.bootstrap?.current) {
-    const done = lp.bootstrap.completed?.length ?? 0;
-    return `正在安装组件：${lp.bootstrap.current}（已完成 ${done} 项）`;
-  }
-  return lp.prepare || '';
-});
+const liveLine = computed(() => startProgressLine(liveProgress.value));
 
 async function pollStartProgress(): Promise<void> {
   if (!isTauri()) return;
   try {
-    liveProgress.value = await tauriBridge.invoke<{ bootstrap: BootProgress | null; prepare: string | null }>(
-      'read_start_progress',
+    liveProgress.value = parseStartProgress(
+      await tauriBridge.invoke<unknown>('read_start_progress'),
     );
   } catch {
     // 进度读不到不影响启动；轮播提示继续兜底
