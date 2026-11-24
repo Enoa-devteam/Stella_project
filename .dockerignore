@@ -98,6 +98,8 @@ tests
 scripts
 design_docs
 assets
+# dashboard 构建阶段引用的动态 Logo（BackendOfflinePage），其余 assets 仍排除。
+!assets/pic/Stella_logo_loading.svg
 dashboard/node_modules
 dashboard/dist
 webui/dist

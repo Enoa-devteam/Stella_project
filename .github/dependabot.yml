@@ -1,0 +1,61 @@
+# Dependabot 版本更新。PR 指向 main，由 ci.yml / dashboard_ci.yml 的 pull_request 触发器照常跑门禁。
+# 每个生态的 minor / patch 合并成一个分组 PR；major 单独开 PR，便于逐个评估破坏性变更。
+version: 2
+
+updates:
+  # Python：requirements.txt / requirements-dev.txt / pyproject.toml
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
+
+  # Dashboard（Vue，pnpm-lock.yaml）
+  - package-ecosystem: npm
+    directory: /dashboard
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dashboard-minor-patch:
+        update-types: [minor, patch]
+
+  # Rust：各 crate 都有独立 Cargo.lock（没有 workspace），逐目录列出
+  - package-ecosystem: cargo
+    directories:
+      - /cli
+      - /desktop/launcher
+      - /desktop/src-tauri
+      - /memory_rust/native
+      - /runtime-manager
+      - /stella-installer/src-tauri
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      cargo-minor-patch:
+        update-types: [minor, patch]
+
+  # GitHub Actions：workflows 与 .github/actions 下的 composite action
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Docker 基础镜像（Dockerfile 的 node / python）
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
