@@ -46,7 +46,9 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 
 - The legacy runtime remains the default.
 - Online installers download from GitHub and Hugging Face and have no mirror ([#149](https://github.com/Enoa-devteam/stella_project/issues/149)). Where either is not reliably reachable, use an Offline installer.
-- Tested before publication: pending (Windows 11 Sandbox check of the Online installer first start).
+- Tested before publication in a clean Windows 11 Sandbox (Smart App Control off in the guest only; no HTTPS request before the test): the Python Online installer's first start showed the loading view for the whole runtime, dependency and component download (about nine minutes, including `llama-cpu` in progress) and never the "backend not running" card. That build was made before this release existed, so its component download ended with the expected HTTP 404. The Sandbox's own WebView2 registration was broken on the test host, so the WebView2 location was set through `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`; the installer and the app were otherwise unchanged.
+- The loading view shows rotating hints instead of the live component progress line: the shell reads `.stella/.bootstrap-progress.json`, while the component installer writes `.stella/.bootstrap-progress` (since v5.1.x).
+- Not verified: a complete Online installation of this version (its component URLs exist only after publication), the Rust and Offline installers, Windows 10, real QQ/OneBot delivery, and chat-model acceptance.
 - An over-install from v6.3.0 or earlier leaves the old `memory/participation/` directory, which shadows the compatibility alias `memory.participation` for plugins that import it ([#146](https://github.com/Enoa-devteam/stella_project/issues/146)). stella itself imports `aoede.participation`. A clean program directory avoids this.
 - Known issues: #142 (a failed table creation during migration is not reported) and #143 (no downgrade guard; restore the pre-migration backup to roll back).
 - `VERSIONED_LAYOUT=0` remains the workflow default.

@@ -1,3 +1,12 @@
+## 2026-11-24 — v6.4.3 发布前 Sandbox 验收（#145）
+
+- Scope：release/v6.4.3（01d5558）版本号与发布说明；测试构建 45368956727（workflow_dispatch，未勾 overwrite_release，未创建 Release / 预发布）的 Python Online 安装器在 Windows Sandbox 验证 #145。
+- 结果：**#145 通过。** 安装器 `Stella_6.4.3_x64-setup.exe`（sha256 8df20d52…6f1487）静默安装 exit 0；首启约 9 分钟的下载窗口（t=104 装 pip → t=128 装依赖 → t=445 组件 `current: llama-cpu, state: running`）内截图全程为加载视图（进度条、已用时、「请勿关闭窗口」），未出现「后端未运行」。t=627 组件 llama-cpu HTTP 404（未发布版本的资产 URL 尚不存在，预期）后显示错误卡与错误原文，属真实失败的正确行为。
+- 环境问题：Sandbox 内 WebView2 注册损坏（注册表 pv 157.0.4341.42，磁盘仅 157.0.4341.60；直接运行 msedgewebview2.exe 退出 13；微软独立安装器 /silent /install 返回 0x80040902 无改动；主机重启无效）。前两轮因此只见「Could not find the WebView2 Runtime」，结论无效。第三轮以 `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` 指向磁盘上的运行时目录重启应用后正常渲染；安装器与应用本身未改。测试前未发 HTTPS 请求（只做 TCP 可达性探测），SAC 仅 guest 内关闭。
+- 另发现（既有，非回归）：组件安装器写 `.stella/.bootstrap-progress`（deploy/bootstrap.py `PROGRESS_FILENAME`），壳读 `.stella/.bootstrap-progress.json`（commands.rs `read_start_progress`），自 2026-09-25（v5.1.x）起实时组件进度行从未显示，加载视图只显示轮播提示。未在本版修复，待维护者决定。
+- 未验证：本版完整 Online 组件安装（须发布后）、Rust / Offline 安装器、Windows 10、QQ / 模型验收。
+- Next：维护者合并 release PR → 确认 main CI 与 cache warm 通过 → 只推 `v6.4.3` tag → 发布后用公开 Python Online 安装器在 Sandbox 复测完整组件安装。
+
 ## 2026-11-24 — #145 在线首启不再显示「后端未运行」；首启加载视图换动态 Logo；接入 Dependabot
 
 - Scope：修复 #145；把 #155 的动态 Logo 用到首启下载组件的加载视图；新增 Dependabot 版本更新。
