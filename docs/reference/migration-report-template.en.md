@@ -15,7 +15,7 @@
 | Source directory | `<old installation>` |
 | Source version | `<old version or unknown>` |
 | Target directory | `<current program directory>` |
-| Target version | `6.4.2` |
+| Target version | `6.4.3` |
 | Generated at | `<UTC timestamp>` |
 
 ## Files and Data

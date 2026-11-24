@@ -6,9 +6,10 @@ This page covers **Windows desktop** deployment. For Linux / remote servers, see
 
 > **v2 control plane (current UI)**: point a browser at the bot's own port for the full management panel (auth / config / plugins / MCP / knowledge base / cron / live logs — see [WebUI management](webui.en.md)); the desktop shell (Tauri 2) embeds the same panel. The legacy native UI is retired, frozen at tag `gui-v1-final`.
 
-## Current release notes (6.4.2)
+## Current release notes (6.4.3)
 
-- Fixes Online installers failing to download components on a clean Windows installation with `CERTIFICATE_VERIFY_FAILED` (v6.0.1–v6.4.1 are affected); an interrupted download now resumes.
+- 6.4.3: while an Online installer's first start downloads the runtime and components, the window shows the loading view (animated logo, live progress and elapsed time) instead of "backend not running" with a Retry button ([#145](https://github.com/Enoa-devteam/stella_project/issues/145)).
+- Since 6.4.2: fixes Online installers failing to download components on a clean Windows installation with `CERTIFICATE_VERIFY_FAILED` (v6.0.1–v6.4.1 are affected); an interrupted download now resumes.
 - Since 6.4.1: the desktop app and the bundled llama.cpp backend start on Windows without the Visual C++ runtime, and the first start of a new installation no longer fails.
 - Online installers download components from GitHub and Hugging Face, with no mirror yet; where they are not reliably reachable, use an Offline installer (about 1.2 GB).
 - Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
