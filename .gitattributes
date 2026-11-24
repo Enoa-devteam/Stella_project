@@ -7,3 +7,6 @@
 # 必须钉死 LF（Dockerfile 里另有构建期剥离 \r 的双保险）。
 
 *.sh text eol=lf
+
+# C4D 场景是二进制，禁止任何换行转换
+*.c4d binary
