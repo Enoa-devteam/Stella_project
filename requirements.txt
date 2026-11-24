@@ -65,7 +65,7 @@ packaging>=23.0
 # 组件下载按系统信任库校验 HTTPS：干净 Windows 的根证书按需下载，stdlib 默认上下文看不到（deploy/acquire.py）。
 truststore>=0.10.0
 mcp>=2.0.0
-bilibili-api-python>=17.4.1
+bilibili-api-python>=17.4.2
 curl_cffi>=0.14.0
 pycryptodomex>=3.23.0
 brotli>=1.2.0
