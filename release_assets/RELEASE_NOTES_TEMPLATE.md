@@ -7,7 +7,7 @@ This patch release builds on [v6.4.2](https://github.com/Enoa-devteam/stella_pro
 ### Bug Fixes
 
 - **The first start of an Online installer no longer says the backend is not running while it is still downloading.** Reading the configuration prepares the runtime, and on a first start that is the whole download of the runtime, dependencies and components. The window entered its loading view only afterwards, so for several minutes it showed "后端未运行" (backend not running) with a Retry button, and users reasonably concluded the installation had failed. The loading view, with live component progress and elapsed time, now appears before that step ([#145](https://github.com/Enoa-devteam/stella_project/issues/145)).
-- **The loading view shows live progress again.** Since v5.1.x the desktop app read component progress from `.stella/.bootstrap-progress.json` while the component installer writes `.stella/.bootstrap-progress`, and read runtime progress from the data directory while it is written in the program directory. The live line (for example "正在安装组件：llama-cpu") therefore never appeared, and the loading view only rotated generic hints. Both files are now read where they are written.
+- **The loading view shows live progress again.** Since v5.1.x the live line (for example "正在安装组件：llama-cpu") never appeared, and the loading view only rotated generic hints. Three things were wrong: the desktop app read component progress from `.stella/.bootstrap-progress.json` while the component installer writes `.stella/.bootstrap-progress`; it read runtime progress from the data directory while it is written in the program directory; and the loading view used the command's JSON text as if it were already parsed. All three are fixed.
 
 ### Improvements
 
@@ -56,7 +56,7 @@ Additional assets include the CPU backend, WebUI, package catalog, release manif
 ## 中文摘要
 
 - **修复：Online 安装器首次启动下载期间显示「后端未运行」**（#145）。读取配置会准备运行时，首次启动时这一步就是整段运行时、依赖与组件下载；过去窗口在这之后才进入加载视图，几分钟里一直显示「后端未运行」与重试按钮，用户会以为安装失败。现在这一步之前就显示加载视图，带组件实时进度与已用时。
-- **修复：加载视图的实时进度行从未显示**（自 v5.1.x）。桌面程序读 `.stella/.bootstrap-progress.json`，组件安装器写的是 `.stella/.bootstrap-progress`；运行时进度又按数据目录去读，实际写在程序目录。现在两个文件都按写入位置读取，加载视图会显示「正在安装组件：llama-cpu」等实时进度，而不只是轮播提示。
+- **修复：加载视图的实时进度行从未显示**（自 v5.1.x）。桌面程序读 `.stella/.bootstrap-progress.json`，组件安装器写的是 `.stella/.bootstrap-progress`；运行时进度又按数据目录去读，实际写在程序目录；加载视图还把命令返回的 JSON 文本当成已解析对象使用。三处都已修复，加载视图会显示「正在安装组件：llama-cpu」等实时进度，而不只是轮播提示。
 - 加载视图使用新的 stella 动态 Logo（由原 3D 模型生成）。
 - Online 安装器的组件来自 GitHub 与 Hugging Face，尚无镜像（#149）；无法稳定访问时请使用 Offline 安装器。
 - **注意：安装器未经代码签名。开启「智能应用控制」的 Windows 11 会直接拦截，且没有「仍要运行」选项**；其他系统会显示 SmartScreen 未知发布者提示。
