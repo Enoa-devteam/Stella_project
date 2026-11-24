@@ -6,6 +6,10 @@ import { useRouter } from 'vue-router';
 import { isTauri, tauriBridge } from '@/api/tauri';
 import { useAuthStore } from '@/stores/auth';
 import { errorText } from '@/utils/errorText';
+// 动态 Logo 的唯一来源是 assets/pic（由 scripts/build_loading_logo.py 生成），
+// 按 PlatformsPage 引用适配器目录的同一方式跨出 dashboard 根引用，不复制副本。
+// SVG 自带 SMIL/CSS 动画与 prefers-reduced-motion 处理，<img> 内即可播放。
+import loadingLogoUrl from '../../../assets/pic/Stella_logo_loading.svg?url';
 
 // 离线页（方案 §11）：
 // - 浏览器：纯重试；
@@ -110,9 +114,13 @@ async function pollBotStatus(): Promise<void> {
 }
 
 function startLoadingUi(): void {
-  elapsedSecs.value = 0;
-  hintIndex.value = 0;
-  liveProgress.value = null;
+  // 已在加载中（onMounted 在 get_config 前已进入加载视图，startBot 随后再调）
+  // 时不清零，计时从用户看到加载视图那一刻连续计算。
+  if (elapsedTimer === null) {
+    elapsedSecs.value = 0;
+    hintIndex.value = 0;
+    liveProgress.value = null;
+  }
   void pollStartProgress();
   void pollBotStatus();
   if (progressTimer === null) {
@@ -342,6 +350,13 @@ async function saveAndStart(): Promise<void> {
 
 onMounted(async () => {
   if (!inShell.value) return;
+  // #145：get_config 走 run_deploy → prepare_runtime，在线安装首启时它本身就
+  // 是整段「下载运行时 / 依赖 / 组件」，可持续数分钟。必须在它之前进入加载
+  // 视图并开始进度轮询，否则这段时间显示的是「后端未运行」错误卡。
+  starting.value = true;
+  startError.value = '';
+  step.value = '正在准备运行环境（首次启动需下载运行时与组件）…';
+  startLoadingUi();
   try {
     cfg.value = await tauriBridge.invoke<ShellConfig>('get_config');
   } catch {
@@ -376,11 +391,13 @@ onMounted(async () => {
   <div class="offline-wrap">
     <!-- 启动中：动画 + 阶段提示（首启全流程反馈，替代吓人的错误卡） -->
     <div v-if="starting" class="offline-card text-center">
-      <v-icon
-        icon="mdi-star-four-points"
-        color="secondary"
-        size="64"
-        class="mb-4 stella-boot-star"
+      <img
+        :src="loadingLogoUrl"
+        alt=""
+        aria-hidden="true"
+        width="128"
+        height="128"
+        class="mb-2 stella-boot-logo"
       />
       <div class="text-h6 mb-1">正在启动 Stella</div>
       <div class="text-body-2 text-medium-emphasis mb-3">{{ step || '准备中…' }}</div>
@@ -537,22 +554,15 @@ onMounted(async () => {
 .pre-wrap {
   white-space: pre-wrap;
 }
-/* 启动动画：星标旋转 + 呼吸缩放（logo 同款四角星） */
-.stella-boot-star {
-  animation: stella-boot-spin 2.4s ease-in-out infinite;
-}
-@keyframes stella-boot-spin {
-  0% {
-    transform: rotate(0deg) scale(1);
-    opacity: 0.75;
-  }
-  50% {
-    transform: rotate(180deg) scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
-    opacity: 0.75;
-  }
+/* 启动动画：assets/pic/Stella_logo_loading.svg（C4D 模型生成的双星动态 Logo）。
+   SVG 背景透明：金色星芒在白卡片上可读，但浅奶油色的高光与伴星细节会丢失。
+   垫原 Logo 的深板岩蓝底（#171D24，见 theme/index.ts）还原原图构图，亮/暗主题一致。 */
+.stella-boot-logo {
+  display: block;
+  margin-inline: auto;
+  padding: 8px;
+  border-radius: 50%;
+  background: #171d24;
+  box-sizing: content-box;
 }
 </style>

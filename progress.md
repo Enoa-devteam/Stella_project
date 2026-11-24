@@ -1,3 +1,11 @@
+## 2026-11-24 — #145 在线首启不再显示「后端未运行」；首启加载视图换动态 Logo；接入 Dependabot
+
+- Scope：修复 #145；把 #155 的动态 Logo 用到首启下载组件的加载视图；新增 Dependabot 版本更新。
+- What's Done：`BackendOfflinePage.vue` 的 `onMounted` 在 `get_config`（经 `run_deploy` → `prepare_runtime`，在线首启即整段下载安装）之前进入加载视图并开始进度轮询；`startLoadingUi` 已在运行时不清零计时，`startBot` 随后调用不打断。加载视图的 `mdi-star-four-points` 旋转图标换成 `assets/pic/Stella_logo_loading.svg`（跨根相对引用，同 PlatformsPage 引用适配器目录的方式），垫原 Logo 深板岩蓝底。Docker dashboard 构建阶段复制该 SVG，`.dockerignore` 放行此单文件；Dashboard CI 的 push / pull_request 路径加入该文件。新增 `.github/dependabot.yml`：pip（根）、npm（dashboard，pnpm）、cargo（6 个独立 crate）、github-actions（workflows + 两个 composite action）、docker；minor/patch 分组，使用 Dependabot 默认标签（仓库无自定义标签）。`get_config` 的 Rust 侧未改。
+- Verification：`pnpm --dir dashboard build`（含 vue-tsc）通过，SVG 作为独立哈希资源输出；`pnpm --dir dashboard test` 10 files / 113 passed；Vite dev 下该 SVG `/@fs/` 返回 200 image/svg+xml；Playwright 截图确认徽章底上 Logo 可读；dependabot.yml 与 dashboard_ci.yml YAML 解析通过；`python scripts/check_docs.py` ok。GitNexus impact：`startLoadingUi` 未索引、`startBot` 仅解析到 stella-installer 同名函数，均 UNKNOWN（Vue SFC 未进图），文本审计确认二者只在本文件内被调用（onMounted 与「启动 Bot」按钮）。
+- Blockers / NOT READY：未在 Windows Sandbox 跑真实 Online 首启验证加载视图全程显示；Docker 镜像未本地构建（仅按既有 catalog JSON 先例改 COPY 与 .dockerignore）；Dependabot 首次运行需合并到 main 后在 GitHub Insights 确认。
+- Files：dashboard/src/views/BackendOfflinePage.vue、Dockerfile、.dockerignore、.github/dependabot.yml、.github/workflows/dashboard_ci.yml、progress.md。
+
 ## 2026-11-23 — README 压缩：功能说明移入 docs
 
 - Scope：README.md / README.en.md 只保留简介与特性、文档索引、许可证、致谢；其余功能说明移入 docs 对应正文。

@@ -6,6 +6,8 @@ on:
     paths:
       - "dashboard/**"
       - "webui/**"
+      # BackendOfflinePage 引用的动态 Logo（跨出 dashboard 根）
+      - "assets/pic/Stella_logo_loading.svg"
       # 流程目录/manifest 是 Dashboard FlowSpec 的直接数据源（计划 §10：
       # 跨语言流程变化触发前端合同）。修复计划 §8：业务埋点/身份/回执来源
       # （gateway、social、memory、knowledge、scheduler、runtime 等）变化
@@ -26,6 +28,8 @@ on:
     paths:
       - "dashboard/**"
       - "webui/**"
+      # BackendOfflinePage 引用的动态 Logo（跨出 dashboard 根）
+      - "assets/pic/Stella_logo_loading.svg"
       - "core/observability/**"
       - "core/social/**"
       - "core/runtime/**"

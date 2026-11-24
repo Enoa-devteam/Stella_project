@@ -23,6 +23,8 @@ RUN pnpm install --frozen-lockfile
 COPY dashboard/ ./
 # PlatformsPage imports this canonical catalog from the repository root.
 COPY webui/services/nonebot_adapter_catalog.json /webui/services/nonebot_adapter_catalog.json
+# BackendOfflinePage imports the generated loading logo from the repository root.
+COPY assets/pic/Stella_logo_loading.svg /assets/pic/Stella_logo_loading.svg
 RUN pnpm build
 
 FROM python:3.12-slim
