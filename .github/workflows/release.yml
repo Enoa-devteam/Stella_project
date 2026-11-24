@@ -50,7 +50,7 @@ jobs:
       version: ${{ steps.resolve.outputs.version }}
       build_id: ${{ steps.resolve.outputs.build_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 解析并校验发布版本（全工作流唯一事实来源）
         id: resolve
@@ -78,13 +78,13 @@ jobs:
     needs: [resolve-release]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -112,7 +112,7 @@ jobs:
     needs: [resolve-release]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 透传统一解析的发布版本
         shell: pwsh
@@ -120,7 +120,7 @@ jobs:
           "RELEASE_VERSION=${{ needs.resolve-release.outputs.version }}" >> $env:GITHUB_ENV
           "BUILD_ID=${{ needs.resolve-release.outputs.build_id }}" >> $env:GITHUB_ENV
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -159,7 +159,7 @@ jobs:
     needs: [resolve-release, build-oneclick-catalog-backend]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 透传统一解析的发布版本
         shell: pwsh
@@ -173,7 +173,7 @@ jobs:
           name: stella-oneclick-catalog-backend
           path: llama-catalog
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -244,11 +244,11 @@ jobs:
         payload: [online, offline]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 显式 setup-python（WP06）：不依赖 runner 的默认 Python——runner 镜像
       # 升级换掉默认版本时，staging 脚本会在用户机器之外先炸一次。
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -256,7 +256,7 @@ jobs:
       # staging 的 webui/dist 兜底读 desktop/dashboard-dist，晚于 staging 就
       # 会打出面板整页缺失的安装包（v5.0.0 离线包实测，2026-09-25）。
       - name: 下载 WebUI 前端产物（壳内资源 + Bot payload 各一份）
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stella-dashboard-dist
           path: desktop/dashboard-dist
@@ -499,9 +499,9 @@ jobs:
   build-rust-wheel:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: 构建 Rust memory wheel（maturin 精确锁定）
@@ -538,7 +538,7 @@ jobs:
         payload: [online, offline]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 下载待验收安装器
         uses: actions/download-artifact@v8
@@ -579,7 +579,7 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # resolve-release 已做过全量版本校验；这里保留终检防线（防止 checkout
       # 内容在标签与分支间出现意外偏差）
@@ -678,7 +678,7 @@ jobs:
       # 硬校验会拒打（v5.1.0-rc 实测：FileNotFoundError webui/dist）。
       # dashboard 产物由 build-dashboard job 产出（needs 已保证它先完成）。
       - name: 下载 WebUI 前端产物
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stella-dashboard-dist
           path: desktop/dashboard-dist
@@ -712,7 +712,7 @@ jobs:
 
       # 用与 Release 运行时相同的 3.12 验证，避免「CI 用 3.10 通过、用户的 3.12 失败」
       - name: 准备校验用 Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'

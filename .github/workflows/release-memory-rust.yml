@@ -31,7 +31,7 @@ jobs:
       )
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
@@ -86,7 +86,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: 准备 Python 构建环境
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 

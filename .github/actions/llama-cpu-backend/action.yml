@@ -89,14 +89,14 @@ runs:
         "key=llama-cpu-win-$($env:INPUT_COMMIT.Substring(0,12))-$env:INPUT_UI_VERSION-$($digest.Substring(0,16))" >> $env:GITHUB_OUTPUT
 
     - id: restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         path: ${{ inputs.package-dir }}
         key: ${{ steps.key.outputs.key }}
 
     - name: Checkout pinned llama.cpp
       if: steps.restore.outputs.cache-hit != 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: ggml-org/llama.cpp
         ref: ${{ inputs.commit }}
@@ -135,7 +135,7 @@ runs:
 
     - name: 保存 backend 缓存
       if: steps.restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v6
       with:
         path: ${{ inputs.package-dir }}
         key: ${{ steps.key.outputs.key }}
