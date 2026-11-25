@@ -1,3 +1,13 @@
+## 2026-11-25 — OneBot V12 接入与非 OneBot 适配器短路（#134，PR #184）
+
+- Scope：按 #134 决定，核心只支持 OneBot V11 / V12；其余 27 个目录适配器短路（代码保留不可达）；OneBot V12 经 `TransportIngress` 接入并作为**实验性功能**启用。分支 `feat/onebot-v12-core-adapters`（worktree `E:/stella/runs/onebot-v12`）。
+- What's Done：V12 标准化器 / 能力提供者 / 目标编码 / 出站导出器（`core/transport/adapters/onebot_v12.py`）；入口 `bot_main/onebot_v12_gateway.py`（只接收 `STELLA_TRANSPORT_SETTINGS_JSON` 显式登记的连接，复用共享管线、`record_message`、封存投递计划）；修复投递 scope 检查对非数字用户 ID 先 `int()` 导致回复被静默丢弃（HIGH 风险，维护者批准）；流程 inventory 与 manifest；平台文档 V12 小节标注实验性。
+- Evidence：新增测试 35（adapter 27、gateway 8）；投递/网关回归 111 passed；适配器/平台/配置 199 passed；全量 4515 passed / 25 skipped / 10 failed（10 项在干净 main 同样失败，见 #185）；manifest check、check_docs、ruff 通过；各提交 detect_changes 为 low。
+- Blockers：真实 OneBot V12 协议端收发未验证——V12 面向 QQ 以外的平台，需等待其他平台的 V12 实现完善，已作为已知缺口登记 #186。
+- Found：`tests/observability` 单独成组运行时 `test_memory_flow_lifecycle.py` 无限挂起（main 同样）；本机 user-site 安装导致 10 项本地失败——均见 #185。
+- Next：维护者审阅 PR #184；#186 待第三方 V12 实现可用后按清单验收并移除实验性标注。
+- Files：`stella_bootstrap/adapter_policy.py`、`core/transport/adapters/onebot_v12.py`、`core/social/delivery.py`、`stella_project/plugins/bot_main/{ai_gateway,onebot_v12_gateway,__init__}.py`、`core/observability/internal_flow_catalog.py`、message-flow manifest、dashboard locales、`docs/guides/platforms*.md`、`requirements.txt`、`pyproject.toml`、相关测试与状态文件。
+
 ## 2026-11-25 — issue #136 记忆写侧与 B05 收尾
 
 - Scope / Current State：qwen 生产引擎（8081）复测、证据门语境缺陷修复、阶段 2 紧凑格式（服务端推导合同）、身份解析词内撇号、独立 judge 入口、embedding/hybrid 离线通道。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`；产品效果 NOT READY。以 PR 提交，#136 保持 OPEN。

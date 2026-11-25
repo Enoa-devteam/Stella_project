@@ -2540,6 +2540,33 @@
           "result": "v6.4.2 (5001639) released in 13m34s; 13 assets, SHA256SUMS, Rust package (API 4 / schema 24) and GHCR verified. Public Rust Online and Python Online installers completed component installation in a cold-root-store Windows 11 Sandbox (screenshots; Python needed one app restart during a network outage window); Python Offline passed. 0 certificate errors. All done criteria have evidence; status done."
         }
       ]
+    },
+    {
+      "id": "ONEBOT-V12-CORE",
+      "name": "核心适配收敛为 OneBot V11/V12，OneBot V12 实验性接入（#134）",
+      "description": "按 #134 决定，核心只支持 OneBot V11 与 V12，其他平台适配计划由独立项目维护；非 OneBot 适配器短路不删除。OneBot V12 经 TransportIngress 接入，作为实验性功能启用。状态 blocked：实现、测试与文档完成（PR #184），真实 V12 协议端验收需等待其他平台 V12 实现完善（#186）。",
+      "status": "blocked",
+      "dependencies": [],
+      "scope": [
+        "stella_bootstrap/adapter_policy.py",
+        "core/transport/adapters/onebot_v12.py",
+        "stella_project/plugins/bot_main/onebot_v12_gateway.py",
+        "core/social/delivery.py 与 ai_gateway 投递 scope 检查",
+        "docs/guides/platforms*.md",
+        "dashboard locales 与相关测试"
+      ],
+      "done_criteria": [
+        "27 个非 OneBot 目录适配器在核心短路，平台页不可添加，启动跳过",
+        "OneBot V12 私聊 / 群 / 频道消息经 TransportIngress 收发，身份域 onebot-v12:<platform>",
+        "非数字用户 ID 的回复不被投递门丢弃，V11 行为不变",
+        "测试、manifest、文档门禁通过，detect_changes 无未审 HIGH/CRITICAL",
+        "真实 OneBot V12 协议端按 #186 清单完成收发验收"
+      ],
+      "evidence": [
+        "PR #184",
+        "progress.md 2026-11-25「OneBot V12 接入与非 OneBot 适配器短路」",
+        "已知缺口 #186；测试异常 #185"
+      ]
     }
   ]
 }

@@ -1,3 +1,12 @@
+## Current Handoff — OneBot V12 接入（2026-11-25）
+
+- Current Objective：PR #184（分支 `feat/onebot-v12-core-adapters`）实现 #134：短路非 OneBot 适配器、OneBot V12 实验性接入；#134 已以 not planned 关闭。
+- Verification Evidence：progress.md 同日「OneBot V12 接入与非 OneBot 适配器短路」；PR #184 描述。
+- Blockers：真实 V12 协议端验收为已知缺口 #186（等待其他平台 V12 实现）；测试隔离挂起与本机环境失败见 #185。
+- Recovery Notes：worktree `E:/stella/runs/onebot-v12`（GitNexus 已为该 worktree 单独建索引）；V12 连接须在 `STELLA_TRANSPORT_SETTINGS_JSON` 登记且 `llm_enabled` / `capture_enabled` 默认关闭。
+- Recommended Next Step：审阅并合并 PR #184；合并后可 `git worktree remove` 该 worktree。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — issue #136 写侧与评测收尾（2026-11-25）
 
 - Current Objective：#136 可执行项已做完，改动在分支 `fix/issue-136-memory-write-path`，PR 待审阅；issue 未勾选，保持 OPEN。

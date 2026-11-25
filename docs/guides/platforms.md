@@ -6,7 +6,7 @@ Stella 使用 NoneBot 适配器连接聊天平台。NoneBot 将适配器包安�
 
 ## 目录与安装
 
-> **核心支持范围：** Stella 核心只支持 OneBot V11 与 OneBot V12（V12 经传输中立入口接入，需显式登记连接，见下文 [OneBot V12](#onebot-v12)）。其他目录适配器在核心中已短路：发行包不随安装包提供，平台页显示为不可添加，启动时跳过并记录警告。其他平台的适配计划在独立项目中开发与维护。决定见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)。下文关于预装其他适配器的描述已不适用。
+> **核心支持范围：** Stella 核心只支持 OneBot V11 与 OneBot V12（V12 为**实验性功能**，经传输中立入口接入，需显式登记连接，见下文 [OneBot V12](#onebot-v12)）。其他目录适配器在核心中已短路：发行包不随安装包提供，平台页显示为不可添加，启动时跳过并记录警告。其他平台的适配计划在独立项目中开发与维护。决定见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)。下文关于预装其他适配器的描述已不适用。
 >
 > **协议方向：** OneBot V12 将成为 Stella 的主要适配协议，用于满足广泛的跨平台接入需求；OneBot V11 现有实现暂时保留。
 
@@ -40,6 +40,8 @@ Stella 使用 NoneBot 适配器连接聊天平台。NoneBot 将适配器包安�
 部分配置会根据文档拆成多账号 JSON 表单，例如 Matrix 的静态 Token、密码或 OAuth 登录，以及同步、邀请、端到端加密设置；Villa 的 Bot ID、Bot Secret、公钥和连接方式按每个 Bot 配置；WxClaw 同时提供账号字段和文档列出的通道默认项。表单中的敏感字段在读取时脱敏，提交空白凭据会保留原值。
 
 ## OneBot V12
+
+> **实验性功能：** OneBot V12 接入尚未在真实协议端上验证。OneBot V11 原生面向 QQ，现有 QQ 链路以 V11 为准；V12 用于进一步适配 QQ 以外的平台，需等待其他平台的 OneBot V12 协议端实现完善后，才能进一步验证其能否正确运行。在此之前，生产环境请继续使用 OneBot V11。已知缺口与验收清单见 [#186](https://github.com/Enoa-devteam/stella_project/issues/186)。
 
 OneBot V12 是面向跨平台的核心协议。它不走 OneBot V11 的 QQ 专用网关，而是经传输中立入口（`TransportIngress`）处理：可信标准化、会话策略、V2 会话登记、消息采集、一次运行时轮次，再按封存的投递计划经出站服务回复。
 
@@ -76,7 +78,7 @@ OneBot V12 是面向跨平台的核心协议。它不走 OneBot V11 的 QQ 专�
 - 用户身份域为 `onebot-v12:<platform>`，与 OneBot V11 的 `qq:client` 不合并：同一 QQ 账号经 V11 与经 V12 视为不同用户，记忆不互通。
 - 已支持：私聊、群、频道（`guild_id` 作为父级）消息的接收与回复；回复包含文本、群/频道首段引用原消息；入站与已确认送达的 Bot 台词进入会话历史；连接的 Bot 绑定到出站注册表。
 - 尚不支持（仍只在 OneBot V11 提供）：图片/文件上传与识图（V12 只提供 `file_id`，不解析为媒体）、AstrBot 插件、斜杠/称呼/开关/能力/定时命令、主动发言与群插话参与、链路心跳监测。
-- 验收状态：单元与集成测试覆盖标准化、出站编码与入口投递；尚未对真实 OneBot V12 协议端（如 ComWeChat）完成收发验收。
+- 验收状态：单元与集成测试覆盖标准化、出站编码与入口投递；尚未对真实 OneBot V12 协议端完成收发验收（实验性，见 [#186](https://github.com/Enoa-devteam/stella_project/issues/186)）。
 
 ## 官方文档
 
