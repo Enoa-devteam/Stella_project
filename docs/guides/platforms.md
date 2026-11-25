@@ -7,6 +7,8 @@ Stella 使用 NoneBot 适配器连接聊天平台。NoneBot 将适配器包安�
 ## 目录与安装
 
 > **核心支持范围：** Stella 核心只支持 OneBot V11 与 OneBot V12（V12 接入开发中，完成前暂时停用）。其他目录适配器在核心中已短路：发行包不随安装包提供，平台页显示为不可添加，启动时跳过并记录警告。其他平台的适配计划在独立项目中开发与维护。决定见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)。下文关于预装其他适配器的描述已不适用。
+>
+> **协议方向：** OneBot V12 将成为 Stella 的主要适配协议，用于满足广泛的跨平台接入需求；OneBot V11 现有实现暂时保留。
 
 平台页内置的目录快照基于 [NoneBot 官方适配器目录](https://raw.githubusercontent.com/nonebot/nonebot2/master/assets/adapters.json5)，共有 32 条记录。OneBot V11 与 V12 共用 `nonebot-adapter-onebot`；Stella 随常规安装包预装 29 条可选记录对应的 28 个发行包。Walle-Q、NTChat 和 Mail 不提供选择，详情见下表。
 
