@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 
 import { api, unwrap } from '@/api/http';
@@ -155,6 +156,10 @@ const discord = reactive({
 
 const toast = useToast();
 const system = useSystemStore();
+// 模板里不要在 `<v-card v-if="configuringAdapter">` 之后直接读 `system.xxx`：vue-tsc 3 把被收窄过的
+// setup 绑定统一生成 `.value` 访问，依赖 TS 的断言收窄；这个 v-if 块之后收窄会丢失，
+// Pinia store 不是 Ref，于是报 TS2339。storeToRefs 拿到的是真正的 Ref，不受影响。
+const { operationPending } = storeToRefs(system);
 const { t } = useI18n();
 const customModules = computed(() =>
   [...new Set(customModulesText.value
@@ -1668,7 +1673,7 @@ onBeforeUnmount(() => {
           color="primary"
           prepend-icon="mdi-content-save"
           :loading="saving"
-          :disabled="loadingAdapters || adapterLoadFailed || !saveSupported || system.operationPending"
+          :disabled="loadingAdapters || adapterLoadFailed || !saveSupported || operationPending"
           @click="saveAdapters"
         >
           {{ t('features.platforms.saveAdapters') }}
