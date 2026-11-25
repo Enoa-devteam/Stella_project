@@ -342,6 +342,30 @@ class TestCodexFailClosed:
         assert health.state.value == "ready"
 
     @pytest.mark.asyncio
+    async def test_inspect_reads_turns_from_thread_with_include_turns(self):
+        """M0 复测（#164）：轮次只在 include_turns=True 时返回，且挂在
+        response.thread.turns 上；旧实现恒为 "turn not found"，断流恢复矩阵失效。"""
+        from types import SimpleNamespace
+
+        from cometa.models import SessionHandle, TurnHandle
+
+        calls = []
+
+        class _Thread:
+            async def read(self, *, include_turns=False):
+                calls.append(include_turns)
+                turns = [SimpleNamespace(id="turn-1", status=SimpleNamespace(value="completed"))]
+                return SimpleNamespace(thread=SimpleNamespace(turns=turns if include_turns else []))
+
+        backend = CodexBackend(BackendConfig(backend_id="codex-local", type="codex"))
+        session = SessionHandle(session_id="s1", backend_id="codex-local")
+        backend._threads[session.session_id] = _Thread()
+        snapshot = await backend.inspect(TurnHandle(turn_id="turn-1", session_id="s1"))
+        assert calls == [True]
+        assert snapshot.session_found and snapshot.turn_completed
+        assert not snapshot.turn_failed and not snapshot.turn_running
+
+    @pytest.mark.asyncio
     async def test_probe_legacy_home_reports_auth_required_with_hint(self, tmp_path, monkeypatch):
         """旧版 ~/.codex 有登录但托管 home 为空 → auth_required + 迁移指引。"""
         from types import SimpleNamespace

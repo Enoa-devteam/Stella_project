@@ -3,10 +3,11 @@
 # 本文件以 AGPL-3.0 许可证发布，全文见项目根目录 LICENSE.
 """Codex 后端适配器——官方 SDK `openai-codex` 驱动本地 App Server（方案 §6.7）。
 
-**M0 状态（2026-10-01）**：已通过。版本矩阵 = openai-codex 0.159.2 + 自带
-cli-bin 0.159.2（0.147.0 被账号后端拒绝——「模型需要更新版客户端」），
-事件契约以实录像
-tests/cometa/fixtures/codex_events.jsonl 为准。会话/轮次/流事件/中断/steer
+**M0 状态**：2026-10-01 首次通过（0.159.2）；2026-11-25 复测（#164）。版本矩阵 =
+openai-codex 0.171.0 + 自带 cli-bin 0.171.0。0.159.2 已被账号后端拒绝（400
+model_not_found：账号默认模型不在其可用目录里），此前 0.147.0 也因同类原因淘汰。
+事件契约以实录 tests/cometa/fixtures/codex_events_0171.jsonl（完成 / 命令 / 中断）
+与 codex_events.jsonl（失败路径）为准。会话/轮次/流事件/中断/steer
 均经真实 App Server 验证；``resume``/``event_replay`` 虽有 thread_resume API
 但未经验证——**显式声明不支持**（§6.6：不能用一次新执行伪装 resume）。
 
@@ -57,7 +58,7 @@ from cometa.models import (
 _import_sdk = codex_auth._import_sdk
 
 # M0 冻结的版本组合（§6.7：版本矩阵；升级须先重跑 M0 探针）。
-M0_SDK_VERSION = "0.159.2"
+M0_SDK_VERSION = "0.171.0"
 
 
 class CodexUnavailableError(RuntimeError):
@@ -256,10 +257,12 @@ class CodexBackend:
         if thread is None:
             return BackendSnapshot(detail="session gone")
         try:
-            read = await thread.read(include_turns=False)
+            # include_turns=False 不返回轮次；轮次挂在 response.thread.turns 上（M0 复测
+            # 2026-11-25：旧写法在 0.159.2 / 0.171.0 上都恒为 "turn not found"）。
+            read = await thread.read(include_turns=True)
         except Exception as e:
             return BackendSnapshot(detail=f"read failed: {type(e).__name__}")
-        turns = getattr(read, "turns", None) or []
+        turns = getattr(getattr(read, "thread", None), "turns", None) or getattr(read, "turns", None) or []
         target = next(
             (t for t in turns if getattr(t, "id", "") == handle.turn_id), None
         )

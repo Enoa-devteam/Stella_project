@@ -17,10 +17,10 @@ the rest of Stella works without it):
 ```bash
 pip install -e ".[cometa]"          # source deployment
 # or install standalone (official index required - mirrors lack this package):
-pip install openai-codex==0.159.2 -i https://pypi.org/simple
+pip install openai-codex==0.171.0 -i https://pypi.org/simple
 ```
 
-The version is the **frozen M0 matrix** (SDK 0.159.2 + bundled cli-bin):
+The version is the **frozen M0 matrix** (SDK 0.171.0 + bundled cli-bin, re-probed 2026-11-25; the account backend now rejects 0.159.2 with model_not_found):
 Codex's event contract drifts between releases (0.147.0 was rejected by the
 account backend for every model), so re-run the protocol probe before
 upgrading - never loosen the pin.
@@ -132,7 +132,7 @@ configuration is kept).
 | --- | --- |
 | probe says "no auth configured" | Configure any route on the auth card |
 | probe mentions "legacy login detected" | Click one-click migrate, or reconfigure |
-| probe says SDK missing | `pip install openai-codex==0.159.2 -i https://pypi.org/simple` |
+| probe says SDK missing | `pip install openai-codex==0.171.0 -i https://pypi.org/simple` |
 | Device-code login fails to start | Check proxy passthrough in toml `env` (OpenAI domains must be reachable) |
 | Device session disappeared | Sessions are in-memory; re-initiate after a bot restart |
 | Custom endpoint stream drops mid-task | Endpoint must support the Responses API incl. function tools; set `NO_PROXY` for local endpoints |

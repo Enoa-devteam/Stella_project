@@ -325,7 +325,7 @@ async def login_with_api_key(
     sdk = _import_sdk()
     if sdk is None:
         raise CodexAuthUnavailable(
-            "openai-codex SDK 未安装（pip install openai-codex==0.159.2）"
+            "openai-codex SDK 未安装（pip install openai-codex==0.171.0）"
         )
     if not (api_key or "").strip():
         raise ValueError("api_key 不能为空")
@@ -377,7 +377,7 @@ async def start_device_login(
     sdk = _import_sdk()
     if sdk is None:
         raise CodexAuthUnavailable(
-            "openai-codex SDK 未安装（pip install openai-codex==0.159.2）"
+            "openai-codex SDK 未安装（pip install openai-codex==0.171.0）"
         )
     client = _spawn_client(sdk, backend, stella_home)
     try:
@@ -396,7 +396,7 @@ async def account_status(
     sdk = _import_sdk()
     if sdk is None:
         raise CodexAuthUnavailable(
-            "openai-codex SDK 未安装（pip install openai-codex==0.159.2）"
+            "openai-codex SDK 未安装（pip install openai-codex==0.171.0）"
         )
     client = _spawn_client(sdk, backend, stella_home)
     try:

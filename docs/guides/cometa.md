@@ -14,10 +14,10 @@ Codex 适配依赖官方 Python SDK（可选依赖，不影响 Stella 其余功�
 ```bash
 pip install -e ".[cometa]"          # 源码部署
 # 或单独安装（须官方源，镜像没有此包系列）：
-pip install openai-codex==0.159.2 -i https://pypi.org/simple
+pip install openai-codex==0.171.0 -i https://pypi.org/simple
 ```
 
-版本是 **M0 冻结矩阵**（SDK 0.159.2 + 自带 cli-bin）：Codex 的事件契约随版
+版本是 **M0 冻结矩阵**（SDK 0.171.0 + 自带 cli-bin，2026-11-25 复测；0.159.2 已被账号后端以 model_not_found 拒绝）：Codex 的事件契约随版
 本漂移（0.147.0 曾被账号后端全模型拒绝），升级前必须重跑协议探针，不要自
 行放宽版本约束。
 
@@ -109,7 +109,7 @@ LM Studio 的 Responses 实现若不支持函数工具，也会在真实任务�
 | --- | --- |
 | probe 报「未配置认证」 | 在认证页完成任一路线配置 |
 | probe 提「检测到旧版认证」 | 点「一键迁移」，或直接重新配置 |
-| probe 报 SDK 未安装 | `pip install openai-codex==0.159.2 -i https://pypi.org/simple` |
+| probe 报 SDK 未安装 | `pip install openai-codex==0.171.0 -i https://pypi.org/simple` |
 | 设备码登录发起失败 | 检查 toml `env` 里的代理透传（OpenAI 域名需可达） |
 | 设备码会话消失 | 登录会话在内存中，bot 重启后重新发起即可 |
 | 自定义端点任务断流 | 确认端点支持 Responses API 且支持函数工具；本地端点记得 `NO_PROXY` |
