@@ -14,7 +14,7 @@ ruff>=0.3.0
 black>=24.0.0
 mypy>=1.8.0
 bandit>=1.7.0
-safety>=3.0.0
+safety>=3.8.1
 build>=1.0.0
 twine>=5.0.0
 
