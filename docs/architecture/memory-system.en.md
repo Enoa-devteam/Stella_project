@@ -177,6 +177,15 @@ the source message verbatim and its statement_kind/predicate must hit a **suppor
 family**. Six supported families (kind → type binding, all positive-only; the A2 value filters —
 second-person objects / placeholders / too-short values — apply to all families):
 
+> 2026-11-25 (issue #136): stage 2 now emits a compact form — only a verbatim `content`, a single
+> `source_message_ids` entry and `statement_kind` (`other` when unsure, reported or hypothetical);
+> `derive_contract` derives the contract from the span. The form must be unique, match the whole
+> span and agree with the model's declared kind. Acceptance also checks the span's **context** in
+> the source: spans cut out of a conditional, quote, reported speech or an adjacent negation
+> ("如果我住在杭州就好了" → "我住在杭州") are never accepted. Such cuts were accepted before;
+> historical accepted rows were not re-audited. Stage-1 fallback candidates without
+> `statement_kind` are still written and stay `contract_missing`.
+
 | kind | example forms | type |
 | --- | --- | --- |
 | self_report | 我住在X / 我来自X / 我叫X / 我在X工作 (+ .en) | FACT |

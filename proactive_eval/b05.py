@@ -145,6 +145,12 @@ def validate_args(args: argparse.Namespace) -> tuple[list[str], list[str], set[s
         if not args.llm_model or not args.llm_base_url:
             raise ValueError("model tasks require explicit --llm-base-url and --llm-model")
         _validate_endpoint(args.llm_base_url, "--llm-base-url", require_v1=True)
+        if args.judge_base_url:
+            if not args.judge_model:
+                raise ValueError("--judge-base-url requires an explicit --judge-model")
+            _validate_endpoint(args.judge_base_url, "--judge-base-url", require_v1=True)
+        elif args.judge_api_key:
+            raise ValueError("--judge-api-key requires --judge-base-url")
         if args.max_reply_tokens < 1 or args.max_judge_tokens < 1:
             raise ValueError("reply and judge token caps must be at least 1")
     if "m6" in tasks:
@@ -191,6 +197,18 @@ def _list_endpoint_models(base_url: str, requested: list[str], api_key: str, *, 
     return {"requested_models": sorted(set(requested)), "available_model_ids": ids}
 
 
+def _judge_endpoint(args: argparse.Namespace) -> tuple[str, str]:
+    """(base URL, API key) of the judge; the reply key never goes to another endpoint."""
+    if args.judge_base_url:
+        return args.judge_base_url, args.judge_api_key
+    return args.llm_base_url, args.llm_api_key
+
+
+def _judge_is_reply_model(args: argparse.Namespace) -> bool:
+    return ((args.judge_model or args.llm_model) == args.llm_model
+            and _judge_endpoint(args)[0].rstrip("/") == args.llm_base_url.rstrip("/"))
+
+
 def _model_preflight(args: argparse.Namespace, tasks: list[str]) -> dict[str, Any]:
     if not (MODEL_TASKS & set(tasks)):
         return {"requested": False}
@@ -198,11 +216,16 @@ def _model_preflight(args: argparse.Namespace, tasks: list[str]) -> dict[str, An
         "requested": True,
         "reply": _list_endpoint_models(
             args.llm_base_url,
-            [args.llm_model, args.judge_model or args.llm_model],
+            [args.llm_model] if args.judge_base_url
+            else [args.llm_model, args.judge_model or args.llm_model],
             args.llm_api_key,
             memory=False,
         ),
     }
+    if args.judge_base_url:
+        result["judge"] = _list_endpoint_models(
+            args.judge_base_url, [args.judge_model], args.judge_api_key, memory=False
+        )
     if "m6" in tasks:
         result["memory"] = _list_endpoint_models(
             args.memory_base_url, [args.memory_model], args.memory_api_key, memory=True
@@ -978,7 +1001,10 @@ def _effective_config(args: argparse.Namespace, tasks: list[str], datasets: dict
                  "b04.py", "b04_ingress.py", "isolation.py"):
         code[f"memory_eval/{name}"] = _sha256(_REPO / "memory_eval" / name)
     for name in ("mneme/retrieval_v2.py", "mneme/retriever.py", "mneme/prompt_builder.py",
-                 "memory_rust/selector.py", "memory_rust/backend.py", "memory_rust/python_backend.py"):
+                 "memory_rust/selector.py", "memory_rust/backend.py", "memory_rust/python_backend.py",
+                 # m6 写侧：换了整合 / 提取 / 审核代码就不能续跑旧工作目录
+                 "mneme/consolidator.py", "mneme/consolidation_prompt.py", "mneme/extraction_prompt.py",
+                 "mneme/evidence_contract.py", "mneme/memory_manager.py"):
         code[name] = _sha256(_REPO / name)
     cfg: dict[str, Any] = {
         "fingerprint_schema": FINGERPRINT_SCHEMA,
@@ -1002,8 +1028,9 @@ def _effective_config(args: argparse.Namespace, tasks: list[str], datasets: dict
                               "reasoning_effort": args.llm_reasoning_effort,
                               "max_tokens": args.max_reply_tokens}
         cfg["judge_model"] = {"model": args.judge_model or args.llm_model,
+                              "base_url": _safe_endpoint(_judge_endpoint(args)[0]),
                               "max_tokens": args.max_judge_tokens,
-                              "same_as_reply_model": (args.judge_model or args.llm_model) == args.llm_model}
+                              "same_as_reply_model": _judge_is_reply_model(args)}
     if "m6" in tasks:
         from memory_eval.b04 import _memory_backend_identity
 
@@ -1096,8 +1123,9 @@ async def run(args: argparse.Namespace) -> int:
         from memory_eval.llm import EvalLLM
 
         inner = EvalLLM(args.llm_base_url, args.llm_model, args.llm_api_key, timeout=300.0)
-        judge_inner = inner if not args.judge_model or args.judge_model == args.llm_model else EvalLLM(
-            args.llm_base_url, args.judge_model, args.llm_api_key, timeout=300.0)
+        judge_url, judge_key = _judge_endpoint(args)
+        judge_inner = inner if _judge_is_reply_model(args) else EvalLLM(
+            judge_url, args.judge_model, judge_key, timeout=300.0)
         llms["reply"] = BudgetedEvalLLM(inner, budget, "reply", args.max_reply_tokens,
                                         reasoning_effort=args.llm_reasoning_effort)
         llms["judge"] = BudgetedEvalLLM(judge_inner, budget, "judge", args.max_judge_tokens,
@@ -1173,7 +1201,7 @@ async def run(args: argparse.Namespace) -> int:
         "limitations": [
             "Reply/judge prompts are evaluation-only (versioned and hashed); they are not the production "
             "reply prompt and load no persona or user configuration.",
-            "The judge is the same local model as the replier unless --judge-model differs: self-evaluation "
+            "The judge is the same model as the replier unless judge_model.same_as_reply_model is false: self-evaluation "
             "bias is possible; no human agreement study was run (B06).",
             "MemUse is English and its official judge (GPT-5.4-nano) was not used; numbers are not comparable "
             "to the dataset card's reference table.",
@@ -1241,6 +1269,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--llm-base-url", default=None)
     p.add_argument("--llm-model", default=None)
     p.add_argument("--judge-model", default=None)
+    p.add_argument("--judge-base-url", default=None,
+                   help="separate judge endpoint ending in /v1; default: the reply endpoint")
+    p.add_argument("--judge-api-key", default="",
+                   help="key for --judge-base-url; the reply key is never sent there")
     p.add_argument("--llm-api-key", default="")
     p.add_argument("--llm-reasoning-effort", default="none")
     p.add_argument("--max-reply-tokens", type=int, default=400)

@@ -170,6 +170,13 @@ TTL **按类型分档**（`MEMORY_CANDIDATE_MAX_OBSERVING_DAYS_BY_TYPE`）：`EV
 句型**。支持的六族（kind → type 绑定，全部 positive only，A2 值段过滤——第二人称宾语/
 占位符/过短值——全部 kind 生效）：
 
+> 2026-11-25（issue #136）：阶段 2 改为紧凑格式——模型只输出逐字 `content`、单个
+> `source_message_ids` 与 `statement_kind`（不确定 / 转述 / 假设填 `other`），合同由
+> `derive_contract` 从 span 机械推导；句型须唯一、整句匹配且与模型声明的 kind 一致。
+> 验收另查 span 在原文里的**语境**：截自条件句、引号、转述或紧邻否定（「如果我住在杭州
+> 就好了」→「我住在杭州」）不会 accepted。此前该截取会被放行，历史 accepted 行未回查。
+> 不带 `statement_kind` 的阶段 1 回退候选仍写库并停在 `contract_missing`。
+
 | kind | 句型示例 | type |
 | --- | --- | --- |
 | self_report | 我住在X / 我来自X / 我叫X / 我在X工作（+ .en） | FACT |

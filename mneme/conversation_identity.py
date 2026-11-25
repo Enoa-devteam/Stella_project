@@ -35,6 +35,7 @@ from nonebot import logger
 
 from config import DB_PATH
 from mneme.conversation_projection import parse_qq_message_id
+from mneme.evidence_contract import strip_inword_apostrophes
 
 # 声明种类（claim_kind 持久化值）
 CLAIM_SELF_ALIAS = "self_alias"
@@ -100,7 +101,7 @@ _NEGATIVE_NAME_PATTERNS = (re.compile(r"^不是(.+)$"), re.compile(r"^不叫(.+)
 _ACTIVITY_STATE_MARKS = ("没", "在", "了", "过", "着", "正", "想", "要", "会", "能")
 
 # P1整改：解析器版本（落库到 conversation_identity_claims.parser_version）
-PARSER_VERSION = "2026-10-05.2"
+PARSER_VERSION = "2026-11-25.1"
 
 
 @dataclass(frozen=True)
@@ -191,7 +192,8 @@ def parse_self_claim_structured(text: str) -> SelfClaim | None:
     if not stripped or len(stripped) > 64:
         # 超长内容不是干净的自我介绍（聊天长句误命中风险）
         return None
-    if any(mark in stripped for mark in _QUOTE_MARKS):
+    # 词内撇号（O'Brien）是名字拼写，不是引号；真正的引号仍整条拒绝
+    if any(mark in strip_inword_apostrophes(stripped) for mark in _QUOTE_MARKS):
         return None
     if any(mark in stripped for mark in _QUESTION_MARKS):
         return None
@@ -256,7 +258,7 @@ def parse_third_person_correction(text: str) -> tuple[str, bool] | None:
     stripped = (text or "").strip()
     if not stripped or len(stripped) > 64:
         return None
-    if any(mark in stripped for mark in _QUOTE_MARKS):
+    if any(mark in strip_inword_apostrophes(stripped) for mark in _QUOTE_MARKS):
         return None
     m = _THIRD_POSITIVE.match(stripped)
     if m:

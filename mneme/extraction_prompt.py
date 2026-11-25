@@ -29,6 +29,10 @@ format 转义规则同 consolidation_prompt：字面花括号写 {{ }}，
 理由与守卫同 consolidation_prompt.py，不再重复。
 
 
+紧凑输出（2026-11-25，issue #136）：verification_contract 占候选文本约 72%，生产上限下
+截断过半；模型改为只填 content / source_message_ids / statement_kind，谓词与值由
+evidence_contract.derive_contract 从 content 机械推导。不要再让模型输出合同字段。
+
 契约硬规则块（2026-10-17 增补）：模板末段枚举服务端闸门
 （memory/evidence_contract.py 的 _SELF_REPORT_PATTERNS / _PATTERN 正则）
 支持的刻板句型与 statement_kind↔type/polarity 绑定——live 回放实证真实模型
@@ -70,13 +74,13 @@ EXTRACTION_PROMPT = """你将读到一段群聊记录。已经有初步判断认
 消息「我时不时会失眠，所以醒得很早」
 → {{"user_id": "该发言者QQ号", "type": "FACT", "content": "我时不时会失眠",
     "usage_tags": ["ANSWER_CONTEXT"], "visibility": "OPEN",
-    "importance": 0.6, "confidence": 0.9, "evidence": "用户直接陈述自己的作息与身体状况",
-    "source_message_ids": []}}
+    "importance": 0.6, "confidence": 0.9,
+    "source_message_ids": [123], "statement_kind": "other"}}
 消息「早餐一般只是一个馒头，自己家做的」
 → {{"user_id": "该发言者QQ号", "type": "FACT", "content": "早餐一般只是一个馒头",
     "usage_tags": ["ANSWER_CONTEXT", "PERSONALIZE"], "visibility": "OPEN",
-    "importance": 0.5, "confidence": 0.9, "evidence": "用户直接陈述自己的饮食习惯",
-    "source_message_ids": []}}
+    "importance": 0.5, "confidence": 0.9,
+    "source_message_ids": [123], "statement_kind": "other"}}
 
 
 请用以下 JSON 格式回复（不要代码块，直接输出 JSON）：
@@ -109,14 +113,13 @@ EXTRACTION_PROMPT = """你将读到一段群聊记录。已经有初步判断认
   这条信息毫无价值，它会被直接丢弃，再高的 confidence 也救不回来。
 - content 必须是可理解的自然语言，不要只写关键词
 - content 必须逐字复制一个最短、完整的原文支持片段；不要改写、归纳或补全
-- 每条候选必须附 verification_contract，包含 fact_subject_user_id、predicate_key、
-  canonical_value、polarity（positive/negative）、statement_kind、temporal_qualifiers、
-  context_qualifiers 与 supports。supports 中每项包含 source_message_id 和 exact_support_span；
-  source_message_id 必须在本批消息中，exact_support_span 必须是该条原文的连续逐字子串，
-  content 必须等于其中一个 exact_support_span
-- verification_contract 只是待审核提案；不要输出 verification_status 或声称 accepted。
-  不确定主体、条件/假设、疑问、转述、引用、玩笑或角色扮演时，仍标明对应 statement_kind，
-  由服务端审核决定能否写入正式记忆
+- 每条候选必须附 statement_kind，表示这句话是什么性质：self_report / explicit_preference /
+  identity_state / plan_intent / ability_habit / past_event；不确定主体、条件/假设、疑问、
+  转述、引用、玩笑或角色扮演时一律填 other——服务端据此拒绝写入正式记忆
+- 每条候选只对应一条来源消息：source_message_ids 只填一个本批消息 ID，
+  content 必须是该条消息原文的连续逐字子串
+- 不要输出 verification_contract、predicate_key 或 canonical_value：服务端从 content 机械推导
+- 不要输出 evidence 或任何未列出的字段（节省输出长度）
 - 绝对不要编造记录里没有的信息。刷屏、复读、表情、单字附和不包含任何可提取信息，跳过它们
 - 一次性玩笑不要提取
 
@@ -131,84 +134,52 @@ EXTRACTION_PROMPT = """你将读到一段群聊记录。已经有初步判断认
   "behavior_rule": "涉及边界/行为约束时写明；否则省略",
   "importance": 0.0,
   "confidence": 0.0,
-  "evidence": "这条信息的依据",
   "source_message_ids": [123],
-  "verification_contract": {{
-    "fact_subject_user_id": "123",
-    "predicate_key": "profile.residence",
-    "canonical_value": "杭州",
-    "polarity": "positive",
-    "statement_kind": "self_report",
-    "temporal_qualifiers": [],
-    "context_qualifiers": [],
-    "supports": [{{"source_message_id": 123, "exact_support_span": "我住在杭州"}}]
-  }}
+  "statement_kind": "self_report"
 }}
 
 
-契约硬规则（服务端按固定句型逐字审核 verification_contract，完全命中才可能被判 accepted）：
+契约硬规则（服务端按固定句型逐字审核 content，完全命中且 statement_kind 一致才可能被判 accepted）：
 
 - 保持原文语言：英文消息就用下列英文句型逐字复制（如 I live in X），中文消息用中文句型；
-  绝不要把原文翻译成另一种语言再填 content / exact_support_span——翻译后不是原文子串，必被拒绝
+  绝不要把原文翻译成另一种语言再填 content——翻译后不是原文子串，必被拒绝
 
-服务端支持的刻板句型（exact_support_span 必须逐字是其中一种；X 代表值段）：
-- 自我陈述（statement_kind=self_report，type 必须是 FACT，polarity 一律 positive）：
-  - 「我住在X」「我居住在X」「我现在/目前住在X」→ predicate_key=profile.residence
-  - 「我来自X」「我出生于X」→ predicate_key=profile.origin
-  - 「我叫X」（发言者自我介绍）→ predicate_key=profile.nickname
-  - 「我在X工作」→ predicate_key=profile.employer
-  - 「I live in X」→ predicate_key=profile.residence.en
-  - 「I am from X」「I'm from X」→ predicate_key=profile.origin.en
-  - 「My name is X」→ predicate_key=profile.nickname.en
-- 明确偏好（statement_kind=explicit_preference，type 必须是 PREFERENCE，
-  predicate_key 一律 preference.general）：
-  - 「我喜欢X」「我偏好X」→ polarity=positive；「我不喜欢X」「我讨厌X」→ polarity=negative
-  - 「I like X」「I prefer X」→ polarity=positive；「I don't like X」「I dislike X」→ polarity=negative
-- 身份与拥有（statement_kind=identity_state，type 必须是 FACT，polarity 一律 positive）：
-  - 「我是X」（身份/状态，如「我是单亲家长」「我是跨性别女性」）→ predicate_key=identity.state
-  - 「我有X」（所有物/家人/宠物，如「我有两个孩子」）→ predicate_key=identity.have
-  - 「I am X」→ predicate_key=identity.state.en；「I have X」→ predicate_key=identity.have.en
-- 计划与意图（statement_kind=plan_intent，type 必须是 PLAN，polarity 一律 positive）：
-  - 「我打算X」「我想X」「我要X」「我正在X」→ predicate_key=plan.intend / plan.want /
-    plan.will / plan.doing
-  - 「I'm going to X」「I'm planning on/to X」→ predicate_key=plan.going_to.en；
-    「I want to X」→ predicate_key=plan.want_to.en
-- 能力（statement_kind=ability_habit，type 必须是 FACT，polarity 一律 positive）：
-  - 「我会X」→ predicate_key=ability.can；「I can X」→ predicate_key=ability.can.en；
-    「I play X」「I sing X」→ predicate_key=ability.play.en
-- 过去事件（statement_kind=past_event，type 必须是 FACT，polarity 一律 positive）：
-  - 「我以前/曾经X」→ predicate_key=past.used_to；「I used to X」→ predicate_key=past.used_to.en
-  - 「I went to X」→ predicate_key=past.went_to.en；「I had X」→ predicate_key=past.had.en
-- 第一人称陈述取**逐字原文**：发言者用第一人称说的事实（含缩略/过去式，如
-  「I painted that lake sunrise last year」），整句作为 exact_support_span 原样提取，
-  不要改写成三人称——三人称改写无法通过逐字绑定。
+服务端支持的刻板句型（content 必须逐字是其中一种；X 代表值段；
+statement_kind 与 type 必须按所属组填写）：
+- self_report（type=FACT）：「我住在X」「我居住在X」「我现在/目前住在X」「我来自X」「我出生于X」
+  「我叫X」「我在X工作」；「I live in X」「I am from X」「I'm from X」「My name is X」
+- explicit_preference（type=PREFERENCE）：「我喜欢X」「我偏好X」「我不喜欢X」「我讨厌X」；
+  「I like X」「I prefer X」「I don't like X」「I dislike X」
+- identity_state（type=FACT）：「我是X」「我有X」；「I am X」「I have X」
+- plan_intent（type=PLAN）：「我打算X」「我想X」「我要X」「我正在X」；
+  「I'm going to X」「I'm planning on/to X」「I want to X」
+- ability_habit（type=FACT）：「我会X」（能力，不是将来）；「I can X」「I play X」「I sing X」
+- past_event（type=FACT）：「我以前/曾经X」；「I used to X」「I went to X」「I had X」
+- 其他第一人称陈述取**逐字原文**（含缩略/过去式），不要改写成三人称
 
 值段硬规则（全部刻板句型通用，违反任何一条契约都不会 accepted，候选本身照常输出）：
 - 值段内不得出现「你/您」（夸赞他人的「我喜欢你画画」不是说话者的偏好）
 - 值段不得是占位符 X 或短于 2 个字符
 
-span 与值段硬规则（违反任何一条契约都不会 accepted，候选本身照常输出）：
-- exact_support_span 只取刻板句本身，遇到逗号/分号/后续分句立即截断：
-  「我叫小艾，以后多指教」→ span=「我叫小艾」
-- 句尾至多保留一个 。或 ！；逗号、分号、问号结尾的 span 不会被接受
-- 值段内不允许任何标点（，。！？!?；；都是截断点）；canonical_value 就是值段本身，
-  不带句式引导词、不带标点，如「小艾」「杭州」「吃辣」
-- span 中不要出现「如果/可能/也许/听说/据说/玩笑」等词或任何引号——含这些词的句子
-  按前面规则照常标注 statement_kind，但契约不会 accepted
-- content 必须与 exact_support_span 逐字相同
+content 与值段硬规则（违反任何一条都不会 accepted，候选本身照常输出）：
+- content 只取刻板句本身，遇到逗号/分号/后续分句立即截断：
+  「我叫小艾，以后多指教」→ content=「我叫小艾」
+- 但不要从条件、转述、引用句里截出一句：「如果我住在杭州就好了」「他说我住在杭州」
+  不是说话者的事实，statement_kind 填 other
+- 句尾至多保留一个 。或 ！；逗号、分号、问号结尾不会被接受
+- content 中不要出现「如果/可能/也许/听说/据说/玩笑」等词或任何引号
 
 反例（真实出现过的失败形态，不要再犯）：
-- ✗ span=「我叫小艾，以后多指教」（整句带尾巴）→ 应截为「我叫小艾」
-- ✗ 自我介绍「我叫小艾」标成 PREFERENCE → 应为 self_report + FACT + profile.nickname
-- ✗ canonical_value=「杭州，西湖区」（值段含逗号）→ 应为「杭州」
-- ✗ 「我喜欢你的画」标成说话者偏好 → 值段含「你」，是夸赞他人，不输出契约
+- ✗ content=「我叫小艾，以后多指教」（整句带尾巴）→ 应截为「我叫小艾」
+- ✗ 自我介绍「我叫小艾」标成 PREFERENCE → 应为 self_report + FACT
+- ✗ 「我喜欢你的画」标成说话者偏好 → 值段含「你」，是夸赞他人，不会 accepted
 
-与称呼要求的边界：发言者介绍自己「我叫X」按 self_report / FACT / profile.nickname
+与称呼要求的边界：发言者介绍自己「我叫X」按 self_report / FACT
 输出；发言者要求别人怎么称呼 TA（「以后叫我X」「别再叫我Y」）维持 PREFERENCE
-（保证去重稳定），这类契约当前不会被判 accepted，照常输出即可，不要硬凑刻板句型。
+（保证去重稳定），当前不会被判 accepted，照常输出即可，不要硬凑刻板句型。
 
 其余非刻板句型（身体状况、习惯、经历、设备等）仍然照常提取，目标是不漏——
-它们的契约不会被 accepted，由服务端按未核验处理，不需要你回避或改写原文。
+它们不会被 accepted，由服务端按未核验处理，不需要你回避或改写原文。
 
 ===== 以上为固定规则；以下是本次待分析的数据 =====
 

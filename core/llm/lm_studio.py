@@ -220,8 +220,16 @@ class OpenAICompatibleBackend(LLMBackend):
                             f"completion_tokens={usage.get('completion_tokens', '?')}{cached}）"
                         )
                         return reply, finish
-                last_error = RuntimeError("LLM 返回空回复")
-                logger.warning(f"{tag} 第 {attempt} 次尝试返回空回复，重试...")
+                if finish == "length":
+                    # 空内容 + 截断 = 输出上限被思维链吃光，不是瞬时故障。online 端点不发
+                    # reasoning_effort（厂商中立），只能由用户在服务商侧关推理或调大上限。
+                    last_error = RuntimeError(
+                        f"LLM 返回空回复：max_tokens={self.max_tokens} 已被推理耗尽"
+                        "（请在服务商侧关闭该模型的思考，或换非推理模型 / 调大该角色的 MAX_TOKENS）"
+                    )
+                else:
+                    last_error = RuntimeError("LLM 返回空回复")
+                logger.warning(f"{tag} 第 {attempt} 次尝试返回空回复（{last_error}），重试...")
             except httpx.HTTPStatusError as e:
                 status = e.response.status_code
                 body = e.response.text[:800]

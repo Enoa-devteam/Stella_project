@@ -12,6 +12,9 @@ from jsonschema.exceptions import ValidationError
 from proactive_eval import b05_prompts
 from proactive_eval.b05 import (
     _GuardedReplyLLM,
+    _judge_endpoint,
+    _judge_is_reply_model,
+    _model_preflight,
     _write_report,
     build_parser,
     validate_args,
@@ -42,6 +45,51 @@ def test_unused_embedding_rank_channel_does_not_enable_embedding_service(tmp_pat
     )
     _, _, used = validate_args(args)
     assert used == {"rule"}
+
+
+_JOINT = ("--tasks", "joint", "--channel", "rule", "--llm-base-url",
+          "http://127.0.0.1:8081/v1", "--llm-model", "m", "--llm-api-key", "reply-key")
+
+
+def test_judge_defaults_to_the_reply_endpoint(tmp_path):
+    args = _args(tmp_path, *_JOINT)
+    validate_args(args)
+    assert _judge_endpoint(args) == ("http://127.0.0.1:8081/v1", "reply-key")
+    assert _judge_is_reply_model(args)
+    assert not _judge_is_reply_model(_args(tmp_path, *_JOINT, "--judge-model", "other"))
+
+
+def test_separate_judge_endpoint_never_receives_the_reply_key(tmp_path):
+    # 同名模型在另一端点上也是独立 judge
+    args = _args(tmp_path, *_JOINT, "--judge-base-url", "http://127.0.0.1:1234/v1", "--judge-model", "m")
+    validate_args(args)
+    assert _judge_endpoint(args) == ("http://127.0.0.1:1234/v1", "")
+    assert not _judge_is_reply_model(args)
+
+
+@pytest.mark.parametrize("extra, match", [
+    (("--judge-base-url", "http://127.0.0.1:1234/v1"), "explicit --judge-model"),
+    (("--judge-base-url", "http://127.0.0.1:1234", "--judge-model", "j"), "must end in /v1"),
+    (("--judge-api-key", "k"), "requires --judge-base-url"),
+])
+def test_judge_endpoint_validation(tmp_path, extra, match):
+    with pytest.raises(ValueError, match=match):
+        validate_args(_args(tmp_path, *_JOINT, *extra))
+
+
+def test_preflight_checks_judge_on_its_own_endpoint(tmp_path, monkeypatch):
+    seen = []
+
+    def fake(base_url, requested, api_key, *, memory):
+        seen.append((base_url, requested, api_key))
+        return {}
+
+    monkeypatch.setattr("proactive_eval.b05._list_endpoint_models", fake)
+    args = _args(tmp_path, *_JOINT, "--judge-base-url", "http://127.0.0.1:1234/v1",
+                 "--judge-model", "j", "--judge-api-key", "judge-key")
+    assert "judge" in _model_preflight(args, ["joint"])
+    assert seen == [("http://127.0.0.1:8081/v1", ["m"], "reply-key"),
+                    ("http://127.0.0.1:1234/v1", ["j"], "judge-key")]
 
 
 def test_judge_parser_ignores_braces_inside_json_strings():

@@ -64,6 +64,62 @@ _CONDITIONAL = re.compile(
 _QUOTE_MARKS = frozenset("\"'“”‘’「」『』《》〈〉")
 # 两侧都是字母的 ' / ’ 视为拼写撇号，不参与引号判定（句首/句尾/空格旁的仍算引号）。
 _INWORD_APOSTROPHE = re.compile(r"(?<=[A-Za-z])['’](?=[A-Za-z])")
+# span 之外的语境：句子边界、引号配对、以及紧贴 span 之前的否定 / 转述 / 主观引导。
+_SENTENCE_BREAK = re.compile(r"[。！？!?；;\n]|\.(?=\s|$)")
+_QUOTE_PAIRS = {"“": "”", "‘": "’", "「": "」", "『": "』", "《": "》", "〈": "〉"}
+_LEADIN_BLOCKED = re.compile(
+    # 否定必须紧贴（「不，我住在上海」是更正，应放行）；转述 / 主观引导可隔标点
+    r"(?:不是|并非|没有|不|别)\s*$"
+    r"|(?:以为|觉得|认为|希望|梦见|假定|据称|说|讲|问|否认)[：:,，\s\"'“‘「『]*$"
+    r"|\b(?:not|never|think|thinks|thought|believe|believes|wish|wishes|hope|hopes|says?|said|"
+    r"told(?: \w+)?|asks?|asked|claims?|claimed|dream(?:ed|t)?)(?: that)?[\s,:\"'“‘]*$",
+    re.IGNORECASE,
+)
+
+
+def strip_inword_apostrophes(text: str) -> str:
+    """去掉词内撇号，供引号判定使用；两侧非字母的撇号原样保留。"""
+    return _INWORD_APOSTROPHE.sub("", text)
+
+
+def _span_context_is_clean(source: str, span: str) -> bool:
+    """span 在原文里是否至少有一处是说话人自己的直接陈述（而非条件 / 引述 / 否定）。
+
+    只看 span 本身会放过「如果我住在杭州就好了」「他说"我住在杭州"」——模型只需把
+    句子截成「我住在杭州」即可伪装成直接陈述。所以在含 span 的整句上查条件词，在句内
+    前缀上查未闭合引号与紧邻的否定 / 转述引导。任一处干净即可：同一条消息里另有
+    直接陈述时不应被别处的假设句连累。
+    """
+    start = source.find(span)
+    while start != -1:
+        end = start + len(span)
+        left = 0
+        for m in _SENTENCE_BREAK.finditer(source, 0, start):
+            left = m.end()
+        right_m = _SENTENCE_BREAK.search(source, end)
+        sentence = source[left : right_m.start() if right_m else len(source)]
+        prefix = source[left:start]
+        if (
+            not _CONDITIONAL.search(sentence)
+            and not _inside_quote(prefix, source[end:])
+            and not _LEADIN_BLOCKED.search(prefix)
+        ):
+            return True
+        start = source.find(span, start + 1)
+    return False
+
+
+def _inside_quote(prefix: str, suffix: str) -> bool:
+    """prefix 里有未闭合的引号，或 span 紧贴引号。"""
+    probe = strip_inword_apostrophes(prefix)
+    for opener, closer in _QUOTE_PAIRS.items():
+        if probe.count(opener) > probe.count(closer):
+            return True
+    if probe.count('"') % 2 or probe.count("'") % 2:
+        return True
+    return suffix[:1] in _QUOTE_MARKS and not suffix[:1].isalnum()
+
+
 _SELF_REPORT_PATTERNS = {
     "profile.residence": re.compile(
         r"我(?:目前|现在)?(?:住在|居住在)(?P<value>[^，。！？!?；;]+)[。！!]?"
@@ -98,7 +154,12 @@ _IDENTITY_STATE_PATTERNS = {
     "identity.state": re.compile(r"我是(?P<value>[^，。！？!?；;]+)[。！!]?"),
     "identity.have": re.compile(r"我有(?P<value>[^，。！？!?；;]+)[。！!]?"),
     "identity.state.en": re.compile(r"I am (?P<value>[^.!?;]+)[.!]?", re.IGNORECASE),
-    "identity.have.en": re.compile(r"I have (?P<value>[^.!?;]+)[.!]?", re.IGNORECASE),
+    # 完成时（I have been / cleaned / never seen）与义务（I have to）不是「拥有」
+    "identity.have.en": re.compile(
+        r"I have (?!(?:been|had|got|gone|done|made|seen|taken|never|always|ever|just|already|to|not)\b"
+        r"|\w+ed\b)(?P<value>[^.!?;]+)[.!]?",
+        re.IGNORECASE,
+    ),
 }
 _PLAN_INTENT_PATTERNS = {
     "plan.intend": re.compile(r"我打算(?P<value>[^，。！？!?；;]+)[。！!]?"),
@@ -142,6 +203,12 @@ _POSITIVE_ONLY_KINDS = frozenset(
 _SECOND_PERSON_VALUE = re.compile(r"你|您|\byou\b|\byour\b", re.IGNORECASE)
 _VALUE_PLACEHOLDER = re.compile(r"\bX\b(?![a-zA-Z])")
 _MIN_VALUE_LEN = 2
+# 值段只有指代词（「I like it」「我喜欢这个」）脱离原对话无法理解，不能成为长期事实
+_PRONOUN_ONLY_VALUE = re.compile(
+    r"(?:it|this|that|them|these|those|him|her|one|so|there|here|"
+    r"这|那|这个|那个|这些|那些|它|它们|他|她|这样|那样)[.!。！]?",
+    re.IGNORECASE,
+)
 
 
 def _match_value_pattern(pattern: re.Pattern, span: str) -> tuple[bool, str]:
@@ -154,6 +221,59 @@ def _match_value_pattern(pattern: re.Pattern, span: str) -> tuple[bool, str]:
     if m:
         return True, (m.groupdict().get("value") or "").strip()
     return False, ""
+
+
+def derive_contract(candidate: Mapping[str, Any], *, uid: str) -> dict[str, Any] | None:
+    """从逐字 span 机械推导 verification_contract（阶段2 紧凑格式，2026-11-25）。
+
+    模型只给 content（逐字 span）、source_message_ids 与 statement_kind；谓词、值、极性
+    由服务端句型唯一确定，不采信模型填写。statement_kind 是模型的语义否决权：
+    条件 / 转述 / 玩笑等不在 _ACCEPTED_KINDS 的陈述不推导。只接受整句 fullmatch——
+    句型表里的 search 兜底（忽略 span 其余部分）不用于推导。推导结果仍要过
+    assess_candidate 的全部检查。
+    """
+    kind = str(candidate.get("statement_kind") or "").strip()
+    span = str(candidate.get("content") or "").strip()
+    source_ids = parse_source_ids(candidate.get("source_message_ids"))
+    if kind not in _ACCEPTED_KINDS or not span or source_ids is None or len(source_ids) != 1:
+        return None
+    hits: list[tuple[str, str, str, str]] = []
+    for family_kind, family in (
+        ("self_report", _SELF_REPORT_PATTERNS),
+        ("identity_state", _IDENTITY_STATE_PATTERNS),
+        ("plan_intent", _PLAN_INTENT_PATTERNS),
+        ("ability_habit", _ABILITY_HABIT_PATTERNS),
+        ("past_event", _PAST_EVENT_PATTERNS),
+    ):
+        for predicate, pattern in family.items():
+            match = pattern.fullmatch(span)
+            if match:
+                hits.append((family_kind, predicate, match.group("value").strip(), "positive"))
+    for pattern in (_PREFERENCE_PATTERN, _PREFERENCE_PATTERN_EN):
+        match = pattern.fullmatch(span)
+        if match:
+            negative = match.group("cue").lower() in {"不喜欢", "讨厌", "don't like", "dislike"}
+            hits.append((
+                "explicit_preference", "preference.general", match.group("value").strip(),
+                "negative" if negative else "positive",
+            ))
+    # 句型须唯一且与模型声明的 kind 一致：「我会住在杭州」句型上像能力、实为计划，
+    # 单靠正则会误归类，两个独立信号一致才推导。
+    if len(hits) != 1 or hits[0][0] != kind:
+        return None
+    derived_kind, predicate, value, polarity = hits[0]
+    if not value or re.search(r"[,，、我]|(?:I|I'm|my)", value):
+        return None
+    return {
+        "fact_subject_user_id": uid,
+        "predicate_key": predicate,
+        "canonical_value": value,
+        "polarity": polarity,
+        "statement_kind": derived_kind,
+        "temporal_qualifiers": [],
+        "context_qualifiers": [],
+        "supports": [{"source_message_id": source_ids[0], "exact_support_span": span}],
+    }
 
 
 def _semantic_contract_matches(
@@ -485,6 +605,10 @@ def assess_candidate(
     if resolved_subject.startswith("qq:") and (not uid.isdecimal() or int(uid) <= 0):
         return unassessed("unknown", "legacy_subject_id_invalid")
     contract = candidate.get("verification_contract")
+    if contract is None and candidate.get("statement_kind"):
+        contract = derive_contract(candidate, uid=uid)
+        if contract is None:
+            return unassessed("unknown", "contract_not_derivable")
     if not isinstance(contract, dict):
         return unassessed("unknown", "contract_missing")
     allowed_contract_keys = {
@@ -587,16 +711,21 @@ def assess_candidate(
     # A2 值段过滤器（MBENCH-004 P1：夸赞误归因/占位符/碎片；全 kind 生效）
     if len(canonical_value.strip()) < _MIN_VALUE_LEN:
         assessment_reasons.append("value_too_short")
+    if _PRONOUN_ONLY_VALUE.fullmatch(canonical_value.strip()):
+        assessment_reasons.append("value_pronoun_only")
     if _VALUE_PLACEHOLDER.search(canonical_value):
         assessment_reasons.append("value_placeholder")
     if _SECOND_PERSON_VALUE.search(canonical_value):
         assessment_reasons.append("value_second_person")
-    for span in support_by_id.values():
+    source_text_by_id = {int(row["id"]): str(row.get("content") or "") for row in rows}
+    for source_id, span in support_by_id.items():
         # 词内撇号（I'm / don't / daughter's）是英文拼写，不是引号；不剔除的话
         # 提示词列出的 I'm from X / I don't like X 句型永远无法 accepted。
-        quote_probe = _INWORD_APOSTROPHE.sub("", span)
+        quote_probe = strip_inword_apostrophes(span)
         if _CONDITIONAL.search(span) or any(mark in quote_probe for mark in _QUOTE_MARKS):
             assessment_reasons.append("conditional_quoted_or_roleplay")
+        elif not _span_context_is_clean(source_text_by_id[source_id], span):
+            assessment_reasons.append("context_conditional_quoted_or_negated")
         if span.rstrip().endswith(("?", "？")):
             assessment_reasons.append("question_not_accepted")
         if not _semantic_contract_matches(

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-22",
+  "updated_at": "2026-11-25",
   "active_feature": "AOEDE-MNEME-BENCH-IMPL",
   "features": [
     {
@@ -2460,6 +2460,10 @@
         {
           "report": "docs/reports/2026-11-21-memory-write-path-zero-promotion-diagnosis.md",
           "result": "Minimal write-path fix: stage-2 extraction splits truncated batches by line halves (max depth 2, budget re-checked) before falling back; in-word apostrophes no longer count as quote marks; the extraction prompt forbids translating source text. On the same 5 M6 pairs with production caps (deepseek-flash stand-in), active memories went from 0 to 5 and positive integration from 1/5 to 2/5 (report SHA-256 61f6faf82f15f68f4d42d742f289fb06b4962d15442ca913691f438c77d335d8). A 15-pair run stopped at its 450-call budget (PARTIAL_BUDGET, 28/30 rows): 8/363 candidates CONFIRMED in 7 items, positive integration 5/15, negative overuse 7/13 (SHA-256 26431bf4fe6a4d523821455a0f87647e23570d6823905dc205d9a9b87b598dfc). Stage-2 calls increased (222 extract, 140 truncated). Tests: new and related suites 70 passed; full suite 4,386 passed / 22 skipped / 11 failed / 1 collection error, where the message-flow drift failure was fixed by regenerating the manifest and the other 10 failures plus the collection error reproduce on HEAD (local environment). Ruff PASS. qwen production engine, M6 full72, B06/B08 and product acceptance remain NOT READY; follow-ups move to a GitHub issue."
+        },
+        {
+          "report": "docs/reports/2026-11-25-issue-136-followups.md",
+          "result": "Issue #136 follow-ups: evidence-gate context fix, compact stage-2 format with server-derived contracts, qwen M6 5-pair (before/after) and 15-pair runs (40/570 promoted, positive integration 1/15, negative overuse 6/15, no M0 control), embedding/hybrid offline rank/boundary, judge endpoint option. Full72, independent judge run and B06-B08 not run; product outcome NOT READY."
         }
       ]
     },
