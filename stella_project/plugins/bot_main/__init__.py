@@ -5,6 +5,7 @@
 
 组装插件元信息，并挂载核心子模块：
 - ai_gateway：AI 对话网关——Pipeline 装配、@ 触发回复、主动发言、定时任务；
+- onebot_v12_gateway：OneBot V12 入口——经 TransportIngress 处理并复用同一管线；
 - OneBot 链路监测（只告警、不重启）已迁至 extensions/link_monitor，
   Bot 不再管理 NapCat 进程（QQ 登录风控使自动登录无法绕开，见
   design_docs/deprecated_napcat_manager.md）。
@@ -28,5 +29,9 @@ __plugin_meta__ = PluginMetadata(
 # 读取插件级配置（实际由项目中全局 Config 提供各字段）
 config = get_plugin_config(Config)
 
-# 仅注册 AI 网关模块（OneBot 链路监测在扩展加载时接入，见 extensions/link_monitor）
+# 注册 AI 网关模块（OneBot 链路监测在扩展加载时接入，见 extensions/link_monitor）
 from . import ai_gateway as ai_gateway
+
+# OneBot V12 入口：经传输中立 ingress，只接收显式配置的连接（ai_gateway 之后加载，
+# 复用其管线与投递计划）。
+from . import onebot_v12_gateway as onebot_v12_gateway
