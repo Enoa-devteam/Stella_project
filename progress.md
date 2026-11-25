@@ -1,3 +1,11 @@
+## 2026-11-25 — Dependabot 遗留 PR 收尾（#182）
+
+- Scope：#182 中 11 个未合并 Dependabot PR 的代码阻断与相关缺口。分支 `fix/issue-182-dependabot-followup`（worktree `E:/stella/stella_project-182`）一次性替代 #171/#176/#173/#175/#172/#161。
+- What's Done：zip 9（name() Result；解压改用 enclosed_name 拼路径并拒绝含 `:` 的名字——main 上 `C:/x` 条目会写到 runtime 之外，仅被 Windows 权限挡住）；sha2 0.11（分块喂入，输出仍大写）；rand 0.10（`rand::rng()`，CryptoRng 编译期约束）；vue-tsc 3（PlatformsPage 模板经 storeToRefs 读 operationPending，规避 v-if 块后 dotValue 收窄丢失）；CI `rust-crates` 矩阵 + `scripts/check_rust_msrv.py`（cli/runtime-manager → 1.85，memory_rust/native → 1.88）；lock pycryptodomex 3.24.2 + lock/requirements 一致性测试；flaky 测试根因（g02 bootstrap 泄漏 CHAT→local_inference 资源组）以 conftest 隔离修复；关闭 #157。
+- Evidence：desktop cargo test 31、installer 23、launcher 3、runtime-manager 9、memory native 26、cli 22 全过；dashboard vue-tsc 3 typecheck、build、test 118 通过；顺序复现 flaky（g02→facade 必失败）修复后通过；全量（除 tests/observability）4392 passed / 13 failed：11 项在干净 origin/main 同样失败（#185），2 项为 xdist worker 崩溃、单跑通过；check_docs、ruff、git diff --check 通过；detect-changes HIGH（sha256_hex CRITICAL、extract_zip HIGH，维护者知悉后批准提交）。
+- Blockers / 未验证：未做 GUI / Sandbox 安装验收；TS 7（#159）vue-tsc 3.3.14 同样无法加载；#178 需 Sandbox，且 build.rs 改 staticVCRuntime 须随 tauri-build 2.7 一起；#164 需 M0 探针；#168 下限待维护者决定；release.yml 未 dispatch。
+- Next：CI 上 `rust-crates` 首跑结果；维护者审阅 PR；#178 Sandbox 验收。
+
 ## 2026-11-25 — OneBot V12 接入与非 OneBot 适配器短路（#134，PR #184）
 
 - Scope：按 #134 决定，核心只支持 OneBot V11 / V12；其余 27 个目录适配器短路（代码保留不可达）；OneBot V12 经 `TransportIngress` 接入并作为**实验性功能**启用。分支 `feat/onebot-v12-core-adapters`（worktree `E:/stella/runs/onebot-v12`）。
