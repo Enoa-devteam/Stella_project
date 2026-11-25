@@ -1,3 +1,12 @@
+## Current Handoff — issue #136 写侧与评测收尾（2026-11-25）
+
+- Current Objective：#136 可执行项已做完，改动在分支 `fix/issue-136-memory-write-path`，PR 待审阅；issue 未勾选，保持 OPEN。
+- Verification Evidence：[报告](docs/reports/2026-11-25-issue-136-followups.md)；progress.md 同日「issue #136 …」。
+- Recovery Notes：评测隔离目录 `E:/stella/runs/issue136`（venv、`baseline-53fcbb6` 与 `snap1` 两个 detached worktree，不用时 `git worktree remove`）。LM Studio 已加载 qwen3-embedding-0.6b。M6 workdir 的 fingerprint 现含写侧代码，换代码须新 workdir。
+- Blockers：B06 标注人员、B08 目标群与授权、full72 预算、`contract_missing` 回退候选的长期策略。
+- Recommended Next Step：审阅 PR 中的证据门收紧与紧凑格式；如要独立 judge，用 `--judge-base-url`。
+- Preserve：同下方既有未跟踪路径。
+
 ## Current Handoff — v6.4.3 已发布（2026-11-24）
 
 - Current Objective：v6.4.3 发布与发布后验收完成（#145 修复、加载视图动态 Logo、实时进度行三处修复、Dependabot）。下文 v6.4.2 各条 handoff 可归档。

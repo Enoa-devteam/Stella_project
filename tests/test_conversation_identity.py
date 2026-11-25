@@ -487,6 +487,29 @@ def test_third_person_patterns_bounded():
     assert parse_third_person_correction("他才是你教父了") is None
 
 
+@pytest.mark.parametrize("text, alias", [
+    ("我叫O'Brien", "O'Brien"),
+    ("我叫D’Arcy", "D’Arcy"),
+    ("我是O'Neil，不是Nox", "O'Neil"),
+])
+def test_inword_apostrophe_is_not_a_quote(text, alias):
+    claim = parse_self_claim_structured(text)
+    assert claim is not None and claim.alias == alias
+
+
+def test_third_person_inword_apostrophe_is_not_a_quote():
+    assert parse_third_person_correction("他才是O'Brien") == ("O'Brien", True)
+    assert parse_third_person_correction("O'Brien不是他") == ("O'Brien", False)
+
+
+@pytest.mark.parametrize("text", [
+    "我叫'Nox'", "我叫‘Nox’", "我叫Nox'", "我叫'Nox", "他说'我叫Nox'", "我叫O'Brien'",
+])
+def test_real_quotes_still_rejected(text):
+    assert parse_self_claim_structured(text) is None
+    assert parse_third_person_correction(text.replace("我叫", "他才是")) is None
+
+
 # ── P1整改（复核 F2）：复合肯定更正 ───────────────────────────────────
 
 

@@ -1,3 +1,12 @@
+## 2026-11-25 — issue #136 记忆写侧与 B05 收尾
+
+- Scope / Current State：qwen 生产引擎（8081）复测、证据门语境缺陷修复、阶段 2 紧凑格式（服务端推导合同）、身份解析词内撇号、独立 judge 入口、embedding/hybrid 离线通道。`AOEDE-MNEME-BENCH-IMPL` 保持 `in_progress`；产品效果 NOT READY。以 PR 提交，#136 保持 OPEN。
+- 维护者决定：紧凑格式 + 服务端推导；回退候选仍写库；M6 跑 15-pair（不跑 full72）；只加载 embedding 模型。
+- 结果：15-pair 40/570 候选晋升（40 active），正例 integration 1/15、负例 overuse 6/15，无 M0 对照；5-pair 阶段 2 截断 29/41 → 7/23。证据门曾接受从条件 / 引述 / 否定句截出的陈述，已收紧；历史行未回查。embedding/hybrid MRR 0.261/0.279。详见 [报告](docs/reports/2026-11-25-issue-136-followups.md)。
+- Verification：全量 4,496 passed / 30 skipped / 3 failed（3 项在 pinned HEAD 同样失败）；ruff、check_docs、manifest check 通过；GitNexus detect-changes CRITICAL（列表截断，未豁免）。
+- Next：维护者审阅 gate 收紧与提取格式；独立 judge 运行；M6 full72 约 17 小时 GPU；ChMap 选择规则、句型扩展、历史行回查另行决策；B06–B08 仍阻断。
+- Files：`mneme/evidence_contract.py`、`mneme/extraction_prompt.py`、`mneme/conversation_identity.py`、`core/llm/lm_studio.py`、`proactive_eval/b05.py`、`.env.example`、相关测试、`docs/architecture/memory-system*.md`、message-flow manifest、报告与状态文件。
+
 ## 2026-11-24 — v6.4.3 发布与发布后验收
 
 - Scope：PR #177 合并（8b77dc8，树与 Sandbox 验证的 ca55ce0 一致）→ 打 `v6.4.3` → 发布后用公开 Python Online 安装器在 Sandbox 验收完整组件安装。

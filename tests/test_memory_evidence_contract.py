@@ -339,3 +339,153 @@ def test_real_ascii_quotes_still_block_acceptance(tmp_path, content):
     conn.close()
     assert result["status"] != "accepted"
     assert "conditional_quoted_or_roleplay" in result["reason"]
+
+
+# ── span 之外的语境（2026-11-25）：模型把假设 / 引述句截成直接陈述 ──────────
+
+
+def _assess_source(tmp_path, text, span, **kwargs):
+    conn = _database(tmp_path)
+    conn.execute("UPDATE group_messages SET content = ? WHERE id = 1", (text,))
+    result = _assess(conn, _candidate(content=span, **kwargs))
+    conn.close()
+    return result
+
+
+@pytest.mark.parametrize("text", [
+    "如果我住在上海就好了",
+    "要是我住在上海，就能天天见到你",
+    "不是我住在上海",
+    '他说"我住在上海"',
+    "他说我住在上海",
+    "他说：我住在上海",
+    "她以为我住在上海",
+    "歌词里写“我住在上海”",
+])
+def test_span_cut_out_of_hypothetical_or_quote_is_not_accepted(tmp_path, text):
+    result = _assess_source(tmp_path, text, "我住在上海", value="上海")
+    assert result["status"] == "unknown"
+    assert "context_conditional_quoted_or_negated" in result["reason"]
+
+
+@pytest.mark.parametrize("text", [
+    "我住在上海",
+    "不，我住在上海",
+    "没有，我住在上海",
+    "今天好冷。我住在上海",
+    "如果有空就来玩。我住在上海",
+    "如果我住在上海就好了。后来搬家了，我住在上海",
+    "我喜欢“甜食”，我住在上海",
+])
+def test_direct_statement_with_nearby_context_still_accepted(tmp_path, text):
+    assert _assess_source(tmp_path, text, "我住在上海", value="上海")["status"] == "accepted"
+
+
+@pytest.mark.parametrize("text, span", [
+    ("If I have a blog I will write about it.", "I have a blog"),
+    ("He said I have a blog.", "I have a blog"),
+    ('She said "I have a blog" to me.', "I have a blog"),
+])
+def test_english_hypothetical_or_reported_span_is_not_accepted(tmp_path, text, span):
+    result = _assess_source(tmp_path, text, span, value="a blog", predicate="identity.have.en",
+                            statement_kind="identity_state")
+    assert result["status"] == "unknown"
+
+
+@pytest.mark.parametrize("span, value, accepted", [
+    ("I have been trying to stop", "been trying to stop", False),
+    ("I have cleaned it twice", "cleaned it twice", False),
+    ("I have to be careful", "to be careful", False),
+    ("I have two kids", "two kids", True),
+])
+def test_perfect_tense_is_not_possession(tmp_path, span, value, accepted):
+    result = _assess_source(tmp_path, span, span, value=value, predicate="identity.have.en",
+                            statement_kind="identity_state")
+    assert (result["status"] == "accepted") is accepted
+
+
+# ── 服务端推导合同（阶段2 紧凑格式，2026-11-25）──────────────────────────────
+
+
+def _compact(content, kind, type_, **over):
+    c = _candidate(content=content)
+    del c["verification_contract"]
+    return {**c, "type": type_, "statement_kind": kind, **over}
+
+
+def _assess_compact(tmp_path, text, content, kind, type_, **over):
+    conn = _database(tmp_path)
+    conn.execute("UPDATE group_messages SET content = ? WHERE id = 1", (text,))
+    result = _assess(conn, _compact(content, kind, type_, **over))
+    conn.close()
+    return result
+
+
+@pytest.mark.parametrize("content, kind, type_, predicate, value, polarity", [
+    ("我住在上海", "self_report", "FACT", "profile.residence", "上海", "positive"),
+    ("我不喜欢吃辣", "explicit_preference", "PREFERENCE", "preference.general", "吃辣", "negative"),
+    ("我打算去北京", "plan_intent", "PLAN", "plan.intend", "去北京", "positive"),
+    ("我会弹钢琴", "ability_habit", "FACT", "ability.can", "弹钢琴", "positive"),
+    ("I went to a pottery workshop on Friday", "past_event", "FACT", "past.went_to.en",
+     "a pottery workshop on Friday", "positive"),
+])
+def test_compact_candidate_contract_is_derived_by_server(
+    tmp_path, content, kind, type_, predicate, value, polarity
+):
+    result = _assess_compact(tmp_path, content, content, kind, type_)
+    assert result["status"] == "accepted", result["reason"]
+    assert result["provenance"]["predicate_key"] == predicate
+    assert result["provenance"]["canonical_value"] == value
+    assert result["provenance"]["polarity"] == polarity
+
+
+@pytest.mark.parametrize("text, content, kind, type_, reason", [
+    # 模型语义否决
+    ("我住在上海", "我住在上海", "other", "FACT", "contract_not_derivable"),
+    ("我住在上海", "我住在上海", "roleplay", "FACT", "contract_not_derivable"),
+    # 正则与模型 kind 不一致
+    ("我会住在上海", "我会住在上海", "plan_intent", "PLAN", "contract_not_derivable"),
+    ("我想我住在上海", "我想我住在上海", "plan_intent", "PLAN", "contract_not_derivable"),
+    # 不支持的句型 / 值段带逗号
+    ("我时不时会失眠", "我时不时会失眠", "self_report", "FACT", "contract_not_derivable"),
+    ("我有猫，也有狗", "我有猫，也有狗", "identity_state", "FACT", "contract_not_derivable"),
+    # 类型绑定、值段第二人称、语境守卫仍由 assess_candidate 把关
+    ("我住在上海", "我住在上海", "self_report", "PREFERENCE", "self_report_type_mismatch"),
+    ("我喜欢你画画", "我喜欢你画画", "explicit_preference", "PREFERENCE", "value_second_person"),
+    ("如果我住在上海就好了", "我住在上海", "self_report", "FACT", "context_conditional_quoted_or_negated"),
+    ("他说我住在上海", "我住在上海", "self_report", "FACT", "context_conditional_quoted_or_negated"),
+    # 改写过的 content 不是原文子串
+    ("我现在搬到了上海", "我住在上海", "self_report", "FACT", "support_span_not_in_source"),
+])
+def test_compact_candidate_not_accepted(tmp_path, text, content, kind, type_, reason):
+    result = _assess_compact(tmp_path, text, content, kind, type_)
+    assert result["status"] != "accepted"
+    assert reason in result["reason"]
+
+
+def test_compact_candidate_author_and_bot_guards_still_apply(tmp_path):
+    conn = _database(tmp_path, author="222")
+    assert _assess(conn, _compact("我住在上海", "self_report", "FACT"))["status"] != "accepted"
+    conn.close()
+
+
+def test_stage1_candidate_without_kind_stays_contract_missing(tmp_path):
+    conn = _database(tmp_path)
+    c = _compact("我住在上海", "self_report", "FACT")
+    del c["statement_kind"]
+    result = _assess(conn, c)
+    conn.close()
+    assert (result["status"], result["reason"]) == ("unknown", "contract_missing")
+
+
+@pytest.mark.parametrize("content, kind, type_, accepted", [
+    ("I like it.", "explicit_preference", "PREFERENCE", False),
+    ("我喜欢这个", "explicit_preference", "PREFERENCE", False),
+    ("I like it here in town", "explicit_preference", "PREFERENCE", True),
+    ("我喜欢这个季节", "explicit_preference", "PREFERENCE", True),
+])
+def test_pronoun_only_value_is_not_a_fact(tmp_path, content, kind, type_, accepted):
+    result = _assess_compact(tmp_path, content, content, kind, type_)
+    assert (result["status"] == "accepted") is accepted
+    if not accepted:
+        assert "value_pronoun_only" in result["reason"]

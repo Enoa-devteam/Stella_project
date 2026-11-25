@@ -114,6 +114,20 @@ def test_generate_retries_on_empty_reply(monkeypatch):
     assert result == "恢复"
 
 
+def test_empty_truncated_reply_names_reasoning_exhaustion(monkeypatch):
+    """online 思考模型把上限全花在推理上时，报错要指向上限而不是笼统的空回复。"""
+    body = {"choices": [{"message": {"content": ""}, "finish_reason": "length"}]}
+    monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **k: _FakeClient(_FakePost([(body, 200)] * 3)))
+    monkeypatch.setattr(asyncio, "sleep", _no_sleep)
+    backend = OpenAICompatibleBackend("https://x.example", api_key="k", max_tokens=1200, kind="online")
+    with pytest.raises(RuntimeError, match="max_tokens=1200 已被推理耗尽"):
+        asyncio.run(backend.generate("hi"))
+
+
+async def _no_sleep(*_args):
+    return None
+
+
 def test_generate_gives_up_on_4xx(monkeypatch):
     backend = LMStudioBackend("http://127.0.0.1:1234")
     _fake_async_client(monkeypatch, [({"error": "bad request"}, 400)])
