@@ -75,8 +75,12 @@ def test_llama_package_copies_vc_runtime(tmp_path):
 
 
 def test_release_pipeline_enforces_the_crt_gate():
-    build_rs = (ROOT / "desktop/src-tauri/build.rs").read_text(encoding="utf-8")
-    assert build_rs.index('set_var("STATIC_VCRUNTIME", "true")') < build_rs.index("tauri_build::build()")
+    # tauri-build 2.7+: static CRT via WindowsAttributes; the deprecated env var would override it.
+    for shell in ("desktop/src-tauri", "stella-installer/src-tauri"):
+        build_rs = (ROOT / shell / "build.rs").read_text(encoding="utf-8")
+        assert ".static_vc_runtime(true)" in build_rs, shell
+        assert build_rs.index('remove_var("STATIC_VCRUNTIME")') < build_rs.index("tauri_build::try_build("), shell
+        assert 'set_var("STATIC_VCRUNTIME"' not in build_rs, shell
     release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
     assert "check_windows_crt.py target/release/stella.exe" in release
     action = (ROOT / ".github/actions/llama-cpu-backend/action.yml").read_text(encoding="utf-8")
