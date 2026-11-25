@@ -6,7 +6,7 @@ Stella 使用 NoneBot 适配器连接聊天平台。NoneBot 将适配器包安�
 
 ## 目录与安装
 
-> **核心支持范围：** Stella 核心只支持 OneBot V11 与 OneBot V12（V12 接入开发中，完成前暂时停用）。其他目录适配器在核心中已短路：发行包不随安装包提供，平台页显示为不可添加，启动时跳过并记录警告。其他平台的适配计划在独立项目中开发与维护。决定见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)。下文关于预装其他适配器的描述已不适用。
+> **核心支持范围：** Stella 核心只支持 OneBot V11 与 OneBot V12（V12 经传输中立入口接入，需显式登记连接，见下文 [OneBot V12](#onebot-v12)）。其他目录适配器在核心中已短路：发行包不随安装包提供，平台页显示为不可添加，启动时跳过并记录警告。其他平台的适配计划在独立项目中开发与维护。决定见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)。下文关于预装其他适配器的描述已不适用。
 >
 > **协议方向：** OneBot V12 将成为 Stella 的主要适配协议，用于满足广泛的跨平台接入需求；OneBot V11 现有实现暂时保留。
 
@@ -38,6 +38,45 @@ Stella 使用 NoneBot 适配器连接聊天平台。NoneBot 将适配器包安�
 表单字段依据各适配器文档或配置模型整理，研究记录见[适配器配置表单研究](../reports/2026-10-23-nonebot-adapter-config-research.md)。Heybox 上游只提供不完整的配置示例，因此其预设字段不标为必填；Minecraft 锁定版本为 1.8.2，因 RCON 文档与新版说明冲突，界面不预设 RCON。适配器目录记录不代表配置字段已针对每个锁定发行包逐项通过运行验证。
 
 部分配置会根据文档拆成多账号 JSON 表单，例如 Matrix 的静态 Token、密码或 OAuth 登录，以及同步、邀请、端到端加密设置；Villa 的 Bot ID、Bot Secret、公钥和连接方式按每个 Bot 配置；WxClaw 同时提供账号字段和文档列出的通道默认项。表单中的敏感字段在读取时脱敏，提交空白凭据会保留原值。
+
+## OneBot V12
+
+OneBot V12 是面向跨平台的核心协议。它不走 OneBot V11 的 QQ 专用网关，而是经传输中立入口（`TransportIngress`）处理：可信标准化、会话策略、V2 会话登记、消息采集、一次运行时轮次，再按封存的投递计划经出站服务回复。
+
+### 接入
+
+1. 在「平台 → 添加适配器」选择 OneBot V12，在「运行时配置」填写协议端地址：正向 WebSocket 填 `ONEBOT_V12_WS_URLS`，HTTP 填 `ONEBOT_V12_API_ROOTS`；协议端反向 WebSocket 连接 `/onebot/v12/ws`。设置了访问令牌时填写 `ONEBOT_V12_ACCESS_TOKEN`。
+2. 在 WebUI 配置页的 `STELLA_TRANSPORT_SETTINGS_JSON` 专用字段为**每个** V12 Bot 登记一条连接。未登记的 Bot 连接时会记录警告，其消息被忽略。
+
+```json
+{
+  "version": 1,
+  "connections": [
+    {
+      "connection_id": "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+      "adapter": "onebot-v12",
+      "platform_scope": "wechat",
+      "self_id": "wxid_example",
+      "enabled": true
+    }
+  ],
+  "defaults": {"llm_enabled": true, "capture_enabled": true, "wake_mode": "mention"},
+  "profiles": [],
+  "bindings": [],
+  "platform_templates": {}
+}
+```
+
+- `connection_id`：自取的规范 UUID，作为该连接的稳定身份。
+- `platform_scope`：协议端在事件 `self.platform` 中上报的平台名（如 `wechat`、`qq`）；`self_id`：事件 `self.user_id`。两者必须与实际事件一致，否则事件被拒绝。
+- 策略默认值为 `llm_enabled: false`、`capture_enabled: false`：不开启时既不回复也不记录历史。`wake_mode` 为 `mention` 时，群与频道需 @ Bot，私聊直接触发。
+
+### 身份与当前范围
+
+- 用户身份域为 `onebot-v12:<platform>`，与 OneBot V11 的 `qq:client` 不合并：同一 QQ 账号经 V11 与经 V12 视为不同用户，记忆不互通。
+- 已支持：私聊、群、频道（`guild_id` 作为父级）消息的接收与回复；回复包含文本、群/频道首段引用原消息；入站与已确认送达的 Bot 台词进入会话历史；连接的 Bot 绑定到出站注册表。
+- 尚不支持（仍只在 OneBot V11 提供）：图片/文件上传与识图（V12 只提供 `file_id`，不解析为媒体）、AstrBot 插件、斜杠/称呼/开关/能力/定时命令、主动发言与群插话参与、链路心跳监测。
+- 验收状态：单元与集成测试覆盖标准化、出站编码与入口投递；尚未对真实 OneBot V12 协议端（如 ComWeChat）完成收发验收。
 
 ## 官方文档
 

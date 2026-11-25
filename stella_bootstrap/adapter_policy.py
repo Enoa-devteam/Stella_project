@@ -50,12 +50,10 @@ UNSUPPORTED_IN_CORE_ADAPTERS = dict.fromkeys(
     "unsupportedInCore",
 )
 
-# Temporarily disabled until its core integration lands. OneBot V12 shares the
-# already installed nonebot-adapter-onebot package with V11.
-TEMPORARILY_DISABLED_ADAPTERS = dict.fromkeys(
-    ("nonebot.adapters.onebot.v12",),
-    "temporarilyDisabled",
-)
+# Temporarily disabled adapters (none right now). OneBot V12 is enabled; it shares
+# the installed nonebot-adapter-onebot package with V11 and enters through the
+# transport-neutral ingress (stella_project/plugins/bot_main/onebot_v12_gateway.py).
+TEMPORARILY_DISABLED_ADAPTERS: dict[str, str] = {}
 
 
 def unavailable_adapter_reasons() -> dict[str, str]:

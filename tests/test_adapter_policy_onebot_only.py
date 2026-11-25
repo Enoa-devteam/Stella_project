@@ -25,10 +25,10 @@ def _catalog_modules() -> list[str]:
     return [item["module"] for item in items]
 
 
-def test_onebot_v11_is_the_only_available_catalog_adapter() -> None:
+def test_onebot_v11_and_v12_are_the_only_available_catalog_adapters() -> None:
     unavailable = unavailable_adapter_reasons()
     available = [module for module in _catalog_modules() if module not in unavailable]
-    assert available == ["nonebot.adapters.onebot.v11"]
+    assert sorted(available) == ["nonebot.adapters.onebot.v11", "nonebot.adapters.onebot.v12"]
     assert DEFAULT_ADAPTER_MODULES == ("nonebot.adapters.onebot.v11",)
 
 
@@ -36,7 +36,7 @@ def test_policy_blocks_keep_their_own_reason() -> None:
     unavailable = unavailable_adapter_reasons()
     assert unavailable["nonebot.adapters.mail"] == "mailSecurityCompatibility"
     assert unavailable["nonebot.adapters.villa"] == "unsupportedInCore"
-    assert unavailable["nonebot.adapters.onebot.v12"] == "temporarilyDisabled"
+    assert "nonebot.adapters.onebot.v12" not in unavailable
 
 
 def test_disabled_adapter_packages_are_not_runtime_requirements() -> None:
@@ -48,7 +48,7 @@ def test_disabled_adapter_packages_are_not_runtime_requirements() -> None:
     ]
     assert active == ["nonebot-adapter-onebot"]
     assert len(UNSUPPORTED_IN_CORE_ADAPTERS) == 27
-    assert set(TEMPORARILY_DISABLED_ADAPTERS) == {"nonebot.adapters.onebot.v12"}
+    assert TEMPORARILY_DISABLED_ADAPTERS == {}
 
 
 def test_every_reason_has_dashboard_text() -> None:

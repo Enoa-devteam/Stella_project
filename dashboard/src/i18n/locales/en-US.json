@@ -264,7 +264,7 @@
         "ntchat": "The upstream project has been inactive for a long time and pins an older httpx version that conflicts with Stella's current NoneBot dependency stack.",
         "mailSecurityCompatibility": "The upstream release still requires aiosmtplib 3.x, which has unresolved security advisories; no compatible fixed release is available.",
         "requiresPython311": "This adapter requires Python 3.11 or newer; the current installer Python version does not satisfy it.",
-        "temporarilyDisabled": "Temporarily disabled: OneBot V12 integration is still in development and will be enabled when it lands.",
+        "temporarilyDisabled": "Temporarily disabled: this adapter is not available in the current version.",
         "unsupportedInCore": "Stella core supports only OneBot V11 and OneBot V12. Adapters for other platforms are planned as a separately maintained project."
       },
       "noAdaptersFound": "No matching platforms. Change the search or add a custom adapter above.",
