@@ -10,11 +10,12 @@
 | `security` | `pip-audit -r requirements.txt`（阻塞；仅三个上游约束导致的 cryptography ID 按下文精确豁免）+ `bandit`（非阻塞，报告上传为 artifact） |
 | `test` | 3.10 / 3.11 / 3.12 三版本矩阵，从 `requirements-platform.lock` 安装基础与可选平台桥接依赖，再运行 `pytest tests/ --cov=. --cov-branch -n auto`，覆盖率报告上传为 artifact |
 | `cli` | Rust CLI（`cli/`）：`cargo fmt --check` + `clippy -- -D warnings` + `cargo test`，另对帮助文本做子命令清单冒烟（doctor/init/start/stop/restart/status/logs/upgrade/migrate/plugin/capabilities/manifest/compose），防止重构悄悄丢命令 |
+| `rust-crates` | windows-latest 矩阵：`desktop/src-tauri`、`stella-installer/src-tauri`、`desktop/launcher`、`runtime-manager`、`memory_rust/native` 各跑 `cargo test --locked`，并用 `scripts/check_rust_msrv.py` 确认声明的 `rust-version` 不低于锁定依赖要求（#182：此前只编译 `cli`，依赖升级的 API 破坏要到发布才暴露）。桌面壳用占位 `desktop/dashboard-dist` 满足 `generate_context!()` |
 | `windows-native` | windows-latest 上跑 `pytest tests/windows`——进程树、升级与安装可靠性的原生矩阵（哨兵/PID/激活记录等都依赖真实 Windows 语义） |
 | `documentation` | 标准库链接/锚点、双语配对、迁移映射、状态检查与六个正反例合同测试 |
 | `flow-manifest` | 源码锚点与消息流程生成物漂移门禁 |
 | `flow-closure` | GitNexus 索引、inventory 与独立发现入口对账 |
-| `notify` | 仅 PR：汇总状态并评论（依赖 test/lint/security/cli/flow-manifest/flow-closure/documentation） |
+| `notify` | 仅 PR：汇总状态并评论（依赖 test/lint/security/cli/rust-crates/flow-manifest/flow-closure/documentation） |
 
 `test` 依赖 `lint` 与 `security` 通过；`fail-fast: false` 保证某个版本失败时其余继续。同一分支的旧工作流会被自动取消。
 

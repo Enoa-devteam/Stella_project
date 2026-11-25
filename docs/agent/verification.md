@@ -24,6 +24,7 @@ Linux / Git Bash 用 `bash init.sh docs|python|dashboard`。安装依赖见 [环
 | 消息流程 / 埋点 | `python scripts/generate_message_flow.py --check` | inventory / discovered entries 与真实事件闭包；[CI](../development/ci.md) |
 | 迁移 / native 合同 | 旧库回归、native cargo test、显式 native parity | 临时库 dry-run 和失败回滚；[数据库](../development/database.md)、[合同](../development/contracts.md) |
 | Rust CLI | `cargo fmt --manifest-path cli/Cargo.toml --all --check`、`cargo clippy --manifest-path cli/Cargo.toml --all-targets -- -D warnings`、`cargo test --manifest-path cli/Cargo.toml` | 帮助清单冒烟；`.github/workflows/ci.yml` |
+| 其余 Rust crate | 在对应目录 `cargo test --locked`（桌面壳需先建 `desktop/dashboard-dist/index.html` 占位，勿提交）、`python scripts/check_rust_msrv.py <crate>` | CI `rust-crates` 矩阵；GUI / 安装行为仍需 Sandbox |
 | prompt / 归属 / Router | 定向回归与正反例模型探针 / benchmark | 实际 prompt、原始输出、QQ 收发；[探针](../development/probes.md) |
 | 部署 / EXE / 升级 | Windows native、包布局、manifest / SHA256、发布回读 | 干净 VM / GUI 首启；[发布](../development/release.md)、[VM 矩阵](../../release_assets/VM-MATRIX.md) |
 

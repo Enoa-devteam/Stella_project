@@ -2,7 +2,7 @@
 name = "stella-memory-rust"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.88"
 description = "Optional Rust memory retrieval engine for Stella"
 license = "AGPL-3.0-only"
 
