@@ -287,6 +287,53 @@ class TestDeliverLines:
         with pytest.raises(DeliveryPlanError, match="scope version is unavailable"):
             seal_delivery_plan(draft)
 
+    def test_delivery_draft_keeps_qq_person_owner_scope(self, monkeypatch):
+        from memory import scope_versions
+
+        seen: list[list[str]] = []
+
+        def versions(keys):
+            seen.append(list(keys))
+            return dict.fromkeys(keys, 1)
+
+        monkeypatch.setattr(scope_versions, "current_versions_strict", versions)
+        ctx = SimpleNamespace(
+            trace_id="qq-trace", turn_id="qq-turn", delivery_source_kind="model",
+            reply_disposition="deliver", lines=["hi"], group_shared_space="space-a",
+            conversation_key="qq:10001:private:7", bot_id="10001", user_id=7,
+        )
+        draft = delivery_draft_from_context(ctx)
+
+        assert draft["scope_versions_available"] is True
+        assert len(seen[0]) == 2  # space owner + QQ person owner
+
+    def test_delivery_draft_accepts_opaque_transport_user_ids(self, monkeypatch):
+        """OneBot V12 等传输层会话的用户 ID 可以是非数字字符串（如 wxid_…）。
+
+        回归：此前先 int(user_id) 再判断 qq: 前缀，非数字 ID 抛错后草稿被标记为
+        scope 版本不可用，回复被投递门静默拒绝。
+        """
+        from memory import scope_versions
+
+        seen: list[list[str]] = []
+
+        def versions(keys):
+            seen.append(list(keys))
+            return dict.fromkeys(keys, 1)
+
+        monkeypatch.setattr(scope_versions, "current_versions_strict", versions)
+        ctx = SimpleNamespace(
+            trace_id="v12-trace", turn_id="v12-turn", delivery_source_kind="model",
+            reply_disposition="deliver", lines=["hi"], group_shared_space="space-b",
+            conversation_key="c2.opaque", bot_id="bot-self", user_id="wxid_abc",
+        )
+        draft = delivery_draft_from_context(ctx)
+
+        assert draft["scope_versions_available"] is True
+        assert len(seen[0]) == 1  # space owner only; no QQ person owner
+        plan = seal_delivery_plan(draft)
+        assert [segment["text"] for segment in plan["segments"]] == ["hi"]
+
     def test_capability_direct_reply_is_a_trusted_source(self, monkeypatch):
         """能力直回（不经生成、ctx.llm_call_count == 0）必须能封存投递计划。
 

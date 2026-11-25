@@ -173,9 +173,12 @@ def delivery_draft_from_context(ctx: Any) -> dict[str, Any]:
         if space:
             keys.append(space_owner_key(space))
         bot_id = str(getattr(ctx, "bot_id", "") or "")
-        user_id = int(getattr(ctx, "user_id", 0) or 0)
-        if bot_id and user_id > 0 and str(getattr(ctx, "conversation_key", "")).startswith("qq:"):
-            keys.append(person_owner_key("qq", bot_id, user_id))
+        # Only legacy QQ conversations carry numeric person owners; transport
+        # conversations (e.g. OneBot V12) may use opaque, non-numeric user IDs.
+        if bot_id and str(getattr(ctx, "conversation_key", "")).startswith("qq:"):
+            user_id = int(getattr(ctx, "user_id", 0) or 0)
+            if user_id > 0:
+                keys.append(person_owner_key("qq", bot_id, user_id))
         captured_versions = current_versions_strict(list(dict.fromkeys(keys)))
     except Exception:
         captured_versions = {}
