@@ -168,7 +168,7 @@ pillow==13.0.0 ; python_full_version >= '3.11'
     #   -r requirements.txt
     #   bilibili-api-python
     #   qrcode-terminal
-playwright==1.64.0
+playwright==1.65.2
     # via -r requirements.txt
 propcache==0.5.4
     # via
@@ -191,10 +191,6 @@ pydantic==2.14.1
     #   nonebot2
 pydantic-core==2.50.1
     # via pydantic
-pyee==13.0.1 ; python_full_version < '3.12'
-    # via playwright
-pyee==14.0.0 ; python_full_version >= '3.12'
-    # via playwright
 pygtrie==2.5.0
     # via
     #   -r requirements.txt
@@ -291,7 +287,6 @@ typing-extensions==4.16.0
     #   opentelemetry-api
     #   pydantic
     #   pydantic-core
-    #   pyee
     #   pyjwt
     #   referencing
     #   starlette

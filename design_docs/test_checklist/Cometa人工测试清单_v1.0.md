@@ -328,7 +328,7 @@ enabled = true
 
 ## T16 Codex 认证配置（WebUI 双路线 + 托管 codex_home）
 
-**前置**：T0 完成；`pip install openai-codex==0.159.2 -i https://pypi.org/simple`
+**前置**：T0 完成；`pip install openai-codex==0.171.0 -i https://pypi.org/simple`
 已装（SDK 缺失时认证按钮会报 503，属预期）；WebUI 可访问 `/#/cometa`。
 注意：本项**全程不需要重启 Bot**（认证即时生效是设计行为）。
 
