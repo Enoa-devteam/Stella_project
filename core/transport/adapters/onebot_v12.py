@@ -10,7 +10,8 @@ use the ``onebot-v12:<platform>`` domain and are not merged with the legacy
 OneBot V11 ``qq:client`` domain.
 
 The module does not import the platform package at import time. No matcher, Bot
-connection or startup registration is installed here.
+connection or startup registration is installed here; callers wire the outbound
+side explicitly with ``register_onebot_v12_transport``.
 """
 
 from __future__ import annotations
@@ -28,6 +29,13 @@ from core.transport.message_event import (
 )
 from core.transport.models import BotRef, SceneRef, UserRef
 from core.transport.normalizers import NormalizedEvent, UnsupportedEvent
+from core.transport.outbound import (
+    AdapterSendResult,
+    DeliveryStatus,
+    DeliveryTarget,
+    OutboundKind,
+    OutboundMessage,
+)
 
 ONEBOT_V12_ADAPTER = "onebot-v12"
 _ONEBOT_V12_ADAPTER_KEYS = frozenset({"onebotv12"})
@@ -165,6 +173,141 @@ class OneBot12Normalizer:
 
 
 onebot12_normalizer = OneBot12Normalizer()
+
+
+class OneBotV12TargetCodec:
+    """Encode exact private, group and channel targets as ``send_message`` params."""
+
+    def encode(self, target: DeliveryTarget, *, bot_handle: Any) -> dict[str, str]:
+        if target.target_codec_version != 1:
+            raise ValueError("OneBot V12 target codec version is unsupported")
+        if target.bot.adapter != ONEBOT_V12_ADAPTER:
+            raise ValueError("OneBot V12 target identity mismatch")
+        if target.routing_parameters:
+            raise ValueError("OneBot V12 target has unsupported routing parameters")
+        if _adapter_key(_adapter_name(bot_handle)) not in _ONEBOT_V12_ADAPTER_KEYS:
+            raise ValueError("OneBot V12 Bot adapter identity mismatch")
+        if str(_get(bot_handle, "self_id")) != target.bot.self_id:
+            raise ValueError("OneBot V12 Bot handle self identity mismatch")
+        if _get(bot_handle, "platform") != target.bot.platform_scope:
+            raise ValueError("OneBot V12 Bot handle platform mismatch")
+
+        scene = target.scene
+        if not _valid_text(scene.scene_id) or scene.thread_id is not None:
+            raise ValueError("OneBot V12 target scene is invalid")
+        if scene.kind == "private" and not scene.parent_path:
+            return {"detail_type": "private", "user_id": scene.scene_id}
+        if scene.kind == "group" and not scene.parent_path:
+            return {"detail_type": "group", "group_id": scene.scene_id}
+        if scene.kind == "channel" and len(scene.parent_path) == 1:
+            guild_id = scene.parent_path[0]
+            if not _valid_text(guild_id):
+                raise ValueError("OneBot V12 guild ID is invalid")
+            return {
+                "detail_type": "channel",
+                "guild_id": guild_id,
+                "channel_id": scene.scene_id,
+            }
+        raise ValueError("OneBot V12 target scene kind is unsupported")
+
+
+class OneBotV12Exporter:
+    """Send text, mentions and replies through the exact bound V12 Bot."""
+
+    async def send(
+        self,
+        target: DeliveryTarget,
+        message: OutboundMessage,
+        *,
+        bot_handle: Any,
+        capabilities: AdapterCapabilities,
+        encoded_target: dict[str, str],
+    ) -> AdapterSendResult:
+        if (
+            capabilities.adapter != ONEBOT_V12_ADAPTER
+            or capabilities.platform_scope != target.bot.platform_scope
+        ):
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_capability_identity_mismatch"
+            )
+        try:
+            trusted_target = OneBotV12TargetCodec().encode(target, bot_handle=bot_handle)
+        except Exception:
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_target_identity_mismatch"
+            )
+        if trusted_target != encoded_target:
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_encoded_target_mismatch"
+            )
+        try:
+            from nonebot.adapters.onebot.v12 import Message, MessageSegment
+        except ImportError:
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_adapter_unavailable"
+            )
+
+        segments: list[Any] = []
+        for segment in message.segments:
+            if segment.kind is OutboundKind.TEXT:
+                if segment.text:
+                    segments.append(MessageSegment.text(segment.text))
+            elif segment.kind is OutboundKind.AT:
+                if encoded_target["detail_type"] != "private":
+                    segments.append(MessageSegment.mention(segment.target_id))
+            elif segment.kind is OutboundKind.REPLY:
+                segments.append(MessageSegment.reply(segment.target_id))
+            elif segment.kind is OutboundKind.NATIVE and isinstance(
+                segment.native_segment, MessageSegment
+            ):
+                segments.append(segment.native_segment)
+            else:
+                return AdapterSendResult(
+                    DeliveryStatus.UNSUPPORTED, error_code="onebot12_segment_unsupported"
+                )
+        if not any(_get(item, "type") != "reply" for item in segments):
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_empty_after_export"
+            )
+
+        send_message = _get(bot_handle, "send_message")
+        if not callable(send_message):
+            return AdapterSendResult(
+                DeliveryStatus.UNSUPPORTED, error_code="onebot12_send_api_unavailable"
+            )
+        try:
+            receipt = await send_message(**encoded_target, message=Message(segments))
+        except TimeoutError:
+            return AdapterSendResult(DeliveryStatus.UNKNOWN, error_code="onebot12_send_timeout")
+        except Exception as exc:
+            if _is_action_failed(exc):
+                return AdapterSendResult(
+                    DeliveryStatus.FAILED, error_code="onebot12_action_failed"
+                )
+            # A network error after the request was written may still have sent it.
+            return AdapterSendResult(
+                DeliveryStatus.UNKNOWN, error_code="onebot12_send_outcome_unknown"
+            )
+
+        message_id = _get(receipt, "message_id")
+        if not _valid_text(message_id):
+            return AdapterSendResult(
+                DeliveryStatus.UNKNOWN, error_code="onebot12_receipt_id_missing"
+            )
+        return AdapterSendResult(DeliveryStatus.ACCEPTED, (message_id,))
+
+
+def register_onebot_v12_transport(registry: Any) -> None:
+    """Register the V12 exporter with a platform-following capability provider."""
+    if registry.binding_for(ONEBOT_V12_ADAPTER) is not None:
+        return
+    registry.register_exporter(
+        ONEBOT_V12_ADAPTER,
+        OneBotV12Exporter(),
+        ONEBOT_V12_CAPABILITIES,
+        target_codec=OneBotV12TargetCodec(),
+        capability_provider=OneBotV12CapabilityProvider(),
+    )
 
 
 def _scene(event: Any, user_id: str) -> SceneRef | UnsupportedEvent:
@@ -312,6 +455,14 @@ def _segment_data(segment: Any) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def _is_action_failed(exc: Exception) -> bool:
+    return any(
+        cls.__name__ == "ActionFailed"
+        and cls.__module__.startswith("nonebot.adapters.onebot")
+        for cls in type(exc).__mro__
+    )
+
+
 def _is_tome(event: Any) -> bool:
     predicate = _get(event, "is_tome")
     if not callable(predicate):
@@ -327,6 +478,9 @@ __all__ = [
     "ONEBOT_V12_CAPABILITIES",
     "OneBot12Normalizer",
     "OneBotV12CapabilityProvider",
+    "OneBotV12Exporter",
+    "OneBotV12TargetCodec",
     "onebot12_normalizer",
     "onebot_v12_identity_domain",
+    "register_onebot_v12_transport",
 ]

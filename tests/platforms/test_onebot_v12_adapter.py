@@ -206,3 +206,162 @@ def test_capability_provider_follows_target_platform():
     assert not capabilities.upload_image
     other = SimpleNamespace(bot=BotRef("legacy-qq:1", "onebot-v11", "qq", "1"))
     assert provider.capabilities_for(other) is None
+
+
+# ── Outbound ────────────────────────────────────────────────────────────────
+
+import asyncio
+
+from nonebot.adapters.onebot.v12 import Message, MessageSegment
+from nonebot.adapters.onebot.v12.exception import ActionFailed
+
+from core.transport.adapters.onebot_v12 import (
+    OneBotV12TargetCodec,
+    register_onebot_v12_transport,
+)
+from core.transport.outbound import (
+    DeliveryStatus,
+    DeliveryTarget,
+    OutboundMessage,
+    OutboundSegment,
+    OutboundService,
+    TransportRegistry,
+)
+
+BOT_REF = BotRef(CONNECTION, ONEBOT_V12_ADAPTER, "wechat", BOT_ID)
+
+
+class _SendingBot(SimpleNamespace):
+    def __init__(self, *, error: Exception | None = None, receipt=None, **kwargs):
+        super().__init__(
+            self_id=kwargs.get("self_id", BOT_ID),
+            platform=kwargs.get("platform", "wechat"),
+            adapter=SimpleNamespace(get_name=lambda: "OneBot V12"),
+        )
+        self.calls: list[dict] = []
+        self._error = error
+        self._receipt = {"message_id": "sent-1", "time": 1.0} if receipt is None else receipt
+
+    async def send_message(self, **params):
+        self.calls.append(params)
+        if self._error is not None:
+            raise self._error
+        return self._receipt
+
+
+def _service(bot) -> OutboundService:
+    service = OutboundService(TransportRegistry())
+    register_onebot_v12_transport(service.registry)
+    service.registry.bind_bot(BOT_REF, bot)
+    return service
+
+
+@pytest.mark.parametrize(
+    ("scene", "expected"),
+    [
+        (SceneRef("private", "user-7"), {"detail_type": "private", "user_id": "user-7"}),
+        (SceneRef("group", "group-9"), {"detail_type": "group", "group_id": "group-9"}),
+        (
+            SceneRef("channel", "chan-2", parent_path=("guild-1",)),
+            {"detail_type": "channel", "guild_id": "guild-1", "channel_id": "chan-2"},
+        ),
+    ],
+)
+def test_target_codec_encodes_exact_scenes(scene, expected):
+    target = DeliveryTarget(BOT_REF, scene)
+    assert OneBotV12TargetCodec().encode(target, bot_handle=_SendingBot()) == expected
+
+
+@pytest.mark.parametrize(
+    ("target", "bot"),
+    [
+        (DeliveryTarget(BOT_REF, SceneRef("thread", "t", thread_id="t")), _SendingBot()),
+        (DeliveryTarget(BOT_REF, SceneRef("group", "g", parent_path=("x",))), _SendingBot()),
+        (DeliveryTarget(BOT_REF, SceneRef("group", "g")), _SendingBot(platform="qq")),
+        (DeliveryTarget(BOT_REF, SceneRef("group", "g")), _SendingBot(self_id="other")),
+        (
+            DeliveryTarget(BotRef("legacy-qq:1", "onebot-v11", "qq", "1"), SceneRef("group", "g")),
+            _SendingBot(),
+        ),
+    ],
+)
+def test_target_codec_rejects_mismatched_or_unsupported_targets(target, bot):
+    with pytest.raises(ValueError):
+        OneBotV12TargetCodec().encode(target, bot_handle=bot)
+
+
+def test_group_reply_sends_reply_mention_and_text_through_bound_bot():
+    bot = _SendingBot()
+    target = DeliveryTarget(BOT_REF, SceneRef("group", "group-9"))
+    message = OutboundMessage(
+        (
+            OutboundSegment.reply("msg-1"),
+            OutboundSegment.at("user-7"),
+            OutboundSegment.text_segment("hello"),
+        )
+    )
+    result = asyncio.run(_service(bot).send(target, message))
+
+    assert result.status is DeliveryStatus.ACCEPTED
+    assert result.message_ids == ("sent-1",)
+    assert len(bot.calls) == 1
+    call = bot.calls[0]
+    assert {k: v for k, v in call.items() if k != "message"} == {
+        "detail_type": "group",
+        "group_id": "group-9",
+    }
+    assert call["message"] == Message(
+        [
+            MessageSegment.reply("msg-1"),
+            MessageSegment.mention("user-7"),
+            MessageSegment.text("hello"),
+        ]
+    )
+
+
+def test_private_reply_drops_mentions():
+    bot = _SendingBot()
+    target = DeliveryTarget(BOT_REF, SceneRef("private", "user-7"))
+    message = OutboundMessage((OutboundSegment.at("user-7"), OutboundSegment.text_segment("hi")))
+    result = asyncio.run(_service(bot).send(target, message))
+
+    assert result.status is DeliveryStatus.ACCEPTED
+    assert bot.calls[0]["message"] == Message([MessageSegment.text("hi")])
+
+
+def test_image_without_upload_support_is_rejected_before_sending():
+    from core.transport.media import MediaSource
+
+    bot = _SendingBot()
+    target = DeliveryTarget(BOT_REF, SceneRef("group", "group-9"))
+    image = OutboundSegment.image(MediaSource(kind="image", uri="https://example.com/a.png"))
+    result = asyncio.run(_service(bot).send(target, OutboundMessage((image,))))
+
+    assert result.status is DeliveryStatus.UNSUPPORTED
+    assert bot.calls == []
+
+
+@pytest.mark.parametrize(
+    ("bot", "status"),
+    [
+        (_SendingBot(error=ActionFailed()), DeliveryStatus.FAILED),
+        (_SendingBot(error=RuntimeError("socket closed")), DeliveryStatus.UNKNOWN),
+        (_SendingBot(receipt={"time": 1.0}), DeliveryStatus.UNKNOWN),
+    ],
+)
+def test_send_failures_are_classified_conservatively(bot, status):
+    target = DeliveryTarget(BOT_REF, SceneRef("group", "group-9"))
+    result = asyncio.run(_service(bot).send(target, OutboundMessage.text("x")))
+
+    assert result.status is status
+
+
+def test_register_is_idempotent_and_keeps_v11_default():
+    registry = TransportRegistry()
+    service = OutboundService(registry)
+    register_onebot_v12_transport(registry)
+    first = registry.binding_for(ONEBOT_V12_ADAPTER)
+    register_onebot_v12_transport(registry)
+
+    assert registry.binding_for(ONEBOT_V12_ADAPTER) is first
+    assert service.registry.binding_for("onebot-v11") is not None
