@@ -10,11 +10,12 @@
 | `security` | `pip-audit -r requirements.txt` (blocking; only the three upstream-constrained cryptography IDs documented below are ignored) + `bandit` (non-blocking; report uploaded as an artifact) |
 | `test` | 3.10 / 3.11 / 3.12 version matrix; installs base and optional platform bridge dependencies from `requirements-platform.lock`, runs `pytest tests/ --cov=. --cov-branch -n auto`, and uploads coverage as an artifact |
 | `cli` | The Rust CLI (`cli/`): `cargo fmt --check` + `clippy -- -D warnings` + `cargo test`, plus a help-text smoke test over the subcommand list (doctor/init/start/stop/restart/status/logs/upgrade/migrate/plugin/capabilities/manifest/compose) so refactors cannot silently drop commands |
+| `rust-crates` | windows-latest matrix: `cargo test --locked` for `desktop/src-tauri`, `stella-installer/src-tauri`, `desktop/launcher`, `runtime-manager` and `memory_rust/native`, plus `scripts/check_rust_msrv.py` to confirm each declared `rust-version` covers the locked dependencies (#182: CI used to compile only `cli`, so dependency API breaks surfaced at release time). The desktop shell gets a placeholder `desktop/dashboard-dist` so `generate_context!()` compiles |
 | `windows-native` | Runs `pytest tests/windows` on windows-latest — the native matrix for process trees, upgrades, and installation reliability (sentinels/PIDs/activation records depend on real Windows semantics) |
 | `documentation` | Stdlib link/anchor, language-pair, redirect, state checks and six positive/negative contract tests |
 | `flow-manifest` | Source anchor and generated message-flow drift gate |
 | `flow-closure` | GitNexus index plus inventory/discovered-entry reconciliation |
-| `notify` | PRs only: summarize status and comment (depends on test/lint/security/cli/flow-manifest/flow-closure/documentation) |
+| `notify` | PRs only: summarize status and comment (depends on test/lint/security/cli/rust-crates/flow-manifest/flow-closure/documentation) |
 
 `test` depends on `lint` and `security` passing; `fail-fast: false` ensures the other versions continue when one fails. Older workflows on the same branch are cancelled automatically.
 

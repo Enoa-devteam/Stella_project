@@ -261,6 +261,47 @@ jobs:
             echo "$HELP" | grep -q "  $sub" || { echo "::error::帮助文本缺少子命令 $sub"; exit 1; }
           done
 
+  # ============ 其余 Rust crate（#182：此前 CI 只编译 cli，依赖升级的 API 破坏漏到 PR 合并前） ============
+  # Tauri 壳与 launcher 面向 Windows，统一在 windows-latest 上 test；同时校验声明的 rust-version
+  # 不低于锁定依赖要求的版本。
+  rust-crates:
+    name: Rust ${{ matrix.crate }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - desktop/src-tauri
+          - stella-installer/src-tauri
+          - desktop/launcher
+          - runtime-manager
+          - memory_rust/native
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.crate }}
+
+      # generate_context!() 要求 frontendDist 存在；真实前端只在 release 里构建。
+      - name: 占位前端产物
+        if: matrix.crate == 'desktop/src-tauri'
+        run: |
+          New-Item -ItemType Directory -Force -Path desktop/dashboard-dist | Out-Null
+          Set-Content -LiteralPath desktop/dashboard-dist/index.html -Value '<!doctype html><title>ci</title>'
+
+      - name: rust-version 覆盖锁定依赖
+        run: python scripts/check_rust_msrv.py ${{ matrix.crate }}
+
+      - name: 单元测试
+        working-directory: ${{ matrix.crate }}
+        run: cargo test --locked
+
   windows-native:
     name: Windows native reliability matrix
     runs-on: windows-latest
@@ -369,7 +410,7 @@ jobs:
 
   # ============ 通知（可选） ============
   notify:
-    needs: [test, lint, security, cli, flow-manifest, flow-closure, documentation, memory-benchmark-public]
+    needs: [test, lint, security, cli, rust-crates, flow-manifest, flow-closure, documentation, memory-benchmark-public]
     runs-on: ubuntu-latest
     if: always() && github.event_name == 'pull_request'
     permissions:
@@ -382,6 +423,7 @@ jobs:
              [ "${{ needs.lint.result }}" == "success" ] && \
              [ "${{ needs.security.result }}" == "success" ] && \
              [ "${{ needs.cli.result }}" == "success" ] && \
+             [ "${{ needs.rust-crates.result }}" == "success" ] && \
              [ "${{ needs.flow-manifest.result }}" == "success" ] && \
              [ "${{ needs.flow-closure.result }}" == "success" ] && \
              [ "${{ needs.documentation.result }}" == "success" ] &&              [ "${{ needs.memory-benchmark-public.result }}" == "success" ]; then

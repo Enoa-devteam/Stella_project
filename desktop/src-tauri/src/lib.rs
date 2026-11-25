@@ -11,9 +11,14 @@ pub fn desktop_session_secret() -> &'static str {
     use std::sync::OnceLock;
     static SECRET: OnceLock<String> = OnceLock::new();
     SECRET.get_or_init(|| {
-        use rand::Rng;
-        rand::thread_rng()
-            .sample_iter(rand::distributions::Alphanumeric)
+        use rand::RngExt;
+        // 这是会话凭据：只接受 CryptoRng（rand 0.10 的 ThreadRng 为 OS 播种的 ChaCha12）。
+        // 换成非密码学 RNG 会在这里编译失败。
+        fn csprng<R: rand::CryptoRng>(rng: R) -> R {
+            rng
+        }
+        csprng(rand::rng())
+            .sample_iter(rand::distr::Alphanumeric)
             .take(48)
             .map(char::from)
             .collect()
@@ -62,4 +67,15 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn desktop_session_secret_is_stable_48_char_alphanumeric() {
+        let secret = super::desktop_session_secret();
+        assert_eq!(secret.len(), 48);
+        assert!(secret.chars().all(|c| c.is_ascii_alphanumeric()));
+        assert_eq!(secret, super::desktop_session_secret());
+    }
 }

@@ -110,6 +110,23 @@ def _inert_capture_gate(monkeypatch):
     monkeypatch.setattr(capture_gate, "_gate", None)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_model_resource_groups(monkeypatch):
+    """每个用例独立的端点槽→共享资源组映射与 scheduler 并发解析器。
+
+    Gravitas bootstrap 启动时调用 ``configure_resource_groups``，默认配置把
+    CHAT/MEMORY 并进 ``local_inference``，且进程内不会撤销。#182：同一 xdist
+    worker 里先跑了 test_g02 的 bootstrap 用例，后面的模型调用就排到
+    ``local_inference`` 而不是 ``CHAT``，test_facade_turns 盯着 CHAT 闸门等满 10s 失败。
+    """
+    import core.llm.scheduler as scheduler
+    import gravitas.model_calls as model_calls
+
+    monkeypatch.setattr(model_calls, "_RESOURCE_GROUP_BY_SLOT", dict(model_calls._RESOURCE_GROUP_BY_SLOT))
+    monkeypatch.setattr(model_calls, "_RESOURCE_GROUP_LIMITS", dict(model_calls._RESOURCE_GROUP_LIMITS))
+    monkeypatch.setattr(scheduler, "_concurrency_resolver", scheduler._concurrency_resolver)
+
+
 # ============================================================
 # cometa 共享夹具（tests/cometa/conftest.py 里有同名细粒度版本；
 # 这里提供跨目录（tests/capability 等）可用的最小形态）

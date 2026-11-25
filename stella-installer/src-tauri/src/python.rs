@@ -517,8 +517,26 @@ mod runtime_bootstrap {
     fn sha256_hex(path: &Path) -> Result<String, String> {
         let mut file = File::open(path).map_err(|e| e.to_string())?;
         let mut hasher = Sha256::new();
-        io::copy(&mut file, &mut hasher).map_err(|e| e.to_string())?;
-        Ok(format!("{:X}", hasher.finalize()))
+        // sha2 0.11 不再为 Sha256 实现 io::Write，摘要也不再实现 UpperHex：
+        // 手动分块喂入，输出保持大写十六进制（PY_SHA256 与 marker 均按大写比对）。
+        let mut buf = [0u8; 64 * 1024];
+        loop {
+            let n = file.read(&mut buf).map_err(|e| e.to_string())?;
+            if n == 0 {
+                break;
+            }
+            hasher.update(&buf[..n]);
+        }
+        Ok(upper_hex(&hasher.finalize()))
+    }
+
+    fn upper_hex(bytes: &[u8]) -> String {
+        use std::fmt::Write as _;
+        let mut out = String::with_capacity(bytes.len() * 2);
+        for b in bytes {
+            let _ = write!(out, "{b:02X}");
+        }
+        out
     }
 
     fn extract_zip(zip_path: &Path, dest: &Path) -> Result<(), String> {
@@ -526,11 +544,25 @@ mod runtime_bootstrap {
         let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("解压失败：{e}"))?;
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index).map_err(|e| e.to_string())?;
-            let name = entry.name().replace('\\', "/");
-            if name.starts_with('/') || name.split('/').any(|part| part == "..") {
-                return Err(format!("压缩包包含不安全路径：{name}"));
-            }
-            let out = dest.join(&name);
+            // zip 9 起 name() 返回 Result（文件名编码无法解析时报错）。
+            let name = entry
+                .name()
+                .map_err(|e| format!("压缩包条目名无法解析（#{index}）：{e}"))?
+                .replace('\\', "/");
+            // `C:/x` 这类盘符路径过不了旧检查之外的任何一道：dest.join() 遇到盘符会整段替换，
+            // 直接写到 runtime 之外。因此拒绝含 `:` 的名字（盘符、NTFS 备用数据流），
+            // 并只用 enclosed_name()（已拒绝 NUL / 越界 / Windows 设备名）拼接输出路径。
+            let enclosed = match entry.enclosed_name() {
+                Some(path)
+                    if !name.starts_with('/')
+                        && !name.contains(':')
+                        && !name.split('/').any(|part| part == "..") =>
+                {
+                    path
+                }
+                _ => return Err(format!("压缩包包含不安全路径：{name}")),
+            };
+            let out = dest.join(enclosed);
             if entry.is_dir() {
                 fs::create_dir_all(&out).map_err(|e| e.to_string())?;
             } else {
@@ -848,6 +880,57 @@ mod runtime_bootstrap {
                 sha256_hex(&file).unwrap(),
                 "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"
             );
+            fs::remove_dir_all(&dir).ok();
+        }
+
+        /// sha2 0.11 后改为 64 KiB 分块喂入：跨多个块的文件必须与一次性摘要一致，且仍是大写。
+        #[test]
+        fn sha256_hex_streams_multi_chunk_files_like_one_shot_digest() {
+            let dir = std::env::temp_dir().join("stella-hash-chunk-test");
+            fs::create_dir_all(&dir).unwrap();
+            let file = dir.join("payload");
+            let body: Vec<u8> = (0..200_003u32).map(|i| (i % 251) as u8).collect();
+            fs::write(&file, &body).unwrap();
+            assert_eq!(sha256_hex(&file).unwrap(), upper_hex(&Sha256::digest(&body)));
+            assert!(!sha256_hex(&file).unwrap().chars().any(|c| c.is_ascii_lowercase()));
+            fs::remove_dir_all(&dir).ok();
+        }
+
+        fn write_test_zip(path: &Path, entries: &[(&str, &[u8])]) {
+            use zip::write::SimpleFileOptions;
+            let mut writer = zip::ZipWriter::new(File::create(path).unwrap());
+            let options =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+            for (name, body) in entries {
+                writer.start_file(*name, options).unwrap();
+                writer.write_all(body).unwrap();
+            }
+            writer.finish().unwrap();
+        }
+
+        /// zip 9 起 name() 返回 Result；正常条目照常解压，越界/绝对/盘符路径一律拒绝，
+        /// 且拒绝时不会把文件写到 dest 之外。
+        #[test]
+        fn extract_zip_extracts_safe_entries_and_rejects_traversal() {
+            let dir = std::env::temp_dir().join("stella-extract-zip-test");
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(&dir).unwrap();
+
+            let ok_zip = dir.join("ok.zip");
+            write_test_zip(&ok_zip, &[("python.exe", b"exe"), (r"Lib\site.py", b"site")]);
+            let dest = dir.join("runtime");
+            extract_zip(&ok_zip, &dest).unwrap();
+            assert_eq!(fs::read(dest.join("python.exe")).unwrap(), b"exe");
+            assert_eq!(fs::read(dest.join("Lib").join("site.py")).unwrap(), b"site");
+
+            for bad in ["../escape.txt", "a/../../escape.txt", "/abs.txt", "C:/drive.txt"] {
+                let bad_zip = dir.join("bad.zip");
+                write_test_zip(&bad_zip, &[(bad, b"x")]);
+                let bad_dest = dir.join("bad-runtime");
+                let err = extract_zip(&bad_zip, &bad_dest).unwrap_err();
+                assert!(err.contains("不安全路径"), "{bad}: {err}");
+                assert!(!dir.join("escape.txt").exists(), "{bad} escaped dest");
+            }
             fs::remove_dir_all(&dir).ok();
         }
 

@@ -2,7 +2,7 @@
 name = "stella-runtime-manager"
 version = "4.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 description = "Stella Runtime Contract and component supervisor"
 license = "AGPL-3.0-only"
 publish = false

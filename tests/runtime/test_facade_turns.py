@@ -41,6 +41,7 @@ async def test_default_provider_uses_shared_chat_gate_across_conversations(
     """默认真实后端必须经过进程共享的 CHAT 资源门。"""
     import core.llm.scheduler as scheduler
     from core.llm.registry import ROLE_CHAT, gate_of
+    from gravitas.model_calls import resource_group_for
 
     scheduler.reset_state()
     monkeypatch.setattr(scheduler, "_concurrency_resolver", lambda _resource: 1)
@@ -64,7 +65,8 @@ async def test_default_provider_uses_shared_chat_gate_across_conversations(
             active -= 1
 
     h.backend.generate = generate
-    resource = gate_of(ROLE_CHAT)
+    # 盯 provider 实际排队的闸门：配置了资源组时 CHAT 槽并入组（如 local_inference）。
+    resource = resource_group_for(gate_of(ROLE_CHAT))
     submitted: list[asyncio.Task] = []
     try:
         await h.start()
