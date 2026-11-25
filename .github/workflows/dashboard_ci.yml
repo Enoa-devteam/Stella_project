@@ -54,15 +54,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # pnpm 版本与仓库锁文件生成器一致（packageManager 由 action 读取；
       # dashboard 未锁 packageManager 时在此固定，升级 pnpm 需同步锁文件）
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm

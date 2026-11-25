@@ -35,7 +35,7 @@ jobs:
   warm-desktop-installer:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 安装 Tauri CLI（精确锁定版本，官方预编译）
         uses: ./.github/actions/install-tauri-cli
@@ -65,7 +65,7 @@ jobs:
   warm-llama-backend:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 读取锁定的 llama.cpp 提交与 UI 版本
         id: pins
@@ -75,7 +75,7 @@ jobs:
           "commit=$($toolchain.llama_cpp_commit)" >> $env:GITHUB_OUTPUT
           "ui_version=$($toolchain.llama_cpp_ui_version)" >> $env:GITHUB_OUTPUT
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 

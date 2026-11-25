@@ -50,9 +50,9 @@ jobs:
             backend: metal
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Checkout pinned llama.cpp
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ggml-org/llama.cpp
           ref: ${{ inputs.llama_commit }}
@@ -157,7 +157,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Resolve version
         run: |
           VERSION="${{ inputs.version }}"

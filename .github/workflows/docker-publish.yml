@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 解析镜像名（仓库路径转小写）
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
@@ -75,13 +75,13 @@ jobs:
           fi
 
       # arm64 并入 PLATFORMS 时才真正用到；无条件装只是几秒钟，省得条件维护
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: 登录 GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -90,7 +90,7 @@ jobs:
       # tag 策略：v3.5.0 → 3.5.0、3.5、latest（semver 自动带 latest）；
       # 手工触发 → 只打输入的版本号（latest=auto 使 raw tag 不抢 latest）
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           flavor: latest=auto
@@ -103,7 +103,7 @@ jobs:
       # load:true 把镜像导出到本地 docker images，供下方冒烟步骤直接跑——
       # 它只支持单架构，PLATFORMS 扩到多架构时冒烟步骤会因条件不满足而跳过
       - name: 构建镜像
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: ${{ env.PLATFORMS }}
