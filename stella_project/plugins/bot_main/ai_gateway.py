@@ -968,9 +968,12 @@ def _delivery_plan_is_current(
         if space:
             scope_keys.append(space_owner_key(space))
         bot_id = str(getattr(ctx, "bot_id", "") or "")
-        user_id = int(getattr(ctx, "user_id", 0) or 0)
-        if bot_id and user_id > 0 and str(ctx.conversation_key).startswith("qq:"):
-            scope_keys.append(person_owner_key("qq", bot_id, user_id))
+        # Mirrors delivery_draft_from_context: numeric person owners exist only
+        # for legacy QQ conversations; transport user IDs may be opaque strings.
+        if bot_id and str(ctx.conversation_key).startswith("qq:"):
+            user_id = int(getattr(ctx, "user_id", 0) or 0)
+            if user_id > 0:
+                scope_keys.append(person_owner_key("qq", bot_id, user_id))
         captured = plan.get("captured_scope_versions")
         if not isinstance(captured, dict) or set(captured) != set(scope_keys):
             return False
