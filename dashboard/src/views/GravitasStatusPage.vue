@@ -54,7 +54,7 @@ onMounted(refresh);
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-1">
-      <h1 class="text-h5 font-weight-bold">{{ $t('features.gravitas.title') }}</h1>
+      <h1 class="text-headline-small font-weight-bold">{{ $t('features.gravitas.title') }}</h1>
       <v-spacer />
       <v-btn
         prepend-icon="mdi-refresh"
@@ -65,7 +65,7 @@ onMounted(refresh);
         {{ $t('features.gravitas.refresh') }}
       </v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis">{{ $t('features.gravitas.subtitle') }}</p>
+    <p class="text-body-medium text-medium-emphasis">{{ $t('features.gravitas.subtitle') }}</p>
 
     <v-alert v-if="loadError" type="error" variant="tonal" class="mt-4">
       {{ loadError }}
@@ -78,31 +78,31 @@ onMounted(refresh);
       <v-row class="mt-2">
         <v-col cols="12" sm="6" md="3">
           <v-card class="pa-4 h-100">
-            <div class="text-caption text-medium-emphasis">{{ $t('features.gravitas.mode') }}</div>
+            <div class="text-body-small text-medium-emphasis">{{ $t('features.gravitas.mode') }}</div>
             <v-chip class="mt-2" :color="modeColor(status.mode)" size="small">{{ status.mode }}</v-chip>
-            <div class="text-caption mt-2">
+            <div class="text-body-small mt-2">
               {{ $t('features.gravitas.configuredMode') }}: {{ status.configured_mode }}
             </div>
           </v-card>
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-card class="pa-4 h-100">
-            <div class="text-caption text-medium-emphasis">{{ $t('features.gravitas.snapshot') }}</div>
+            <div class="text-body-small text-medium-emphasis">{{ $t('features.gravitas.snapshot') }}</div>
             <v-chip class="mt-2" :color="status.snapshot_valid ? 'success' : 'error'" size="small">
               {{ status.snapshot_valid ? $t('features.gravitas.valid') : $t('features.gravitas.expired') }}
             </v-chip>
-            <div class="text-caption mt-2">
+            <div class="text-body-small mt-2">
               {{ $t('features.gravitas.age') }}: {{ formatSeconds(status.snapshot_age_seconds) }}
             </div>
           </v-card>
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-card class="pa-4 h-100">
-            <div class="text-caption text-medium-emphasis">{{ $t('features.gravitas.assessment') }}</div>
+            <div class="text-body-small text-medium-emphasis">{{ $t('features.gravitas.assessment') }}</div>
             <v-chip class="mt-2" color="info" size="small">
               {{ assessment?.state === 'complete' ? $t('features.gravitas.complete') : $t('features.gravitas.partial') }}
             </v-chip>
-            <div class="text-caption mt-2">
+            <div class="text-body-small mt-2">
               {{ $t('features.gravitas.facts') }}: {{ facts.length }}
               · {{ $t('features.gravitas.unassessed') }}: {{ assessment?.unassessed_count ?? 0 }}
             </div>
@@ -110,9 +110,9 @@ onMounted(refresh);
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-card class="pa-4 h-100">
-            <div class="text-caption text-medium-emphasis">{{ $t('features.gravitas.reason') }}</div>
-            <div class="text-body-1 mt-2">{{ status.reason_code }}</div>
-            <div class="text-caption mt-2">
+            <div class="text-body-small text-medium-emphasis">{{ $t('features.gravitas.reason') }}</div>
+            <div class="text-body-large mt-2">{{ status.reason_code }}</div>
+            <div class="text-body-small mt-2">
               {{ $t('features.gravitas.redactedCount') }}: {{ assessment?.redacted_fact_count ?? 0 }}
             </div>
           </v-card>
@@ -120,7 +120,7 @@ onMounted(refresh);
       </v-row>
 
       <v-card class="mt-4 pa-4">
-        <div class="text-subtitle-1 font-weight-medium mb-3">{{ $t('features.gravitas.facts') }}</div>
+        <div class="text-body-large font-weight-medium mb-3">{{ $t('features.gravitas.facts') }}</div>
         <v-alert v-if="!facts.length" type="info" variant="tonal">{{ $t('features.gravitas.noFacts') }}</v-alert>
         <v-table v-else density="comfortable">
           <thead>
@@ -153,7 +153,7 @@ onMounted(refresh);
       <v-row class="mt-1">
         <v-col cols="12" md="6">
           <v-card class="pa-4 h-100">
-            <div class="text-subtitle-1 font-weight-medium mb-3">{{ $t('features.gravitas.unassessed') }}</div>
+            <div class="text-body-large font-weight-medium mb-3">{{ $t('features.gravitas.unassessed') }}</div>
             <v-alert v-if="!unassessed.length" type="success" variant="tonal">
               {{ $t('features.gravitas.noUnassessed') }}
             </v-alert>
@@ -167,15 +167,15 @@ onMounted(refresh);
         </v-col>
         <v-col cols="12" md="6">
           <v-card class="pa-4 h-100">
-            <div class="text-subtitle-1 font-weight-medium mb-3">{{ $t('features.gravitas.appliedAck') }}</div>
-            <div class="text-body-2">
+            <div class="text-body-large font-weight-medium mb-3">{{ $t('features.gravitas.appliedAck') }}</div>
+            <div class="text-body-medium">
               {{ $t('features.gravitas.ackState') }}:
               <strong>{{ assessment?.applied_ack.state ?? $t('features.gravitas.ackNotReceived') }}</strong>
             </div>
-            <div class="text-caption text-medium-emphasis mt-1">
+            <div class="text-body-small text-medium-emphasis mt-1">
               {{ assessment?.applied_ack.reason_code }}
             </div>
-            <p v-if="!assessment?.applied_ack.items?.length" class="text-body-2 mt-3 mb-0">
+            <p v-if="!assessment?.applied_ack.items?.length" class="text-body-medium mt-3 mb-0">
               {{ $t('features.gravitas.noAckItems') }}
             </p>
           </v-card>
@@ -185,7 +185,7 @@ onMounted(refresh);
       <v-row class="mt-1">
         <v-col cols="12" md="6">
           <v-card class="pa-4 h-100">
-            <div class="text-subtitle-1 font-weight-medium mb-3">{{ $t('features.gravitas.criteria') }}</div>
+            <div class="text-body-large font-weight-medium mb-3">{{ $t('features.gravitas.criteria') }}</div>
             <v-table density="compact">
               <tbody>
                 <tr v-for="[key, value] in criteria" :key="key">
@@ -198,7 +198,7 @@ onMounted(refresh);
         </v-col>
         <v-col cols="12" md="6">
           <v-card class="pa-4 h-100">
-            <div class="text-subtitle-1 font-weight-medium mb-3">{{ $t('features.gravitas.version') }}</div>
+            <div class="text-body-large font-weight-medium mb-3">{{ $t('features.gravitas.version') }}</div>
             <dl class="diagnostic-version">
               <dt>{{ $t('features.gravitas.schemaVersion') }}</dt>
               <dd>{{ assessment?.version.diagnostics_schema_version ?? status.schema_version }}</dd>
@@ -217,6 +217,8 @@ onMounted(refresh);
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .diagnostic-version {
   display: grid;
   grid-template-columns: minmax(9rem, 0.4fr) 1fr;
@@ -231,5 +233,6 @@ onMounted(refresh);
 .diagnostic-version dd {
   margin: 0;
   font-family: monospace;
+}
 }
 </style>

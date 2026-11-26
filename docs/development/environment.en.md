@@ -40,7 +40,7 @@ this directory contains the real `.env` and chat history, and once they leave wi
 Three pieces of v2 GUI code live in the repo (see [docs/webui.md](../guides/webui.md)):
 
 ```bash
-# Panel frontend (Vue 3 + Vuetify 3): dev server proxies to the local bot (8080)
+# Panel frontend (Vue 3 + Vuetify 4): dev server proxies to the local bot (8080)
 cd dashboard && pnpm install
 pnpm dev            # http://localhost:5173
 pnpm build          # vue-tsc type gate + vite build → dist/
@@ -88,7 +88,7 @@ python -m deploy start
 
 **Plugin compatibility and rendering**: `Jinja2` · `Playwright` (local Chromium, used only to render plugin cards as images)
 
-**Desktop installer**: `Tauri 2` · `Rust`. v1 (`stella-installer/`, native HTML/JS, frozen at tag `gui-v1-final`); v2 (`desktop/` shell + `dashboard/` panel, Vue 3 + Vuetify 3 — see [WebUI management](../guides/webui.en.md)).
+**Desktop installer**: `Tauri 2` · `Rust`. v1 (`stella-installer/`, native HTML/JS, frozen at tag `gui-v1-final`); v2 (`desktop/` shell + `dashboard/` panel, Vue 3 + Vuetify 4 — see [WebUI management](../guides/webui.en.md)).
 
 **Containerized deployment**: `Docker` · `docker compose` (`Dockerfile` + two-container stella/napcat orchestration, with an optional `llama` profile; Chromium and CJK fonts are baked into the image; see the [Docker Deployment Guide](../guides/deployment-docker.en.md))
 

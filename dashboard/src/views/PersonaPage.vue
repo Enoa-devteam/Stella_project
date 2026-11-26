@@ -308,14 +308,14 @@ onMounted(loadPage);
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-4 flex-wrap ga-2">
-      <h1 class="text-h5 font-weight-bold">群组与人格</h1>
+      <h1 class="text-headline-small font-weight-bold">群组与人格</h1>
       <v-spacer />
       <v-btn variant="tonal" prepend-icon="mdi-account-group-outline" @click="openAllowedGroups">
         编辑 ALLOWED_GROUPS
       </v-btn>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="createDialog = true">新建空间</v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       在同一处管理群组所属空间、主动发言状态，以及空间的人格和群绑定。ALLOWED_GROUPS 控制 Stella 可响应的 QQ 群。
     </p>
     <v-alert v-if="cacheStale" type="warning" variant="tonal" class="mb-3">
@@ -347,7 +347,7 @@ onMounted(loadPage);
                 style="max-width: 14rem"
                 @update:model-value="(value: string) => changeGroupSpace(group, value)"
               />
-              <span v-else class="text-caption text-medium-emphasis">请先新建空间</span>
+              <span v-else class="text-body-small text-medium-emphasis">请先新建空间</span>
             </td>
             <td>{{ group.messages }}</td>
             <td>
@@ -368,27 +368,27 @@ onMounted(loadPage);
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis pa-4">
+      <div v-else class="text-body-medium text-medium-emphasis pa-4">
         当前没有已允许的群组。可使用上方“编辑 ALLOWED_GROUPS”添加群号。
       </div>
     </v-card>
 
     <div class="d-flex align-center ga-2 mb-3">
-      <h2 class="text-h6 font-weight-medium">空间人格</h2>
+      <h2 class="text-title-large font-weight-medium">空间人格</h2>
       <v-chip size="small" variant="tonal">{{ spaces.length }}</v-chip>
     </div>
 
     <v-row>
       <v-col v-for="space in spaces" :key="space.name" cols="12" sm="6" md="4">
         <v-card class="pa-4 fill-height d-flex flex-column">
-          <div class="text-subtitle-1 font-weight-medium">{{ space.name }}</div>
-          <div class="text-caption text-medium-emphasis mb-2">绑定群</div>
+          <div class="text-body-large font-weight-medium">{{ space.name }}</div>
+          <div class="text-body-small text-medium-emphasis mb-2">绑定群</div>
           <div v-if="space.qq_groups.length" class="d-flex flex-wrap ga-1 mb-3">
             <v-chip v-for="group in space.qq_groups" :key="group" size="small" variant="tonal">
               {{ group }}
             </v-chip>
           </div>
-          <div v-else class="text-body-2 text-medium-emphasis mb-3">尚未绑定群</div>
+          <div v-else class="text-body-medium text-medium-emphasis mb-3">尚未绑定群</div>
           <v-spacer />
           <div class="d-flex align-center ga-1 mt-2">
             <v-btn
@@ -416,7 +416,7 @@ onMounted(loadPage);
         <v-card-title>空间设置 · {{ editing.name }}</v-card-title>
         <v-card-text>
           <v-progress-linear v-if="spaceSettingsLoading" indeterminate color="primary" class="mb-4" />
-          <div class="text-subtitle-2 font-weight-medium mb-2">人格</div>
+          <div class="text-title-small font-weight-medium mb-2">人格</div>
           <v-textarea
             v-model="editingText"
             label="人格提示词"
@@ -425,7 +425,7 @@ onMounted(loadPage);
             :disabled="spaceSettingsLoading || spaceSettingsSaving"
           />
           <v-divider class="my-4" />
-          <div class="text-subtitle-2 font-weight-medium mb-2">群绑定</div>
+          <div class="text-title-small font-weight-medium mb-2">群绑定</div>
           <v-select
             v-model="boundGroupIds"
             :items="availableBindingGroupIds"
@@ -495,7 +495,7 @@ onMounted(loadPage);
               {{ groupId }}
             </v-chip>
           </div>
-          <div v-else class="text-body-2 text-medium-emphasis mt-2">尚未添加群号。</div>
+          <div v-else class="text-body-medium text-medium-emphasis mt-2">尚未添加群号。</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />

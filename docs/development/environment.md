@@ -41,7 +41,7 @@ Stella_project/
 仓库里有三块 v2 GUI 代码（方案与状态见 [docs/webui.md](../guides/webui.md)）：
 
 ```bash
-# 面板前端（Vue 3 + Vuetify 3）：开发期反代到本机 Bot（8080）
+# 面板前端（Vue 3 + Vuetify 4）：开发期反代到本机 Bot（8080）
 cd dashboard && pnpm install
 pnpm dev            # http://localhost:5173
 pnpm build          # vue-tsc 类型门禁 + vite 构建 → dist/
@@ -87,7 +87,7 @@ python -m deploy start
 
 **插件兼容与渲染**：`Jinja2` · `Playwright`（本地 Chromium，仅用于把插件卡片渲染成图片）
 
-**桌面安装器**：`Tauri 2` · `Rust`。v1（`stella-installer/`，原生 HTML/JS，已冻结于 `gui-v1-final`）；v2（`desktop/` 壳 + `dashboard/` 面板，Vue 3 + Vuetify 3，见 [WebUI 管理](../guides/webui.md)）
+**桌面安装器**：`Tauri 2` · `Rust`。v1（`stella-installer/`，原生 HTML/JS，已冻结于 `gui-v1-final`）；v2（`desktop/` 壳 + `dashboard/` 面板，Vue 3 + Vuetify 4，见 [WebUI 管理](../guides/webui.md)）
 
 **容器化部署**：`Docker` · `docker compose`（`Dockerfile` + stella/napcat 双容器编排，另有可选 `llama` profile；Chromium 与中文字体已内置镜像；见 [Docker 部署指南](../guides/deployment-docker.md)）
 

@@ -237,7 +237,7 @@ onMounted(async () => {
           style="max-width: 14rem"
           @update:model-value="pickGroup"
         />
-        <span v-if="groups.length" class="text-caption text-medium-emphasis">
+        <span v-if="groups.length" class="text-body-small text-medium-emphasis">
           共 {{ total }} 条 · 第 {{ page }}/{{ Math.max(1, Math.ceil(total / pageSize)) }} 页
         </span>
         <v-spacer />
@@ -252,7 +252,7 @@ onMounted(async () => {
         <v-btn icon="mdi-refresh" size="small" variant="text" @click="loadMessages" />
       </div>
 
-      <div v-if="checkpoint" class="text-caption text-medium-emphasis mb-2">
+      <div v-if="checkpoint" class="text-body-small text-medium-emphasis mb-2">
         整合 checkpoint：已处理到消息 id {{ checkpoint.last_processed_id }} ·
         连续跳过 {{ checkpoint.skip_streak }} · 更新于 {{ checkpoint.updated_at }}
       </div>
@@ -270,7 +270,7 @@ onMounted(async () => {
                 {{ KIND_META[item.source_kind]?.label ?? item.source_kind }}
               </v-chip>
             </template>
-            <v-list-item-title class="text-body-2">
+            <v-list-item-title class="text-body-medium">
               {{ item.content }}
             </v-list-item-title>
             <v-list-item-subtitle>
@@ -278,7 +278,7 @@ onMounted(async () => {
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
-        <div v-else class="text-body-2 text-medium-emphasis pa-4">
+        <div v-else class="text-body-medium text-medium-emphasis pa-4">
           没有消息。群消息按 QQ 群落库（含 Bot 自己的发言与被动摄入），积分后进入记忆。
         </div>
       </div>
@@ -301,10 +301,10 @@ onMounted(async () => {
           @update:model-value="pickTransportScene"
         >
           <template #item="{ props: itemProps, item }">
-            <v-list-item v-bind="itemProps" :subtitle="item.raw.subtitle" />
+            <v-list-item v-bind="itemProps" :subtitle="item.subtitle" />
           </template>
         </v-select>
-        <span v-if="selectedTransportKey" class="text-caption text-medium-emphasis">
+        <span v-if="selectedTransportKey" class="text-body-small text-medium-emphasis">
           共 {{ transportTotal }} 条 · 第 {{ transportPage }} 页
         </span>
         <v-spacer />
@@ -320,17 +320,17 @@ onMounted(async () => {
                 {{ KIND_META[item.source_kind]?.label ?? item.source_kind }}
               </v-chip>
             </template>
-            <v-list-item-title class="text-body-2">{{ item.content }}</v-list-item-title>
+            <v-list-item-title class="text-body-medium">{{ item.content }}</v-list-item-title>
             <v-list-item-subtitle>
               {{ formatDbTime(item.timestamp) }} · 用户 {{ item.user_id }} · 外部消息 {{ item.platform_message_id || '—' }}
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
-        <div v-else-if="!transportLoading" class="text-body-2 text-medium-emphasis pa-4">
+        <div v-else-if="!transportLoading" class="text-body-medium text-medium-emphasis pa-4">
           当前场景没有有效历史消息；已被后续编辑替换或删除的来源行不会显示。
         </div>
       </div>
-      <div v-else-if="!transportLoading" class="text-body-2 text-medium-emphasis pa-4">
+      <div v-else-if="!transportLoading" class="text-body-medium text-medium-emphasis pa-4">
         尚无已注册的跨平台会话场景。
       </div>
     </v-card>
@@ -338,9 +338,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .msg-scroll {
   max-height: calc(100vh - 340px);
   min-height: 300px;
   overflow-y: auto;
+}
 }
 </style>

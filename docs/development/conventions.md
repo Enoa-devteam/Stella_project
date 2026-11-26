@@ -32,6 +32,9 @@ else:
 同理，任何「失败时返回空结果继续跑」的路径都要留下 warning。功能静默失效比崩溃难查得多。
 
 **Prompt 改动需要护栏**。`tests/test_consolidation_prompt.py`、`tests/test_proactive_prompt.py` 对关键条款做字符串断言，包括反向断言（确认已移除的条款没被写回来）。这类条款删掉后功能仍「正常工作」但效果立刻变差，只能靠断言锁住。
+
+**Dashboard 样式走 CSS 层**（Vuetify 4，#211）。`dashboard/index.html` 先声明层序 `vuetify-core, vuetify-components, vuetify-overrides, stella-app, vuetify-utilities, vuetify-final`；每个 SFC 的 `<style scoped>` 内容包在 `@layer stella-app { … }` 里。不分层的样式会压过 `pa-0`、`text-*` 这类工具类（v4 工具类不再带 `!important`），所以新组件也照此包一层。版式类用 MD3 名称（`text-title-large`、`text-body-small` 等，`text-h6` / `text-caption` 已不存在），`elevation` 取 0–5。v3 版面兼容片段（reset、旧栅格）集中在 `dashboard/src/styles/vuetify-compat.css`。
+
 ## 提交与贡献
 
 **提交信息**用简短的英文或中文描述改动实质，避免「fix bug」「update」这类无信息量的描述。

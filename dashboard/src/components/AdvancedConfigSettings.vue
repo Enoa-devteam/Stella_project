@@ -226,7 +226,7 @@ onMounted(load);
       <v-btn color="primary" :loading="busy" :disabled="!dirty" @click="save">保存</v-btn>
     </div>
 
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       环境变量高级配置。敏感字段留空表示保持原值；需要重启的修改会自动请求重启。
     </p>
 
@@ -253,7 +253,7 @@ onMounted(load);
         <v-card-title>JSON 源码（当前表单值）</v-card-title>
         <v-card-text>
           <v-textarea v-model="jsonText" rows="16" density="compact" hide-details />
-          <div v-if="jsonError" class="text-error text-caption mt-1">{{ jsonError }}</div>
+          <div v-if="jsonError" class="text-error text-body-small mt-1">{{ jsonError }}</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -266,6 +266,8 @@ onMounted(load);
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .unsaved-pill {
   display: inline-flex;
   align-items: center;
@@ -275,5 +277,6 @@ onMounted(load);
   padding: 4px 14px;
   border-radius: 999px;
   font-size: 0.85rem;
+}
 }
 </style>

@@ -64,7 +64,7 @@
 `link_monitor` 是参考实现：它在 import 时注册一个 `event_preprocessor`（任何 OneBot V11 事件刷新心跳）、两个 driver 钩子（`on_bot_connect` / `on_bot_disconnect`）与一个自己的定时任务（逐 Bot 超时后主动探活，探活失败只告警不重启）。其他适配器只显示连接状态，不套用 OneBot 的心跳合同。扩展无需改动业务主程序即可接入。
 ## v2 控制面（WebUI 与桌面壳）
 
-浏览器与桌面壳共用的管理面板：`dashboard/`（Vue 3 + Vuetify 3）为前端，
+浏览器与桌面壳共用的管理面板：`dashboard/`（Vue 3 + Vuetify 4）为前端，
 `webui/`（FastAPI 子应用）挂在 NoneBot 同一 ASGI 端口上——**不新增端口**；
 `desktop/`（Tauri 2 壳）内嵌同一份面板，离线时经窄契约（启动/自检/配置）
 工作。鉴权、首启向导、故障排查见 [docs/webui.md](../guides/webui.md) 与

@@ -172,7 +172,7 @@ function levelColor(level?: string): string {
         <span class="text-info mr-1">{{ item.module }}</span>
         <span>{{ item.message ?? item.raw }}</span>
       </div>
-      <div v-if="!visible.length" class="text-body-2 text-medium-emphasis pa-4">
+      <div v-if="!visible.length" class="text-body-medium text-medium-emphasis pa-4">
         暂无日志（Bot 运行后这里实时滚动显示结构化日志）
       </div>
     </div>
@@ -180,6 +180,8 @@ function levelColor(level?: string): string {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .log-scroll {
   height: calc(100vh - 300px);
   min-height: 320px;
@@ -194,5 +196,6 @@ function levelColor(level?: string): string {
   white-space: pre-wrap;
   word-break: break-all;
   padding: 1px 0;
+}
 }
 </style>

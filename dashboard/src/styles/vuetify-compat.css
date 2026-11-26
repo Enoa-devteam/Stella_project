@@ -1,0 +1,43 @@
+/*
+ * Vuetify 3 → 4 兼容层（#211）。取自官方 upgrade guide 的“多步迁移”片段，
+ * 用来让 v4 保持 v3 的版面；后续逐页迁移完可以逐段删除。
+ * 层序声明在 index.html（必须先于任何样式表出现，不能打进 bundle）。
+ */
+
+/*
+ * CSS reset：v4 去掉了全局 `* { margin: 0; padding: 0 }`。
+ * 只补回 dashboard 实际用到的元素（h1/h2/p/details 与列表），
+ * 不整体恢复旧 reset。
+ */
+@layer vuetify-core.reset {
+  ul, ol, figure, details, summary {
+    padding: 0;
+    margin: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6, p {
+    margin: 0;
+  }
+}
+
+/*
+ * Grid legacy mode：v4 的 VRow/VCol 改用 CSS gap，去掉负 margin 与列 padding。
+ * 页面里的 pa-0/mx-0 等手调间距都是按旧模型写的，先恢复旧行为。
+ * https://vuetifyjs.com/en/getting-started/grid-legacy-mode/
+ */
+@layer vuetify-overrides {
+  .v-row {
+    gap: unset;
+    margin: calc(var(--v-col-gap-y) * -.5) calc(var(--v-col-gap-x) * -.5);
+  }
+  .v-row + .v-row {
+    margin-top: calc(var(--v-col-gap-y) * .5);
+  }
+  .v-col {
+    padding: calc(var(--v-col-gap-y) * .5) calc(var(--v-col-gap-x) * .5);
+    flex-basis: var(--v-col-is-size, calc(100% * var(--v-col-size) / var(--v-col-size-columns))) var(--v-col-is-auto, auto) var(--v-col-is-grow, 0);
+  }
+  .v-col:where([class*='v-col--offset-']) {
+    margin-inline-start: calc(100% * var(--v-col-offset) / var(--v-col-size-columns));
+  }
+}

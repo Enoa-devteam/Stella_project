@@ -33,6 +33,9 @@ else:
 Likewise, every path that "returns an empty result on failure and continues" must leave a warning. A feature that fails silently is much harder to diagnose than a crash.
 
 **Prompt changes need guardrails.** `tests/test_consolidation_prompt.py` and `tests/test_proactive_prompt.py` use string assertions for key clauses, including reverse assertions (confirming that removed clauses have not been written back). After such a clause is removed, the feature still "works" but its quality immediately degrades; only assertions can lock this down.
+
+**Dashboard styles go through CSS layers** (Vuetify 4, #211). `dashboard/index.html` declares the layer order `vuetify-core, vuetify-components, vuetify-overrides, stella-app, vuetify-utilities, vuetify-final` first, and every SFC wraps its `<style scoped>` content in `@layer stella-app { … }`. Unlayered styles beat utility classes such as `pa-0` and `text-*` (v4 utilities no longer use `!important`), so new components follow the same pattern. Use MD3 typography names (`text-title-large`, `text-body-small`, …; `text-h6` / `text-caption` no longer exist) and keep `elevation` within 0–5. The v3 layout compatibility snippets (reset, legacy grid) live in `dashboard/src/styles/vuetify-compat.css`.
+
 ## Commits and Contributions
 
 **Commit messages** should briefly describe the substance of the change in English or Chinese. Avoid information-free descriptions such as "fix bug" or "update".

@@ -170,11 +170,11 @@ onBeforeUnmount(() => {
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-4">
-      <h1 class="text-h5 font-weight-bold">外部 Agent 任务</h1>
+      <h1 class="text-headline-small font-weight-bold">外部 Agent 任务</h1>
       <v-spacer />
       <v-btn variant="text" @click="load">刷新</v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       跨轮次委派外部 Agent（Codex 等）：受理后立即返回，进度与结果在任务中心可查；
       等待输入的任务会在这里提问。与群内「委派 / 任务状态 / 取消任务」指令共用同一套服务。
       Codex 后端的登录与端点认证在<a href="#/providers">「提供商」页</a>的「外部 Agent」卡片配置。
@@ -195,11 +195,11 @@ onBeforeUnmount(() => {
         </thead>
         <tbody>
           <tr v-for="t in tasks" :key="t.task_id" :class="{ 'bg-surface-light': selected?.task_id === t.task_id }">
-            <td><code class="text-caption">{{ t.short_id }}</code></td>
+            <td><code class="text-body-small">{{ t.short_id }}</code></td>
             <td><v-chip size="x-small" :color="stateColor(t.state)" variant="tonal">{{ stateLabel(t.state) }}</v-chip></td>
-            <td class="text-caption">{{ t.phase || '—' }}</td>
-            <td class="text-caption">{{ t.last_activity_at ? new Date(t.last_activity_at).toLocaleString() : '—' }}</td>
-            <td class="text-caption">{{ t.delivery_state || '—' }}</td>
+            <td class="text-body-small">{{ t.phase || '—' }}</td>
+            <td class="text-body-small">{{ t.last_activity_at ? new Date(t.last_activity_at).toLocaleString() : '—' }}</td>
+            <td class="text-body-small">{{ t.delivery_state || '—' }}</td>
             <td class="d-flex ga-1">
               <v-btn size="x-small" variant="text" @click="openDetail(t, true)">详情</v-btn>
               <v-btn
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis pa-4">
+      <div v-else class="text-body-medium text-medium-emphasis pa-4">
         没有任务。
       </div>
     </v-card>
@@ -228,10 +228,10 @@ onBeforeUnmount(() => {
         </v-card-title>
         <v-card-text>
           <div v-if="selected.waiting_request_id" class="mb-3">
-            <div class="text-body-2 font-weight-medium mb-1">
+            <div class="text-body-medium font-weight-medium mb-1">
               任务提问（{{ selected.waiting_kind === 'approval' ? '需要审批' : '需要补充信息' }}）：
             </div>
-            <div class="text-body-2 mb-2">{{ selected.waiting_question || '（见任务详情）' }}</div>
+            <div class="text-body-medium mb-2">{{ selected.waiting_question || '（见任务详情）' }}</div>
             <div class="d-flex ga-2">
               <v-text-field v-model="answer" label="答复内容" density="compact" hide-details />
               <v-btn color="primary" :disabled="!answer.trim()" @click="answerWaiting">提交</v-btn>
@@ -239,10 +239,10 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-if="detailResult" class="mb-3">
-            <div class="text-subtitle-2">结果（{{ detailResult.outcome }} / 验证 {{ detailResult.verification_status }}）</div>
-            <div class="text-body-2" style="white-space: pre-wrap">{{ detailResult.summary }}</div>
+            <div class="text-title-small">结果（{{ detailResult.outcome }} / 验证 {{ detailResult.verification_status }}）</div>
+            <div class="text-body-medium" style="white-space: pre-wrap">{{ detailResult.summary }}</div>
             <div v-if="detailResult.artifacts.length" class="mt-2">
-              <div class="text-caption text-medium-emphasis">产物</div>
+              <div class="text-body-small text-medium-emphasis">产物</div>
               <v-btn
                 v-for="a in detailResult.artifacts"
                 :key="a.artifact_id"
@@ -253,16 +253,16 @@ onBeforeUnmount(() => {
                 target="_blank"
               >{{ a.display_name }}（{{ a.size }} 字节）</v-btn>
             </div>
-            <div v-if="detailResult.limitations.length" class="text-caption text-warning mt-1">
+            <div v-if="detailResult.limitations.length" class="text-body-small text-warning mt-1">
               限制：{{ detailResult.limitations.join('；') }}
             </div>
           </div>
 
-          <div class="text-subtitle-2 mb-1">事件（最近 30 条）</div>
+          <div class="text-title-small mb-1">事件（最近 30 条）</div>
           <v-list density="compact" max-height="260">
             <v-list-item v-for="e in detailEvents" :key="e.sequence">
-              <v-list-item-title class="text-body-2">{{ e.kind }}</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
+              <v-list-item-title class="text-body-medium">{{ e.kind }}</v-list-item-title>
+              <v-list-item-subtitle class="text-body-small">
                 #{{ e.sequence }} {{ e.occurred_at ? new Date(e.occurred_at).toLocaleTimeString() : '' }}
                 {{ JSON.stringify(e.payload).slice(0, 120) }}
               </v-list-item-subtitle>

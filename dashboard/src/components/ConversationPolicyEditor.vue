@@ -428,12 +428,12 @@ onMounted(() => { void load(); });
 <template>
   <v-card class="pa-4 mb-6" :loading="loading">
     <div class="d-flex align-center flex-wrap ga-2 mb-2">
-      <div class="text-h6">{{ t('features.conversationPolicy.title') }}</div>
+      <div class="text-title-large">{{ t('features.conversationPolicy.title') }}</div>
       <v-spacer />
       <v-chip size="small" variant="tonal">{{ t('features.conversationPolicy.desired') }}: {{ snapshot?.desired_revision || '—' }}</v-chip>
       <v-chip size="small" variant="tonal" color="secondary">{{ t('features.conversationPolicy.applied') }}: {{ snapshot?.applied_revision || '—' }}</v-chip>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-3">{{ t('features.conversationPolicy.intro') }}</p>
+    <p class="text-body-medium text-medium-emphasis mb-3">{{ t('features.conversationPolicy.intro') }}</p>
     <v-alert v-if="loadError" type="error" variant="tonal" class="mb-3">
       {{ t('features.conversationPolicy.settingsUnavailable', { reason: loadError }) }}
     </v-alert>
@@ -443,7 +443,7 @@ onMounted(() => { void load(); });
     <v-alert v-if="snapshot && snapshot.source !== snapshot.effective_source" type="info" variant="tonal" class="mb-3">
       {{ t('features.conversationPolicy.overlaySource', { source: snapshot.effective_source || snapshot.source || 'default' }) }}
     </v-alert>
-    <v-row dense>
+    <v-row density="compact">
       <v-col cols="12" md="4">
         <v-select
           :model-value="selectedAdapter"
@@ -472,7 +472,7 @@ onMounted(() => { void load(); });
           @update:model-value="chooseScene"
         >
           <template #item="{ props: itemProps, item }">
-            <v-list-item v-bind="itemProps" :subtitle="`${item.raw.kind} · ${item.raw.parent_path.join(' / ') || '—'}${item.raw.thread_id ? ` · ${item.raw.thread_id}` : ''}`" />
+            <v-list-item v-bind="itemProps" :subtitle="`${item.kind} · ${item.parent_path.join(' / ') || '—'}${item.thread_id ? ` · ${item.thread_id}` : ''}`" />
           </template>
         </v-select>
       </v-col>
@@ -485,13 +485,13 @@ onMounted(() => { void load(); });
       <v-alert v-if="memorySpaceBlocked" type="warning" variant="tonal" class="my-3">
         {{ t('features.conversationPolicy.historySpaceBlocked', { count: selectedScene.messages }) }}
       </v-alert>
-      <div class="text-caption text-medium-emphasis mt-2 mb-3">
+      <div class="text-body-small text-medium-emphasis mt-2 mb-3">
         {{ selectedScene.adapter }} · {{ selectedScene.self_id }} · {{ selectedScene.kind }}:{{ selectedScene.scene_id }}
         <span v-if="selectedScene.parent_path.length"> · {{ selectedScene.parent_path.join(' / ') }}</span>
         <span v-if="selectedScene.thread_id"> · {{ selectedScene.thread_id }}</span>
       </div>
 
-      <v-row dense>
+      <v-row density="compact">
         <v-col cols="12" md="6">
           <v-select v-model="form.policyProfileId" :items="profileOptions" :label="t('features.conversationPolicy.profile')" density="compact" />
         </v-col>
@@ -525,9 +525,9 @@ onMounted(() => { void load(); });
       </v-table>
 
       <v-card variant="tonal" class="pa-3 mb-3">
-        <div class="text-subtitle-2">{{ t('features.conversationPolicy.capabilities') }}</div>
-        <div class="text-body-2">{{ evidence?.capabilityProvider || t('features.conversationPolicy.capabilityUnknown') }}</div>
-        <div class="text-caption text-medium-emphasis">{{ t('features.conversationPolicy.certification') }}: {{ evidence?.finalStatus || 'not_assessed' }}</div>
+        <div class="text-title-small">{{ t('features.conversationPolicy.capabilities') }}</div>
+        <div class="text-body-medium">{{ evidence?.capabilityProvider || t('features.conversationPolicy.capabilityUnknown') }}</div>
+        <div class="text-body-small text-medium-emphasis">{{ t('features.conversationPolicy.certification') }}: {{ evidence?.finalStatus || 'not_assessed' }}</div>
         <v-table v-if="evidenceRows.length" density="compact">
           <thead><tr><th>Level</th><th>{{ t('features.conversationPolicy.fixture') }}</th><th>{{ t('features.conversationPolicy.live') }}</th></tr></thead>
           <tbody><tr v-for="row in evidenceRows" :key="row.level"><td>{{ row.level }}</td><td>{{ row.fixture }}</td><td>{{ row.live }}</td></tr></tbody>

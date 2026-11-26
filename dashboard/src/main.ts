@@ -1,6 +1,7 @@
 // Plugin dependencies.
 import '@mdi/font/css/materialdesignicons.css';
 import 'vuetify/styles';
+import './styles/vuetify-compat.css';
 
 // Core plugins.
 import { createPinia } from 'pinia';

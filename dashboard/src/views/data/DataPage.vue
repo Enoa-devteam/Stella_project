@@ -33,6 +33,8 @@ const tabs = [
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .data-tab {
   padding: 0.35rem 1.1rem;
   border-radius: 999px;
@@ -42,5 +44,6 @@ const tabs = [
 .data-tab.active {
   background: rgba(var(--v-theme-primary), 0.15);
   font-weight: 600;
+}
 }
 </style>

@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
 <template>
   <v-card v-if="available && codexBackends.length" class="pa-4 mb-4">
     <div class="d-flex align-center mb-2">
-      <div class="text-subtitle-1 font-weight-medium">外部 Agent（Codex）认证</div>
+      <div class="text-body-large font-weight-medium">外部 Agent（Codex）认证</div>
       <v-spacer />
       <v-select
         :model-value="authBackendId"
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
         @click="doLogout"
       >登出</v-btn>
     </div>
-    <div v-if="authStatus" class="text-caption text-medium-emphasis mb-2">
+    <div v-if="authStatus" class="text-body-small text-medium-emphasis mb-2">
       {{ authStatus.reason }}
       <span v-if="authStatus.account?.type && authStatus.ready">｜账号类型：{{ authStatus.account.type }}</span>
       ｜认证即时生效，无需重启
@@ -253,7 +253,7 @@ onBeforeUnmount(() => {
 
     <v-row>
       <v-col cols="12" md="4">
-        <div class="text-body-2 font-weight-medium mb-1">ChatGPT 账号登录（设备码）</div>
+        <div class="text-body-medium font-weight-medium mb-1">ChatGPT 账号登录（设备码）</div>
         <v-btn
           size="small"
           variant="tonal"
@@ -262,20 +262,20 @@ onBeforeUnmount(() => {
           @click="startDevice"
         >发起登录</v-btn>
         <div v-if="deviceLogin" class="mt-2">
-          <div class="text-body-2">
+          <div class="text-body-medium">
             打开
             <a :href="deviceLogin.verification_url" target="_blank">{{ deviceLogin.verification_url }}</a>
             ，输入设备码：
           </div>
-          <code class="text-h6">{{ deviceLogin.user_code }}</code>
-          <div class="text-caption text-medium-emphasis">
+          <code class="text-title-large">{{ deviceLogin.user_code }}</code>
+          <div class="text-body-small text-medium-emphasis">
             {{ deviceLogin.state === 'pending' ? '等待你在浏览器完成登录…' : deviceLogin.state === 'completed' ? '登录完成' : `失败：${deviceLogin.error}` }}
           </div>
         </div>
       </v-col>
 
       <v-col cols="12" md="4">
-        <div class="text-body-2 font-weight-medium mb-1">OpenAI API Key</div>
+        <div class="text-body-medium font-weight-medium mb-1">OpenAI API Key</div>
         <v-text-field
           v-model="apiKeyInput"
           label="API Key"
@@ -285,11 +285,11 @@ onBeforeUnmount(() => {
           class="mb-2"
         />
         <v-btn size="small" variant="tonal" :loading="authBusy" @click="applyKey">登录</v-btn>
-        <div class="text-caption text-medium-emphasis mt-1">计费走 OpenAI 平台额度（非 ChatGPT 订阅）</div>
+        <div class="text-body-small text-medium-emphasis mt-1">计费走 OpenAI 平台额度（非 ChatGPT 订阅）</div>
       </v-col>
 
       <v-col cols="12" md="4">
-        <div class="text-body-2 font-weight-medium mb-1">自定义端点（OpenAI 兼容 / 中转）</div>
+        <div class="text-body-medium font-weight-medium mb-1">自定义端点（OpenAI 兼容 / 中转）</div>
         <v-text-field v-model="customBase" label="Base URL" density="compact" hide-details class="mb-1" />
         <v-text-field v-model="customModel" label="模型名" density="compact" hide-details class="mb-1" />
         <v-text-field
@@ -307,7 +307,7 @@ onBeforeUnmount(() => {
         <div v-if="customModels.length" class="d-flex flex-wrap ga-1 mt-1">
           <v-chip v-for="m in customModels" :key="m" size="x-small" variant="tonal" @click="customModel = m">{{ m }}</v-chip>
         </div>
-        <div class="text-caption text-medium-emphasis mt-1">端点须支持 OpenAI Responses API（codex 已弃用 chat 协议）</div>
+        <div class="text-body-small text-medium-emphasis mt-1">端点须支持 OpenAI Responses API（codex 已弃用 chat 协议）</div>
       </v-col>
     </v-row>
   </v-card>

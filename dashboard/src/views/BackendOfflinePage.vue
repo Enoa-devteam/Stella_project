@@ -384,15 +384,15 @@ onMounted(async () => {
         height="128"
         class="mb-2 stella-boot-logo"
       />
-      <div class="text-h6 mb-1">正在启动 Stella</div>
-      <div class="text-body-2 text-medium-emphasis mb-3">{{ step || '准备中…' }}</div>
+      <div class="text-title-large mb-1">正在启动 Stella</div>
+      <div class="text-body-medium text-medium-emphasis mb-3">{{ step || '准备中…' }}</div>
       <v-progress-linear indeterminate color="secondary" class="mb-4 rounded" />
-      <div v-if="liveLine" class="text-body-2 font-weight-medium mb-1">{{ liveLine }}</div>
-      <div v-if="bootstrapFailed" class="text-error text-body-2 mb-1">
+      <div v-if="liveLine" class="text-body-medium font-weight-medium mb-1">{{ liveLine }}</div>
+      <div v-if="bootstrapFailed" class="text-error text-body-medium mb-1">
         组件安装失败不影响程序运行——点「重试」可重新安装组件。
       </div>
-      <div class="text-body-2 mb-1">{{ BOOT_HINTS[hintIndex] }}</div>
-      <div class="text-caption text-disabled">
+      <div class="text-body-medium mb-1">{{ BOOT_HINTS[hintIndex] }}</div>
+      <div class="text-body-small text-disabled">
         已运行 {{ elapsedText }} · 首次启动需要下载运行时与依赖，可能需要数分钟，请勿关闭窗口
       </div>
       <div class="d-flex ga-2 justify-center mt-4">
@@ -406,23 +406,23 @@ onMounted(async () => {
             :icon="item.level === 'error' ? 'mdi-close-circle' : item.level === 'warn' ? 'mdi-alert' : 'mdi-check-circle'"
           />
           <div>
-            <div class="text-body-2">{{ item.title }}</div>
-            <div v-if="item.detail" class="text-caption text-medium-emphasis">{{ item.detail }}</div>
-            <div v-if="item.fix_hint" class="text-caption text-medium-emphasis">建议：{{ item.fix_hint }}</div>
+            <div class="text-body-medium">{{ item.title }}</div>
+            <div v-if="item.detail" class="text-body-small text-medium-emphasis">{{ item.detail }}</div>
+            <div v-if="item.fix_hint" class="text-body-small text-medium-emphasis">建议：{{ item.fix_hint }}</div>
           </div>
         </div>
       </div>
       <details v-if="doctorText" class="mt-2 text-left" style="max-width: 36rem">
-        <summary class="text-caption text-medium-emphasis">原始报告</summary>
-        <pre class="text-caption" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap">{{ doctorText }}</pre>
+        <summary class="text-body-small text-medium-emphasis">原始报告</summary>
+        <pre class="text-body-small" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap">{{ doctorText }}</pre>
       </details>
-      <div v-if="startError" class="text-error text-caption mt-2 pre-wrap">{{ startError }}</div>
+      <div v-if="startError" class="text-error text-body-small mt-2 pre-wrap">{{ startError }}</div>
     </div>
 
     <div v-else class="offline-card">
       <v-icon icon="mdi-lan-disconnect" color="warning" size="44" class="mb-3" />
-      <div class="text-h6 mb-2">{{ $t('features.offline.title') }}</div>
-      <p class="text-body-2 text-medium-emphasis mb-4">
+      <div class="text-title-large mb-2">{{ $t('features.offline.title') }}</div>
+      <p class="text-body-medium text-medium-emphasis mb-4">
         {{ $t('features.offline.hint') }}
       </p>
       <div class="d-flex ga-2 justify-center flex-wrap">
@@ -457,14 +457,14 @@ onMounted(async () => {
             :icon="item.level === 'error' ? 'mdi-close-circle' : item.level === 'warn' ? 'mdi-alert' : 'mdi-check-circle'"
           />
           <div>
-            <div class="text-body-2">{{ item.title }}</div>
-            <div v-if="item.detail" class="text-caption text-medium-emphasis">{{ item.detail }}</div>
-            <div v-if="item.fix_hint" class="text-caption text-medium-emphasis">建议：{{ item.fix_hint }}</div>
+            <div class="text-body-medium">{{ item.title }}</div>
+            <div v-if="item.detail" class="text-body-small text-medium-emphasis">{{ item.detail }}</div>
+            <div v-if="item.fix_hint" class="text-body-small text-medium-emphasis">建议：{{ item.fix_hint }}</div>
           </div>
         </div>
       </div>
-      <div v-if="step" class="text-caption text-medium-emphasis mt-2">{{ step }}</div>
-      <div v-if="startError" class="text-error text-caption mt-2 pre-wrap">{{ startError }}</div>
+      <div v-if="step" class="text-body-small text-medium-emphasis mt-2">{{ step }}</div>
+      <div v-if="startError" class="text-error text-body-small mt-2 pre-wrap">{{ startError }}</div>
     </div>
 
     <!-- 基础配置向导（首启 / 修改） -->
@@ -512,10 +512,10 @@ onMounted(async () => {
             label="连接方式"
             density="compact"
           />
-          <div v-if="wizardStep" class="text-caption text-medium-emphasis mt-2">
+          <div v-if="wizardStep" class="text-body-small text-medium-emphasis mt-2">
             {{ wizardStep }}
           </div>
-          <div v-if="wizardError" class="text-error text-caption mt-2 pre-wrap">{{ wizardError }}</div>
+          <div v-if="wizardError" class="text-error text-body-small mt-2 pre-wrap">{{ wizardError }}</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -530,6 +530,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .offline-wrap {
   min-height: 100vh;
   display: flex;
@@ -549,5 +551,6 @@ onMounted(async () => {
   border-radius: 50%;
   background: #171d24;
   box-sizing: content-box;
+}
 }
 </style>

@@ -65,7 +65,7 @@ Every module/package under `extensions/` that provides `setup(pipeline)` is load
 ## v2 Control Plane (WebUI and Desktop Shell)
 
 The management panel shared by the browser and the desktop shell:
-`dashboard/` (Vue 3 + Vuetify 3) is the frontend, `webui/` (FastAPI
+`dashboard/` (Vue 3 + Vuetify 4) is the frontend, `webui/` (FastAPI
 sub-app) hangs off the same ASGI port as NoneBot — **no extra port**;
 `desktop/` (Tauri 2 shell) embeds the same panel and works offline via a
 narrow contract (start/doctor/config). Auth, first-run wizard and

@@ -142,8 +142,8 @@ onMounted(async () => {
 
 <template>
   <v-container fluid class="pa-6">
-    <h1 class="text-h5 font-weight-bold mb-1">{{ $t('features.welcome.title') }}</h1>
-    <p v-if="status?.webui" class="text-body-2 text-medium-emphasis">
+    <h1 class="text-headline-small font-weight-bold mb-1">{{ $t('features.welcome.title') }}</h1>
+    <p v-if="status?.webui" class="text-body-medium text-medium-emphasis">
       {{ status.webui.username }}
     </p>
 
@@ -153,7 +153,7 @@ onMounted(async () => {
 
     <!-- Onboarding（对齐 AstrBot WelcomePage 的时间线范式）：每步可点击跳转对应功能页 -->
     <v-card class="mt-4 pa-4">
-      <div class="text-subtitle-1 font-weight-medium mb-2">
+      <div class="text-body-large font-weight-medium mb-2">
         {{ $t('features.welcome.onboard') }}
       </div>
       <v-timeline side="end" density="comfortable" truncate-line="both">
@@ -168,7 +168,7 @@ onMounted(async () => {
             :title="$t('features.welcome.go')"
             @click="goStep(step.to)"
           >
-            <div class="text-body-2">{{ $t(`features.welcome.${step.key}`) }}</div>
+            <div class="text-body-medium">{{ $t(`features.welcome.${step.key}`) }}</div>
             <v-spacer />
             <v-icon size="small" icon="mdi-chevron-right" class="stella-step-go" />
           </div>
@@ -178,24 +178,24 @@ onMounted(async () => {
 
     <!-- 运行状态卡（数据即 v1 status payload 的聚合） -->
     <v-card class="mt-4 pa-4" :loading="!status && !loadError">
-      <div class="text-subtitle-1 font-weight-medium mb-3">
+      <div class="text-body-large font-weight-medium mb-3">
         {{ $t('features.welcome.statusTitle') }}
       </div>
       <SystemBanner class="mb-3" />
       <v-row v-if="status && system.managed">
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.corePhase') }}</div>
-          <div class="text-body-1 font-weight-medium">
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.corePhase') }}</div>
+          <div class="text-body-large font-weight-medium">
             {{ system.status?.core?.phase ?? status.core?.phase ?? $t('core.status.unknown') }}
           </div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.pid') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ status.core?.pid ?? '—' }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.pid') }}</div>
+          <div class="text-body-large font-weight-medium">{{ status.core?.pid ?? '—' }}</div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.groups') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ boundGroupCount ?? '—' }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.groups') }}</div>
+          <div class="text-body-large font-weight-medium">{{ boundGroupCount ?? '—' }}</div>
         </v-col>
         <v-col v-if="system.statusError" cols="12">
           <v-alert type="warning" variant="tonal" density="compact">{{ system.statusError }}</v-alert>
@@ -206,20 +206,20 @@ onMounted(async () => {
       </v-row>
       <v-row v-else-if="status">
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.version') }}</div>
-          <div class="text-body-1 font-weight-medium">v{{ status.version }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.version') }}</div>
+          <div class="text-body-large font-weight-medium">v{{ status.version }}</div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.pid') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ status.pid }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.pid') }}</div>
+          <div class="text-body-large font-weight-medium">{{ status.pid }}</div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.uptime') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ uptimeText }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.uptime') }}</div>
+          <div class="text-body-large font-weight-medium">{{ uptimeText }}</div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.link') }}</div>
-          <div class="text-body-1 font-weight-medium d-flex align-center">
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.link') }}</div>
+          <div class="text-body-large font-weight-medium d-flex align-center">
             <v-icon
               size="small"
               :color="status.link?.connected ? 'success' : 'error'"
@@ -230,12 +230,12 @@ onMounted(async () => {
           </div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.groups') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ boundGroupCount ?? '—' }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.groups') }}</div>
+          <div class="text-body-large font-weight-medium">{{ boundGroupCount ?? '—' }}</div>
         </v-col>
         <v-col cols="6" sm="4" md="3">
-          <div class="text-caption text-medium-emphasis">{{ $t('features.welcome.tokensToday') }}</div>
-          <div class="text-body-1 font-weight-medium">{{ tokensToday }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ $t('features.welcome.tokensToday') }}</div>
+          <div class="text-body-large font-weight-medium">{{ tokensToday }}</div>
         </v-col>
       </v-row>
     </v-card>
@@ -243,6 +243,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 /* 引导步骤整行可点：悬停给反馈，右侧箭头提示跳转 */
 .stella-step {
   cursor: pointer;
@@ -263,5 +265,6 @@ onMounted(async () => {
 .stella-step-go {
   opacity: 0.4;
   transition: opacity 0.15s ease;
+}
 }
 </style>

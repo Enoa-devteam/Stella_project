@@ -192,19 +192,19 @@ const displayHitRate = computed(
     <v-row v-if="today">
       <v-col cols="6" md="3">
         <v-card class="pa-4">
-          <div class="text-caption text-medium-emphasis">今日 token</div>
-          <div class="text-h5">{{ today.totals.prompt_tokens + today.totals.completion_tokens }}</div>
+          <div class="text-body-small text-medium-emphasis">今日 token</div>
+          <div class="text-headline-small">{{ today.totals.prompt_tokens + today.totals.completion_tokens }}</div>
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
         <v-card class="pa-4">
-          <div class="text-caption text-medium-emphasis">今日调用 / 失败</div>
-          <div class="text-h5">{{ today.totals.calls }} / {{ today.totals.failures }}</div>
+          <div class="text-body-small text-medium-emphasis">今日调用 / 失败</div>
+          <div class="text-headline-small">{{ today.totals.calls }} / {{ today.totals.failures }}</div>
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
         <v-card class="pa-4">
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-body-small text-medium-emphasis">
             缓存命中率
             <v-tooltip location="top" :max-width="420">
               <template #activator="{ props: tip }">
@@ -213,20 +213,20 @@ const displayHitRate = computed(
               这里的缓存命中率为理论哈希值计算（按提示词前缀复用估算），跟实际缓存命中率有可能不一致。分母是输入 token。
             </v-tooltip>
           </div>
-          <div class="text-h5">
+          <div class="text-headline-small">
             {{ Math.round(displayHitRate * 100) }}%
           </div>
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
         <v-card class="pa-4">
-          <div class="text-caption text-medium-emphasis">预算</div>
+          <div class="text-body-small text-medium-emphasis">预算</div>
           <v-progress-linear
             :model-value="budgetPercent"
             :color="today.over_budget ? 'error' : 'primary'"
             class="mt-2"
           />
-          <div class="text-caption mt-1">
+          <div class="text-body-small mt-1">
             {{ today.used_tokens }} / {{ today.budget > 0 ? today.budget : '不限' }}
           </div>
         </v-card>
@@ -246,7 +246,7 @@ const displayHitRate = computed(
       <v-col cols="12" md="8">
         <v-card class="pa-4">
           <div class="d-flex align-center mb-2">
-            <div class="text-subtitle-1 font-weight-medium">token 趋势</div>
+            <div class="text-body-large font-weight-medium">token 趋势</div>
             <v-spacer />
             <v-btn-toggle v-model="chartKind" mandatory density="compact" class="mr-2">
               <v-btn value="line">折线</v-btn>
@@ -270,7 +270,7 @@ const displayHitRate = computed(
       <v-col cols="12" md="4">
         <v-card class="pa-4">
           <div class="d-flex align-center mb-2">
-            <div class="text-subtitle-1 font-weight-medium">调用次数</div>
+            <div class="text-body-large font-weight-medium">调用次数</div>
             <v-spacer />
             <v-btn-toggle v-model="chartKind" mandatory density="compact">
               <v-btn value="line">折线</v-btn>
@@ -292,7 +292,7 @@ const displayHitRate = computed(
     <v-row class="mt-2">
       <v-col cols="12" md="4" v-for="(rank, key) in { 角色: daily?.by_role, 端点: daily?.by_slot, 模型: daily?.by_model }" :key="key">
         <v-card class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-2">按{{ key }}排行</div>
+          <div class="text-body-large font-weight-medium mb-2">按{{ key }}排行</div>
           <v-table density="compact" v-if="rank && rank.length">
             <thead>
               <tr><th>名称</th><th class="text-right">调用</th><th class="text-right">token</th></tr>
@@ -305,7 +305,7 @@ const displayHitRate = computed(
               </tr>
             </tbody>
           </v-table>
-          <div v-else class="text-body-2 text-medium-emphasis">暂无数据</div>
+          <div v-else class="text-body-medium text-medium-emphasis">暂无数据</div>
         </v-card>
       </v-col>
     </v-row>

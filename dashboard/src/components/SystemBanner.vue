@@ -42,7 +42,7 @@ const visible = computed(() => system.managed || !system.controlAvailable);
 
 <template>
   <v-alert v-if="visible" :type="color" variant="tonal" density="compact" class="mb-3">
-    <div class="d-flex flex-wrap ga-2 align-center text-body-1">
+    <div class="d-flex flex-wrap ga-2 align-center text-body-large">
       <span>
         <strong>{{ t('features.system.control') }}:</strong>
         {{ system.controlAvailable ? t('features.system.connected') : t('features.system.reconnecting') }}
@@ -56,26 +56,26 @@ const visible = computed(() => system.managed || !system.controlAvailable);
         {{ phaseLabel(system.operation.phase) }}
       </span>
     </div>
-    <div v-if="system.managed && system.controlAvailable && system.coreUnavailable" class="mt-1 text-body-2">
+    <div v-if="system.managed && system.controlAvailable && system.coreUnavailable" class="mt-1 text-body-medium">
       {{ t('features.system.coreUnavailable') }}
       <span v-if="system.status?.core?.error">{{ t('features.system.error') }}: {{ system.status.core.error }}</span>
     </div>
-    <div v-if="system.managed && system.status?.external_conflict" class="mt-1 text-body-2">
+    <div v-if="system.managed && system.status?.external_conflict" class="mt-1 text-body-medium">
       {{ t('features.system.externalConflict') }}
     </div>
-    <div v-if="system.operation?.error_code" class="mt-1 text-body-2">
+    <div v-if="system.operation?.error_code" class="mt-1 text-body-medium">
       {{ t('features.system.error') }}: {{ system.operation.error_code }}
     </div>
-    <div v-if="system.operation?.phase === 'rolled_back' && system.operation.recovery_attempted" class="mt-1 text-body-2">
+    <div v-if="system.operation?.phase === 'rolled_back' && system.operation.recovery_attempted" class="mt-1 text-body-medium">
       {{ t('features.system.restored') }}
     </div>
-    <div v-if="system.operation?.phase === 'failed' && system.operation.recovery_attempted" class="mt-1 text-body-2">
+    <div v-if="system.operation?.phase === 'failed' && system.operation.recovery_attempted" class="mt-1 text-body-medium">
       {{ t('features.system.recoveryFailed') }}
     </div>
-    <div v-if="system.operation?.restart_scope === 'controller'" class="mt-1 text-body-2">
+    <div v-if="system.operation?.restart_scope === 'controller'" class="mt-1 text-body-medium">
       {{ t('features.system.controllerRestart') }}
     </div>
-    <div v-if="!system.controlAvailable && system.statusError" class="mt-1 text-body-2">
+    <div v-if="!system.controlAvailable && system.statusError" class="mt-1 text-body-medium">
       {{ t('features.system.reconnectingDetail') }}
     </div>
   </v-alert>

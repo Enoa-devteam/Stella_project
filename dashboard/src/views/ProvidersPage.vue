@@ -179,10 +179,10 @@ onBeforeUnmount(() => {
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-1">
-      <h1 class="text-h5 font-weight-bold">提供商</h1>
+      <h1 class="text-headline-small font-weight-bold">提供商</h1>
       <v-chip size="small" variant="tonal" color="secondary" class="ml-3">运行态 + 配置</v-chip>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       在此编辑模型端点（Base URL / 模型 / API Key）与角色绑定，并测试连通性；
       下方为调度器的实时闸门与降级状态。
       {{ system.managed ? t('features.providers.managedSaveHint') : t('features.providers.legacySaveHint') }}
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
 
     <v-card class="pa-4 mb-4">
       <div class="d-flex align-center mb-2">
-        <div class="text-subtitle-1 font-weight-medium">端点与角色</div>
+        <div class="text-body-large font-weight-medium">端点与角色</div>
         <v-spacer />
         <v-btn color="primary" prepend-icon="mdi-pencil" @click="openEditor">编辑配置</v-btn>
       </div>
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
         </thead>
         <tbody>
           <tr v-for="ep in endpoints" :key="ep.slot">
-            <td>{{ slotLabel(ep.slot) }} <span class="text-caption text-medium-emphasis">{{ ep.slot }}</span></td>
+            <td>{{ slotLabel(ep.slot) }} <span class="text-body-small text-medium-emphasis">{{ ep.slot }}</span></td>
             <td>{{ ep.base_url || '—' }}</td>
             <td>{{ ep.model || '—' }}</td>
             <td>{{ ep.kind || '—' }}</td>
@@ -214,7 +214,7 @@ onBeforeUnmount(() => {
           </tr>
         </tbody>
       </v-table>
-      <div class="text-caption text-medium-emphasis mt-2">
+      <div class="text-body-small text-medium-emphasis mt-2">
         角色绑定：{{ roles.map((r) => `${r.role}→${r.endpoint}`).join(' · ') }}
       </div>
     </v-card>
@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
     <CodexAuthCard />
 
     <v-card class="pa-4 mb-4">
-      <div class="text-subtitle-1 font-weight-medium mb-2">模型闸门（每端点串行）</div>
+      <div class="text-body-large font-weight-medium mb-2">模型闸门（每端点串行）</div>
       <v-table density="compact" v-if="gates.length">
         <thead>
           <tr>
@@ -248,20 +248,20 @@ onBeforeUnmount(() => {
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis">
+      <div v-else class="text-body-medium text-medium-emphasis">
         尚无调度记录（Bot 至少完成一次 LLM 调用后这里才有数据）。
       </div>
     </v-card>
 
     <v-card class="pa-4">
-      <div class="text-subtitle-1 font-weight-medium mb-2">降级状态</div>
+      <div class="text-body-large font-weight-medium mb-2">降级状态</div>
       <div v-if="fallbacks.length">
         <div v-for="[role, state] in fallbacks" :key="role" class="mb-2">
-          <b class="text-body-2">{{ role }}</b>
-          <pre class="text-caption text-medium-emphasis">{{ JSON.stringify(state, null, 2) }}</pre>
+          <b class="text-body-medium">{{ role }}</b>
+          <pre class="text-body-small text-medium-emphasis">{{ JSON.stringify(state, null, 2) }}</pre>
         </div>
       </div>
-      <div v-else class="text-body-2 text-medium-emphasis">
+      <div v-else class="text-body-medium text-medium-emphasis">
         没有角色正在降级（配了降级链且调用过的角色才会出现在这里）。
       </div>
     </v-card>
@@ -270,9 +270,9 @@ onBeforeUnmount(() => {
       <v-card>
         <v-card-title>编辑端点与角色绑定</v-card-title>
         <v-card-text style="max-height: 65vh; overflow-y: auto">
-          <div class="text-subtitle-2 mb-2">端点槽（API Key 留空 = 不修改）</div>
+          <div class="text-title-small mb-2">端点槽（API Key 留空 = 不修改）</div>
           <v-card v-for="ep in endpoints" :key="ep.slot" variant="outlined" class="pa-3 mb-3">
-            <div class="text-subtitle-2 mb-2">{{ slotLabel(ep.slot) }}（{{ ep.slot }}）</div>
+            <div class="text-title-small mb-2">{{ slotLabel(ep.slot) }}（{{ ep.slot }}）</div>
             <v-text-field v-model="ep.base_url" label="Base URL" density="compact" />
             <div class="d-flex ga-2 align-center">
               <v-text-field
@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
               {{ testResult.ok ? '连通正常' : (testResult.error ?? '测试失败') }}
             </v-alert>
           </v-card>
-          <div class="text-subtitle-2 mb-2 mt-4">角色绑定矩阵</div>
+          <div class="text-title-small mb-2 mt-4">角色绑定矩阵</div>
           <v-table density="compact">
             <thead><tr><th>角色</th><th>端点槽</th><th>模型覆盖</th><th>温度</th></tr></thead>
             <tbody>
@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
               </tr>
             </tbody>
           </v-table>
-          <div class="text-caption text-medium-emphasis mt-2">
+          <div class="text-body-small text-medium-emphasis mt-2">
             端点槽选 none = 该角色不启用（视觉默认不启用，属可选增强）。
             <v-alert type="warning" density="compact" variant="tonal" class="mt-2">
               保存写入 .env，重启后生效。
