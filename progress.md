@@ -1,3 +1,11 @@
+## 2026-11-26 — Tauri 两壳迁移到 ureq 3（#210）
+
+- Scope：#210，替代 Dependabot #200（desktop/src-tauri）与 #202（stella-installer/src-tauri）。分支 `fix/issue-210-ureq3`（worktree `E:/stella/stella_project-210`，基于 origin/main ea6554a）。
+- What's Done：两壳 `ureq = "3"`，lock 到 3.5.2（同时 rustls 0.23.46、webpki-roots 1.0.12、新增 ureq-proto / utf8-zero）。`.timeout(d)` → `.config().timeout_global(Some(d)).build()`（ureq 2 的 timeout 与 3 的 timeout_global 都是端到端含读 body，数值不变：下载 120s、模型列表 10s、就绪探针 1s）；`.set` → `.header`；`Error::Status(code, _)` → `Error::StatusCode(code)`，401/403/404/其他提示原文不变；下载读 `headers().get("Content-Length")`、`status().as_u16()`，body 用不限长的 `into_body().into_reader()`。新增本机回环 HTTP 测试：`download_resumes_with_range_and_reports_status_errors`（206 续传追加、忽略 Range 回 200 全量重下、无部分不带 Range、404/416 报错且不污染文件）与 `list_models_maps_http_status_to_user_messages`（Bearer 头、200 解析、401/403/404/500 提示、错误不回显 key），两壳各一份。
+- Evidence：`cargo test --locked` desktop 33 passed、installer 25 passed（rustc 1.97.1）；`check_rust_msrv.py` 两壳 ok；check_docs ok；detect-changes（worktree 索引）low、0 流程；impact download / list_models 各候选 LOW。`runtime_message` 未使用警告 main 上已有。
+- 未验证 / NOT READY：Python Online 安装器首启的干净 Windows Sandbox 验收（运行时 → 依赖 → 组件 → bot 在线）未做——#210 完成条件之一；CI 未跑；未提交。
+- Next：提交并开 PR；dispatch release.yml（`overwrite_release=false`）取 Python Online 产物做 Sandbox 验收；合并后关闭 #200 / #202 / #210。
+
 ## 2026-11-26 — memory_rust/native rust-version 抬到 1.89（#212）
 
 - Scope：#212 决定取方案 1。分支 `fix/issue-212-native-msrv`（worktree `E:/stella/stella_project-212`，基于 origin/main a88bbf4），替代 Dependabot #196。

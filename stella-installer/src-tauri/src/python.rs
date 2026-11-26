@@ -276,9 +276,13 @@ mod runtime_bootstrap {
     fn download(root: &Path, url: &str, dest: &Path) -> Result<(), String> {
         let existing = fs::metadata(dest).map(|m| m.len()).unwrap_or(0);
         // 断点续传：已有部分且大小合理时尝试 Range
-        let mut req = ureq::get(url).timeout(Duration::from_secs(120));
+        // ureq 3：timeout_global 是端到端预算（含读 body），与 ureq 2 的 timeout 语义一致
+        let mut req = ureq::get(url)
+            .config()
+            .timeout_global(Some(Duration::from_secs(120)))
+            .build();
         let resume_from = if existing > 0 && existing < 50 * 1024 * 1024 {
-            req = req.set("Range", &format!("bytes={existing}-"));
+            req = req.header("Range", &format!("bytes={existing}-"));
             Some(existing)
         } else {
             if existing > 0 {
@@ -288,16 +292,20 @@ mod runtime_bootstrap {
         };
 
         let resp = req.call().map_err(|e| format!("{url}: {e}"))?;
-        let status = resp.status();
+        // ureq 3 默认把 4xx/5xx 当 Err 返回（含 416），与 ureq 2 一致，走上面的 map_err
+        let status = resp.status().as_u16();
         let is_partial = status == 206;
         // 206 时 Content-Length 是剩余部分，需加上已有部分才是总量
         let remaining: u64 = resp
-            .header("Content-Length")
+            .headers()
+            .get("Content-Length")
+            .and_then(|v| v.to_str().ok())
             .and_then(|v| v.parse().ok())
             .unwrap_or(0);
         let total = if is_partial { existing + remaining } else { remaining };
 
-        let mut reader = resp.into_reader();
+        // into_reader() 不限长度（read_to_string 才有 10MB 上限），大文件下载必须用它
+        let mut reader = resp.into_body().into_reader();
         let mut file: File = if is_partial {
             OpenOptions::new()
                 .append(true)
@@ -857,6 +865,89 @@ mod runtime_bootstrap {
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        /// 一次性本机 HTTP 服务：接一条连接，把请求头交给 `respond` 生成响应，返回收到的请求头。
+        /// 只给 ureq 下载路径的回归测试用（#210：ureq 2 → 3 换了请求/错误 API）。
+        fn serve_once(
+            respond: impl FnOnce(&str) -> Vec<u8> + Send + 'static,
+        ) -> (String, std::thread::JoinHandle<String>) {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let addr = listener.local_addr().unwrap();
+            let handle = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut req = Vec::new();
+                let mut buf = [0u8; 1024];
+                while !req.windows(4).any(|w| w == b"\r\n\r\n") {
+                    let n = stream.read(&mut buf).unwrap();
+                    if n == 0 {
+                        break;
+                    }
+                    req.extend_from_slice(&buf[..n]);
+                }
+                let req = String::from_utf8_lossy(&req).to_ascii_lowercase();
+                stream.write_all(&respond(&req)).unwrap();
+                req
+            });
+            (format!("http://{addr}/file.bin"), handle)
+        }
+
+        fn http_response(status: &str, body: &[u8]) -> Vec<u8> {
+            let mut resp = format!(
+                "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .into_bytes();
+            resp.extend_from_slice(body);
+            resp
+        }
+
+        /// 断点续传合同：已有部分时带 Range；206 追加、服务器忽略 Range 回 200 时全量重下；
+        /// 4xx（含 416）仍作为错误交给镜像重试循环，错误里带 URL 与状态码。
+        #[test]
+        fn download_resumes_with_range_and_reports_status_errors() {
+            let dir = std::env::temp_dir().join("stella-download-resume-test");
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(&dir).unwrap();
+            let dest = dir.join("file.bin");
+
+            // 1. 206：Range 从已有长度开始，剩余部分追加
+            fs::write(&dest, b"hello ").unwrap();
+            let (url, server) = serve_once(|req| {
+                if req.contains("range: bytes=6-") {
+                    http_response("206 Partial Content", b"world")
+                } else {
+                    http_response("200 OK", b"unexpected full body")
+                }
+            });
+            download(&dir, &url, &dest).unwrap();
+            assert!(server.join().unwrap().contains("range: bytes=6-"));
+            assert_eq!(fs::read(&dest).unwrap(), b"hello world");
+
+            // 2. 服务器不支持 Range（回 200）：丢弃旧部分，全量重下
+            fs::write(&dest, b"stale").unwrap();
+            let (url, server) = serve_once(|_| http_response("200 OK", b"full body"));
+            download(&dir, &url, &dest).unwrap();
+            assert!(server.join().unwrap().contains("range: bytes=5-"));
+            assert_eq!(fs::read(&dest).unwrap(), b"full body");
+
+            // 3. 无已有部分：不带 Range；404 返回错误
+            fs::remove_file(&dest).unwrap();
+            let (url, server) = serve_once(|_| http_response("404 Not Found", b"nope"));
+            let err = download(&dir, &url, &dest).unwrap_err();
+            assert!(!server.join().unwrap().contains("range:"));
+            assert!(err.contains(&url) && err.contains("404"), "{err}");
+
+            // 4. 416（已有部分越界）同样是错误，不会把错误页写进文件
+            fs::write(&dest, b"0123456789").unwrap();
+            let (url, server) =
+                serve_once(|_| http_response("416 Range Not Satisfiable", b""));
+            let err = download(&dir, &url, &dest).unwrap_err();
+            server.join().unwrap();
+            assert!(err.contains("416"), "{err}");
+            assert_eq!(fs::read(&dest).unwrap(), b"0123456789");
+
+            fs::remove_dir_all(&dir).ok();
+        }
 
         #[test]
         fn patch_pth_enables_site_and_project_root() {
