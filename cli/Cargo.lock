@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "stellacli"
-version = "6.4.4"
+version = "6.4.5"
 dependencies = [
  "anstream",
  "anstyle",
