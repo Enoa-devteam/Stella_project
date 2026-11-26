@@ -1,3 +1,11 @@
+## 2026-11-26 — memory_rust/native rust-version 抬到 1.89（#212）
+
+- Scope：#212 决定取方案 1。分支 `fix/issue-212-native-msrv`（worktree `E:/stella/stella_project-212`，基于 origin/main a88bbf4），替代 Dependabot #196。
+- What's Done：`rust-version` 1.88 → 1.89；rusqlite 0.32.1 → 0.43.0（libsqlite3-sys 0.30.1 → 0.40.0），uuid 1.26.1 → 1.29.3；源码无需改动。`.github/dependabot.yml` 删除 native 块的 uuid >=1.27 ignore（#209），保留单列块；README 徽章 Rust 1.89+。
+- Evidence：本机 rustc 1.97.1 下 `cargo build --locked` / `cargo test --locked` 26 passed；`check_rust_msrv.py memory_rust/native` ok；maturin release 构建 abi3 wheel，导出 API 4 / schema 24；隔离 STELLA_HOME 下 test_memory_rust_{promotion,selector,benchmark} 31 passed；`validate_rust_fullchain.py` retrieve_ok、parity `differ: false`；check_docs ok；detect_changes low、0 流程。
+- 未验证：未用 1.89 工具链实际编译（只有 metadata 级 MSRV 检查）；CI 未跑；#196 的 `test_cancel_rejects_inflight_provider` 偶发失败未处理（与 Rust 无关，需单独查）。
+- Next：提交并开 PR，合并后关闭 #196 / #212。
+
 ## 2026-11-26 — v6.4.4 发布与发布后验收
 
 - Scope：#189（含 #188 Tauri 2.12、#164 Codex 0.171.0 M0 复测、#168 playwright 下限）与 release PR #190 合并后打 `v6.4.4`；发布后用公开 Python Online 安装器在 Sandbox 验收。另处理剩余 Dependabot PR #159 / #191。
