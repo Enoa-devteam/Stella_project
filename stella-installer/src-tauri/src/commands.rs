@@ -345,22 +345,27 @@ pub async fn list_models(base_url: String, api_key: Option<String>) -> Result<St
     tauri::async_runtime::spawn_blocking(move || {
         let url = format!("{}/v1/models", base_url.trim_end_matches('/'));
         // 在线服务商跨公网，5 秒会在正常网络下就误报「连不上」
-        let mut request = ureq::get(&url).timeout(std::time::Duration::from_secs(10));
+        // ureq 3：超时移到请求级 config；timeout_global 与 ureq 2 的 timeout 同为端到端（含读 body）
+        let mut request = ureq::get(&url)
+            .config()
+            .timeout_global(Some(std::time::Duration::from_secs(10)))
+            .build();
         if let Some(key) = api_key.as_deref().map(str::trim).filter(|k| !k.is_empty()) {
-            request = request.set("Authorization", &format!("Bearer {key}"));
+            request = request.header("Authorization", &format!("Bearer {key}"));
         }
         let response = request.call().map_err(|e| match e {
-            ureq::Error::Status(code @ (401 | 403), _) => {
+            ureq::Error::StatusCode(code @ (401 | 403)) => {
                 format!("端点拒绝了这把 API key（HTTP {code}）：检查 key 是否填对、账户是否可用。")
             }
-            ureq::Error::Status(404, _) => {
+            ureq::Error::StatusCode(404) => {
                 "端点没有 /v1/models（HTTP 404）：地址应填服务根地址，不要带 /v1。".to_owned()
             }
-            ureq::Error::Status(code, _) => format!("端点返回 HTTP {code}。"),
+            ureq::Error::StatusCode(code) => format!("端点返回 HTTP {code}。"),
             other => format!("无法连接端点：{other}"),
         })?;
         let mut body = String::new();
         response
+            .into_body()
             .into_reader()
             .read_to_string(&mut body)
             .map_err(|e| format!("读取端点响应失败：{e}"))?;
@@ -1033,6 +1038,72 @@ fn runtime_failure(envelope: &serde_json::Value, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{canonical_plain, extract_json, resolve_log_path, runtime_failure, runtime_message};
+
+    /// 一次性本机 HTTP 服务，返回 (base_url, 收到的请求头)。#210 回归测试用。
+    fn serve_once(response: String) -> (String, std::thread::JoinHandle<String>) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut req = Vec::new();
+            let mut buf = [0u8; 1024];
+            while !req.windows(4).any(|w| w == b"\r\n\r\n") {
+                let n = stream.read(&mut buf).unwrap();
+                if n == 0 {
+                    break;
+                }
+                req.extend_from_slice(&buf[..n]);
+            }
+            stream.write_all(response.as_bytes()).unwrap();
+            String::from_utf8_lossy(&req).to_ascii_lowercase()
+        });
+        (format!("http://{addr}"), handle)
+    }
+
+    fn http_response(status: &str, body: &str) -> String {
+        format!(
+            "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+    }
+
+    /// list_models 的状态码 → 用户提示映射在 ureq 3（Error::StatusCode）下保持不变，
+    /// 带 key 时发 Bearer 头，200 时照旧解析模型 id。
+    #[test]
+    fn list_models_maps_http_status_to_user_messages() {
+        let run = |status: &str, body: &str, key: Option<&str>| {
+            let (base, server) = serve_once(http_response(status, body));
+            let result = tauri::async_runtime::block_on(super::list_models(
+                format!("{base}/"),
+                key.map(str::to_owned),
+            ));
+            (result, server.join().unwrap())
+        };
+
+        let (result, req) = run("200 OK", r#"{"data":[{"id":"m1"},{"id":"m2"}]}"#, Some("sk-x"));
+        assert!(req.starts_with("get /v1/models "), "{req}");
+        assert!(req.contains("authorization: bearer sk-x"), "{req}");
+        let models: Vec<String> = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(models, ["m1", "m2"]);
+
+        for code in ["401 Unauthorized", "403 Forbidden"] {
+            let (result, _) = run(code, "", Some("sk-x"));
+            let err = result.unwrap_err();
+            assert!(err.starts_with("端点拒绝了这把 API key（HTTP 40"), "{err}");
+            assert!(!err.contains("sk-x"), "错误信息不得回显 key：{err}");
+        }
+
+        let (result, req) = run("404 Not Found", "", None);
+        assert!(!req.contains("authorization:"), "{req}");
+        assert_eq!(
+            result.unwrap_err(),
+            "端点没有 /v1/models（HTTP 404）：地址应填服务根地址，不要带 /v1。"
+        );
+
+        let (result, _) = run("500 Internal Server Error", "", None);
+        assert_eq!(result.unwrap_err(), "端点返回 HTTP 500。");
+    }
     use std::fs;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
