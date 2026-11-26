@@ -1,3 +1,10 @@
+## 2026-11-26 — Dashboard 升级到 Vite 8（替代 Dependabot #214，#182 收尾）
+
+- Scope：#214（vite 6.4.3 → 8.3.8）build 失败，是 #182 最后一项。分支 `fix/vite-8`（worktree `E:/stella/stella_project-vite8`，基于 main 339d253）。
+- What's Done：vite ^8.3.8（vitest 5.1.1、@vitejs/plugin-vue 6.0.11 的 peer 均已覆盖 8）。Vite 8 改用 Rolldown：`build.rollupOptions` → `rolldownOptions`，`manualChunks` 对象写法（TS2769 根因）改为 `output.codeSplitting.groups`，vuetify / charts 两组按 node_modules 路径归组；apexcharts 的 SSR 构建只被 vue3-apexcharts 动态 import，排除在 charts 组外保持懒加载（否则首屏 JS 1947 → 2820 KB）。
+- Evidence：`pnpm --dir dashboard build`（含 vue-tsc）通过；`pnpm --dir dashboard test` 118 passed；干净副本按 Dockerfile 用 pnpm@10 `install --frozen-lockfile` + build 通过；首屏 JS 1886 KB / CSS 846 KB（v6.4.6：1947 / 858）。`scripts/dev_webui.py`（临时 STELLA_HOME）托管后 Playwright + Edge 截 setup / 登录与 11 个页面，light / dark × 1440 / 1200px，无 pageerror，与 v6.4.6 发布面板逐页差异 ≤ 0.5%（仅 PID、运行时长、数据目录路径）；统计页两张图在折线 / 柱状、7 / 30 天切换后正常重绘。`vite` dev server 8.3.8 启动、应用挂载（无后端时进 /offline）。
+- 未验证：桌面壳内实看；Bot 在线时的数据态图表。
+
 ## 2026-11-26 — v6.4.6 发布准备（PR #222）
 
 - Scope：#221（#211 Vuetify 4）合并后发布维护版 v6.4.6。分支 `chore/release-v6.4.6`（worktree `E:/stella/stella_project-release-646`，基于 main 77c2ec2）。
