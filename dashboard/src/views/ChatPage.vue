@@ -180,8 +180,8 @@ onMounted(loadHistory);
       </v-alert>
       <div class="chat-header d-flex align-center ga-3 px-4 pt-4">
         <div>
-          <h1 class="text-h5 font-weight-bold">聊天</h1>
-          <div class="text-caption text-medium-emphasis">WebChat 私聊 · 独立记忆空间</div>
+          <h1 class="text-headline-small font-weight-bold">聊天</h1>
+          <div class="text-body-small text-medium-emphasis">WebChat 私聊 · 独立记忆空间</div>
         </div>
         <v-spacer />
         <v-btn variant="tonal" prepend-icon="mdi-cog-outline" @click="openWebChatSettings">
@@ -197,11 +197,11 @@ onMounted(loadHistory);
             :class="m.role === 'user' ? 'justify-end' : 'justify-start'"
           >
             <div class="bubble" :class="m.role">
-              <div class="text-body-2" style="white-space: pre-wrap">{{ m.content }}</div>
-              <div v-if="m.ts" class="text-caption text-disabled">{{ m.ts }}</div>
+              <div class="text-body-medium" style="white-space: pre-wrap">{{ m.content }}</div>
+              <div v-if="m.ts" class="text-body-small text-disabled">{{ m.ts }}</div>
             </div>
           </div>
-          <div v-if="!messages.length" class="text-body-2 text-medium-emphasis text-center pa-8">
+          <div v-if="!messages.length" class="text-body-medium text-medium-emphasis text-center pa-8">
             开始和 Stella 聊天吧。这里的对话与群聊记忆相互隔离（专属 webchat 空间）。
           </div>
         </div>
@@ -229,7 +229,7 @@ onMounted(loadHistory);
       <v-card>
         <v-card-title>WebChat 设置</v-card-title>
         <v-card-text>
-          <p class="text-body-2 text-medium-emphasis mb-4">
+          <p class="text-body-medium text-medium-emphasis mb-4">
             这里设置聊天界面 WebChat 使用的人格。WebChat 的专属空间和虚拟会话身份由系统固定管理。
           </p>
           <v-progress-linear v-if="webChatSettingsLoading" indeterminate color="primary" class="mb-4" />
@@ -244,7 +244,7 @@ onMounted(loadHistory);
             auto-grow
             :disabled="webChatSettingsLoading || webChatSettingsSaving || !webChatSettingsLoaded"
           />
-          <div class="text-caption text-medium-emphasis mt-2">专属空间：webchat · 虚拟会话：-1</div>
+          <div class="text-body-small text-medium-emphasis mt-2">专属空间：webchat · 虚拟会话：-1</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -265,6 +265,8 @@ onMounted(loadHistory);
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .chat-layout {
   flex: 1 1 0;
   min-height: 0;
@@ -294,5 +296,6 @@ onMounted(loadHistory);
 }
 .bubble.user {
   background: rgba(var(--v-theme-secondary), 0.2);
+}
 }
 </style>

@@ -336,8 +336,8 @@ onMounted(() => {
 
 <template>
   <v-container fluid class="pa-6">
-    <h1 class="text-h5 font-weight-bold mb-1">扩展</h1>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <h1 class="text-headline-small font-weight-bold mb-1">扩展</h1>
+    <p class="text-body-medium text-medium-emphasis mb-4">
       AstrBot 兼容插件 · MCP Servers · Skills
     </p>
 
@@ -368,8 +368,8 @@ onMounted(() => {
           <tbody>
             <tr v-for="p in plugins.plugins" :key="p.plugin_id">
               <td>
-                <div class="text-body-2">{{ p.display_name || p.name }}</div>
-                <div class="text-caption text-medium-emphasis">{{ p.desc }}</div>
+                <div class="text-body-medium">{{ p.display_name || p.name }}</div>
+                <div class="text-body-small text-medium-emphasis">{{ p.desc }}</div>
               </td>
               <td>{{ p.version || '—' }}</td>
               <td>
@@ -392,7 +392,7 @@ onMounted(() => {
             </tr>
           </tbody>
         </v-table>
-        <div v-else class="text-body-2 text-medium-emphasis pa-4">
+        <div v-else class="text-body-medium text-medium-emphasis pa-4">
           没有插件。安装入口在「市场」标签，或从 GitHub/URL/zip 安装。
           <v-btn size="x-small" variant="tonal" class="ml-2" @click="switchTab('market'); installDialog = true">
             从 GitHub 安装
@@ -404,7 +404,7 @@ onMounted(() => {
     <!-- 市场（多源） -->
     <div v-if="tab === 'market'">
       <v-card class="pa-4 mb-3">
-        <div class="text-subtitle-1 font-weight-medium mb-2">市场源（自建源为一等公民）</div>
+        <div class="text-body-large font-weight-medium mb-2">市场源（自建源为一等公民）</div>
         <v-chip
           v-for="src in sources" :key="src.id"
           closable :color="src.enabled ? 'primary' : 'default'" size="small"
@@ -431,9 +431,9 @@ onMounted(() => {
       <v-row>
         <v-col v-for="p in market?.plugins ?? []" :key="p.name + p.repo" cols="12" sm="6" md="4">
           <v-card class="pa-3 fill-height d-flex flex-column">
-            <div class="text-subtitle-2 font-weight-medium">{{ p.name }} <span class="text-caption">{{ p.version }}</span></div>
-            <div class="text-caption text-medium-emphasis mb-1">by {{ p.author }} · {{ p.source_id }}</div>
-            <div class="text-body-2 flex-grow-1">{{ p.desc }}</div>
+            <div class="text-title-small font-weight-medium">{{ p.name }} <span class="text-body-small">{{ p.version }}</span></div>
+            <div class="text-body-small text-medium-emphasis mb-1">by {{ p.author }} · {{ p.source_id }}</div>
+            <div class="text-body-medium flex-grow-1">{{ p.desc }}</div>
             <v-btn
               size="small" color="primary" variant="tonal" class="mt-2"
               :disabled="!p.repo" @click="installFromMarket(p)"
@@ -443,7 +443,7 @@ onMounted(() => {
           </v-card>
         </v-col>
       </v-row>
-      <div v-if="market && !market.plugins.length" class="text-body-2 text-medium-emphasis pa-4">
+      <div v-if="market && !market.plugins.length" class="text-body-medium text-medium-emphasis pa-4">
         市场为空或全部源不可达。
       </div>
     </div>
@@ -453,7 +453,7 @@ onMounted(() => {
       <v-card class="pa-2">
         <!-- 空状态：提示与新增按钮同一行（2026-09-25 用户要求对齐） -->
         <div v-if="!mcpServers.length" class="d-flex align-center flex-wrap ga-2 pa-3">
-          <span class="text-body-2 text-medium-emphasis">
+          <span class="text-body-medium text-medium-emphasis">
             没有 MCP Server。MCP_ENABLED=false 时服务只写配置不热生效。
           </span>
           <v-spacer />
@@ -471,7 +471,7 @@ onMounted(() => {
                   {{ s.enabled ? '启用' : '停用' }}
                 </v-chip>
               </template>
-              <v-list-item-title class="text-body-2">{{ s.server_id }}</v-list-item-title>
+              <v-list-item-title class="text-body-medium">{{ s.server_id }}</v-list-item-title>
               <v-list-item-subtitle>
                 {{ s.transport === 'stdio' ? s.command : s.url }}
               </v-list-item-subtitle>
@@ -482,7 +482,7 @@ onMounted(() => {
               </template>
             </v-list-item>
           </v-list>
-          <div v-if="mcpTestResult" class="text-caption pa-2">{{ mcpTestResult }}</div>
+          <div v-if="mcpTestResult" class="text-body-small pa-2">{{ mcpTestResult }}</div>
         </template>
       </v-card>
     </div>
@@ -492,7 +492,7 @@ onMounted(() => {
       <v-card class="pa-2">
         <v-list>
           <v-list-item v-for="s in skills" :key="s.name">
-            <v-list-item-title class="text-body-2">{{ s.name }}</v-list-item-title>
+            <v-list-item-title class="text-body-medium">{{ s.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ s.description }} · {{ s.source }}</v-list-item-subtitle>
             <template #append>
               <v-btn size="x-small" variant="text" @click="openSkill(s)">查看/编辑</v-btn>
@@ -500,13 +500,13 @@ onMounted(() => {
             </template>
           </v-list-item>
         </v-list>
-        <div v-if="!skills.length" class="text-body-2 text-medium-emphasis pa-4">
+        <div v-if="!skills.length" class="text-body-medium text-medium-emphasis pa-4">
           没有技能。用户技能放 data/skills/&lt;name&gt;/SKILL.md。
         </div>
       </v-card>
       <v-card v-if="skillName" class="pa-4 mt-3">
         <div class="d-flex align-center mb-2">
-          <div class="text-subtitle-2">{{ skillName }} {{ skillEditable ? '' : '（只读）' }}</div>
+          <div class="text-title-small">{{ skillName }} {{ skillEditable ? '' : '（只读）' }}</div>
           <v-spacer />
           <v-btn v-if="skillEditable" size="small" color="primary" @click="saveSkill">保存</v-btn>
         </div>
@@ -557,10 +557,10 @@ onMounted(() => {
             v-model="installRepo" label="owner/name" placeholder="AstrBotDevs/astrbot_plugin_xxx"
           />
           <v-text-field v-else v-model="installUrl" label="zip 直链 URL" />
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-body-small text-medium-emphasis">
             安装会经过 Stella 插件规范校验（plugin-check），不合规将被拒绝并清理。
           </div>
-          <pre v-if="installResult" class="text-caption text-error mt-2">{{ installResult }}</pre>
+          <pre v-if="installResult" class="text-body-small text-error mt-2">{{ installResult }}</pre>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -582,7 +582,7 @@ onMounted(() => {
           <v-text-field v-if="mcpForm.transport === 'stdio'" v-model="mcpForm.args" label="参数（空格分隔）" />
           <v-text-field v-if="mcpForm.transport !== 'stdio'" v-model="mcpForm.url" label="URL" />
           <v-text-field v-if="mcpForm.transport !== 'stdio'" v-model="mcpForm.auth_env" label="token 环境变量名" />
-          <div v-if="mcpTestResult" class="text-caption">{{ mcpTestResult }}</div>
+          <div v-if="mcpTestResult" class="text-body-small">{{ mcpTestResult }}</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -595,6 +595,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 /* 操作按钮组：td 内层 flex（td 本身不能变 flex，会破坏表格布局） */
 .action-cell {
   white-space: nowrap;
@@ -666,5 +668,6 @@ onMounted(() => {
 .md-body :deep(ul),
 .md-body :deep(ol) {
   padding-left: 1.4em;
+}
 }
 </style>

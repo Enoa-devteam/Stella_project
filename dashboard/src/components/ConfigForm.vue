@@ -57,7 +57,7 @@ function setListItem(key: string, index: number, value: string): void {
           hide-details
           @update:model-value="(v: boolean | null) => setValue(field.key, Boolean(v ?? false))"
         />
-        <span class="text-body-2">{{ field.label }}</span>
+        <span class="text-body-medium">{{ field.label }}</span>
         <v-tooltip v-if="field.hint" location="top" :max-width="480">
           <template #activator="{ props: tip }">
             <v-icon
@@ -67,7 +67,7 @@ function setListItem(key: string, index: number, value: string): void {
               class="text-medium-emphasis stella-tip-icon"
             />
           </template>
-          <span class="text-body-2">{{ field.hint }}</span>
+          <span class="text-body-medium">{{ field.hint }}</span>
         </v-tooltip>
       </div>
 
@@ -84,7 +84,7 @@ function setListItem(key: string, index: number, value: string): void {
                 class="text-medium-emphasis stella-tip-icon"
               />
             </template>
-            <span class="text-body-2">{{ field.hint }}</span>
+            <span class="text-body-medium">{{ field.hint }}</span>
           </v-tooltip>
         </div>
         <div v-for="(_, i) in getList(field.key)" :key="i" class="d-flex ga-2 mb-1">
@@ -114,7 +114,7 @@ function setListItem(key: string, index: number, value: string): void {
                 class="text-medium-emphasis stella-tip-icon"
               />
             </template>
-            <span class="text-body-2">{{ field.hint }}</span>
+            <span class="text-body-medium">{{ field.hint }}</span>
           </v-tooltip>
         </div>
         <v-select
@@ -164,6 +164,8 @@ function setListItem(key: string, index: number, value: string): void {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .config-field {
   margin-bottom: 0.9rem;
 }
@@ -178,5 +180,6 @@ function setListItem(key: string, index: number, value: string): void {
 
 .stella-tip-icon {
   cursor: help;
+}
 }
 </style>

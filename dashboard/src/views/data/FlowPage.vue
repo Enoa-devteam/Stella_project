@@ -708,11 +708,11 @@ const rootKindOptions = computed(() => [
 </script>
 
 <template>
-  <v-row dense class="flow-row">
+  <v-row density="compact" class="flow-row">
     <!-- 左：消息列表 -->
     <v-col cols="12" md="3" class="d-flex flex-column">
       <v-card variant="flat" :elevation="1" class="flow-card-full d-flex flex-column">
-        <v-card-title class="text-subtitle-1">消息</v-card-title>
+        <v-card-title class="text-body-large">消息</v-card-title>
         <v-card-text class="pb-0">
           <v-select
             v-model="store.platformFilter"
@@ -748,18 +748,18 @@ const rootKindOptions = computed(() => [
                 size="small"
               />
             </template>
-            <v-list-item-title class="text-body-2">
+            <v-list-item-title class="text-body-medium">
               {{ rootKindLabel(item) }}
               <v-chip v-if="item.outcome" size="x-small" class="ml-1" label>
                 {{ outcomeLabel(item.outcome) }}
               </v-chip>
             </v-list-item-title>
-            <v-list-item-subtitle class="text-caption">
+            <v-list-item-subtitle class="text-body-small">
               {{ fmtTime(item.started_utc) }} · {{ item.scope || item.platform }}
             </v-list-item-subtitle>
           </v-list-item>
           <v-list-item v-if="!store.messages.length">
-            <v-list-item-title class="text-body-2 text-medium-emphasis">
+            <v-list-item-title class="text-body-medium text-medium-emphasis">
               暂无消息轨迹（开启 Bot 后处理消息即会出现）
             </v-list-item-title>
           </v-list-item>
@@ -786,7 +786,7 @@ const rootKindOptions = computed(() => [
         </v-card-text>
         <template v-else>
           <v-card-text class="pb-0 d-flex flex-wrap ga-2 align-center">
-            <span class="text-subtitle-2">
+            <span class="text-title-small">
               {{ ROOT_KIND_LABELS[store.detail.root_kind] ?? store.detail.root_kind }}
             </span>
             <v-chip size="x-small" label>{{ store.detail.scope }}</v-chip>
@@ -857,7 +857,7 @@ const rootKindOptions = computed(() => [
             v-if="store.detail.relations.length"
             class="pt-1 pb-0 d-flex flex-wrap ga-2 align-center"
           >
-            <span class="text-caption text-medium-emphasis">关联：</span>
+            <span class="text-body-small text-medium-emphasis">关联：</span>
             <v-chip
               v-for="(rel, i) in store.detail.relations"
               :key="i"
@@ -880,7 +880,7 @@ const rootKindOptions = computed(() => [
             v-if="store.traceEntities.length"
             class="pt-1 pb-0 d-flex flex-wrap ga-2 align-center"
           >
-            <span class="text-caption text-medium-emphasis">对象：</span>
+            <span class="text-body-small text-medium-emphasis">对象：</span>
             <v-chip
               v-for="(ent, i) in store.traceEntities.slice(0, 12)"
               :key="i"
@@ -895,7 +895,7 @@ const rootKindOptions = computed(() => [
               {{ ent.entity_type }}:{{ String(ent.entity_id).slice(0, 10) }}
               <template v-if="ent.to_state"> → {{ ent.to_state }}</template>
             </v-chip>
-            <span v-if="store.traceEntities.length > 12" class="text-caption text-medium-emphasis">
+            <span v-if="store.traceEntities.length > 12" class="text-body-small text-medium-emphasis">
               …共 {{ store.traceEntities.length }} 条对象变化
             </span>
           </v-card-text>
@@ -907,16 +907,16 @@ const rootKindOptions = computed(() => [
           >
             <div class="io-grid">
               <div class="io-cell">
-                <div class="text-caption text-medium-emphasis mb-1">
+                <div class="text-body-small text-medium-emphasis mb-1">
                   <v-icon size="x-small">mdi-import</v-icon> 输入
                 </div>
                 <div v-if="store.io.input" class="io-text" :title="store.io.input.content">
                   {{ store.io.input.content }}
                 </div>
-                <div v-else class="text-caption text-medium-emphasis">（无用户输入）</div>
+                <div v-else class="text-body-small text-medium-emphasis">（无用户输入）</div>
               </div>
               <div class="io-cell">
-                <div class="text-caption text-medium-emphasis mb-1">
+                <div class="text-body-small text-medium-emphasis mb-1">
                   <v-icon size="x-small">mdi-export</v-icon> 输出
                   <span v-if="store.io.output.count">（{{ store.io.output.count }} 行）</span>
                 </div>
@@ -952,14 +952,14 @@ const rootKindOptions = computed(() => [
                 >
                   <div
                     v-if="store.io.output.segments_truncated"
-                    class="text-caption text-warning mb-1"
+                    class="text-body-small text-warning mb-1"
                   >
                     片段事实已截断：仅展示前 {{ store.io.output.segments.length }} 段
                   </div>
                   <div
                     v-for="seg in store.io.output.segments"
                     :key="seg.part_index"
-                    class="d-flex align-center ga-2 text-caption py-0.5"
+                    class="d-flex align-center ga-2 text-body-small py-0.5"
                   >
                     <v-chip
                       size="x-small"
@@ -975,13 +975,13 @@ const rootKindOptions = computed(() => [
                 <div
                   v-if="!store.io.output.lines.length
                     && !(store.io.output.segments && store.io.output.segments.length)"
-                  class="text-caption text-medium-emphasis"
+                  class="text-body-small text-medium-emphasis"
                 >
                   （无）
                 </div>
               </div>
             </div>
-            <div v-if="store.io.notes.length" class="text-caption text-medium-emphasis mt-1">
+            <div v-if="store.io.notes.length" class="text-body-small text-medium-emphasis mt-1">
               {{ store.io.notes.join('；') }}
             </div>
           </v-card-text>
@@ -994,7 +994,7 @@ const rootKindOptions = computed(() => [
             <span
               v-for="lane in laneLegend"
               :key="lane.id"
-              class="d-inline-flex align-center ga-1 text-caption text-medium-emphasis"
+              class="d-inline-flex align-center ga-1 text-body-small text-medium-emphasis"
             >
               <span
                 class="lane-dot"
@@ -1002,14 +1002,14 @@ const rootKindOptions = computed(() => [
               />{{ lane.label }}
             </span>
             <v-divider vertical inset class="mx-1" style="max-height: 14px" />
-            <span class="d-inline-flex align-center ga-1 text-caption text-medium-emphasis">
+            <span class="d-inline-flex align-center ga-1 text-body-small text-medium-emphasis">
               <svg width="26" height="8" aria-hidden="true">
                 <line x1="0" y1="4" x2="26" y2="4"
                       stroke="rgb(var(--v-theme-success))" stroke-width="2" />
               </svg>
               实际走过
             </span>
-            <span class="d-inline-flex align-center ga-1 text-caption text-medium-emphasis">
+            <span class="d-inline-flex align-center ga-1 text-body-small text-medium-emphasis">
               <svg width="26" height="8" aria-hidden="true">
                 <line x1="0" y1="4" x2="26" y2="4"
                       stroke="rgba(var(--v-theme-on-surface), 0.35)" stroke-width="1.2"
@@ -1017,7 +1017,7 @@ const rootKindOptions = computed(() => [
               </svg>
               静态未确认（无跳转事实）
             </span>
-            <span class="d-inline-flex align-center ga-1 text-caption text-medium-emphasis">
+            <span class="d-inline-flex align-center ga-1 text-body-small text-medium-emphasis">
               <svg width="26" height="8" aria-hidden="true">
                 <line x1="0" y1="4" x2="26" y2="4"
                       stroke="rgba(var(--v-theme-on-surface), 0.35)" stroke-width="1.2"
@@ -1046,7 +1046,7 @@ const rootKindOptions = computed(() => [
                 title="放大"
                 @click="zoomStep(1.2)"
               />
-              <span class="text-caption canvas-zoom-label">
+              <span class="text-body-small canvas-zoom-label">
                 {{ Math.round(viewScale * 100) }}%
               </span>
               <v-btn
@@ -1064,7 +1064,7 @@ const rootKindOptions = computed(() => [
                 @click="fitView"
               />
             </div>
-            <div class="canvas-hint text-caption text-medium-emphasis">
+            <div class="canvas-hint text-body-small text-medium-emphasis">
               右键拖拽平移 · 滚轮缩放
             </div>
             <svg
@@ -1188,7 +1188,7 @@ const rootKindOptions = computed(() => [
               class="flow-card"
               :style="{ left: `${card?.x}px`, top: `${card?.y}px` }"
               variant="elevated"
-              :elevation="6"
+              :elevation="2"
               @click.stop
             >
               <v-card-text class="pa-3">
@@ -1197,7 +1197,7 @@ const rootKindOptions = computed(() => [
                     class="lane-dot"
                     :style="{ background: laneColor(selectedNode.lane) }"
                   />
-                  <span class="text-subtitle-2">{{ selectedNode.label }}</span>
+                  <span class="text-title-small">{{ selectedNode.label }}</span>
                   <v-chip
                     size="x-small"
                     label
@@ -1213,7 +1213,7 @@ const rootKindOptions = computed(() => [
                     @click="closeCard"
                   />
                 </div>
-                <div class="text-caption text-medium-emphasis mb-1">
+                <div class="text-body-small text-medium-emphasis mb-1">
                   {{ selectedNode.nodeId }}
                   <template v-if="selectedNode.spec?.kind === 'unknown'">
                     · 未知节点（不在当前目录，事件事实如下）
@@ -1224,13 +1224,13 @@ const rootKindOptions = computed(() => [
                     · {{ laneLabels[selectedNode.lane] ?? selectedNode.lane }}
                   </template>
                 </div>
-                <div v-if="selectedNode.status === 'skipped'" class="text-body-2 mb-1">
+                <div v-if="selectedNode.status === 'skipped'" class="text-body-medium mb-1">
                   已跳过<template v-if="selectedNode.outcome">（原因：{{ selectedNode.outcome }}）</template>
                 </div>
-                <div v-else-if="selectedNode.outcome" class="text-body-2 mb-1">
+                <div v-else-if="selectedNode.outcome" class="text-body-medium mb-1">
                   事实：{{ selectedNode.outcome }}
                 </div>
-                <div v-if="selectedNodeDetail" class="text-caption mb-1">
+                <div v-if="selectedNodeDetail" class="text-body-small mb-1">
                   实例 {{ selectedNode.instances }}
                   <template v-if="selectedNodeDetail.running_count"> · 在跑 {{ selectedNodeDetail.running_count }}</template>
                   <template v-if="selectedNodeDetail.succeeded_count"> · 成功 {{ selectedNodeDetail.succeeded_count }}</template>
@@ -1239,12 +1239,12 @@ const rootKindOptions = computed(() => [
                     · 最近耗时 {{ selectedNodeDetail.durationMs.toFixed(1) }} ms
                   </template>
                 </div>
-                <div v-else class="text-caption text-medium-emphasis mb-1">
+                <div v-else class="text-body-small text-medium-emphasis mb-1">
                   本次消息未观测到这个节点（无事实，不猜测原因）。
                 </div>
                 <template v-if="selectedNodeDetail?.events?.length">
                   <v-divider class="my-2" />
-                  <div class="text-caption">
+                  <div class="text-body-small">
                     <div
                       v-for="ev in selectedNodeDetail.events.slice(-8)"
                       :key="ev.event_id"
@@ -1269,7 +1269,7 @@ const rootKindOptions = computed(() => [
                 </template>
                 <template v-if="selectedClosure">
                   <v-divider class="my-2" />
-                  <div class="text-caption text-medium-emphasis">
+                  <div class="text-body-small text-medium-emphasis">
                     <div>
                       源码：{{ selectedClosure.file }}#{{ selectedClosure.symbol }}
                     </div>
@@ -1376,7 +1376,7 @@ const rootKindOptions = computed(() => [
                 继续加载事件（当前为部分加载）
               </v-btn>
             </div>
-            <div v-if="currentEvent" class="text-caption text-medium-emphasis mt-1">
+            <div v-if="currentEvent" class="text-body-small text-medium-emphasis mt-1">
               {{ fmtTime(currentEvent.ts_utc) }} ·
               {{ store.nodeLabel(currentEvent.node_id) }} ·
               {{ currentEvent.kind }} {{ nodeStatusText(currentEvent.status) }}
@@ -1397,7 +1397,7 @@ const rootKindOptions = computed(() => [
   <!-- 对象履历（修复计划 §6.6 R7）：对象视角 ↔ 运行视角互查 -->
   <v-dialog v-model="entityDialog" max-width="640">
     <v-card>
-      <v-card-title class="text-subtitle-1 d-flex align-center">
+      <v-card-title class="text-body-large d-flex align-center">
         对象履历
         <v-chip size="x-small" label class="ml-2">{{ entityHistoryKey }}</v-chip>
         <v-spacer />
@@ -1410,7 +1410,7 @@ const rootKindOptions = computed(() => [
           class="d-flex align-center ga-2 py-1 flex-wrap"
           style="border-bottom: 1px solid rgba(128,128,128,.15)"
         >
-          <span class="text-caption">{{ fmtTime(String(h.ts_utc ?? '')) }}</span>
+          <span class="text-body-small">{{ fmtTime(String(h.ts_utc ?? '')) }}</span>
           <v-chip size="x-small" label>{{ h.from_state || '∅' }} → {{ h.to_state || '∅' }}</v-chip>
           <v-spacer />
           <v-btn
@@ -1422,7 +1422,7 @@ const rootKindOptions = computed(() => [
             打开运行 {{ String(h.trace_id).slice(0, 8) }}…
           </v-btn>
         </div>
-        <div v-if="!entityHistory.length" class="text-caption text-medium-emphasis">
+        <div v-if="!entityHistory.length" class="text-body-small text-medium-emphasis">
           该对象没有状态变化事实。
         </div>
       </v-card-text>
@@ -1431,6 +1431,8 @@ const rootKindOptions = computed(() => [
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .io-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1544,9 +1546,9 @@ const rootKindOptions = computed(() => [
   overflow-y: auto;
   z-index: 10;
 }
-.flow-card :deep(.text-caption),
-.flow-card :deep(.text-body-2),
-.flow-card :deep(.text-subtitle-2) {
+.flow-card :deep(.text-body-small),
+.flow-card :deep(.text-body-medium),
+.flow-card :deep(.text-title-small) {
   overflow-wrap: anywhere;
   word-break: break-word;
   white-space: normal;
@@ -1665,5 +1667,6 @@ const rootKindOptions = computed(() => [
   padding: 6px;
   max-height: 140px;
   overflow: auto;
+}
 }
 </style>

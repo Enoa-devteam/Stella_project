@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
               {{ item.trigger || 'reply' }}
             </v-chip>
           </template>
-          <v-list-item-title class="text-body-2">
+          <v-list-item-title class="text-body-medium">
             {{ item.message || '(空)' }}
           </v-list-item-title>
           <v-list-item-subtitle>
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
           </template>
         </v-list-item>
       </v-list>
-      <div v-if="!traces.length" class="text-body-2 text-medium-emphasis pa-4">
+      <div v-if="!traces.length" class="text-body-medium text-medium-emphasis pa-4">
         还没有决策轨迹。每次回复会在这里留下「为什么调用这些记忆、为什么不用那些」的完整记录。
       </div>
     </v-card>
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
               {{ item.decision }}
             </v-chip>
           </template>
-          <v-list-item-title class="text-body-2">
+          <v-list-item-title class="text-body-medium">
             得分 {{ Math.round(item.final_score) }} · 话题相关度 {{ item.relevance?.toFixed?.(2) }}
           </v-list-item-title>
           <v-list-item-subtitle>
@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
           </v-list-item-subtitle>
         </v-list-item>
       </v-list>
-      <div v-if="!participations.length" class="text-body-2 text-medium-emphasis pa-4">
+      <div v-if="!participations.length" class="text-body-medium text-medium-emphasis pa-4">
         还没有参与评分记录。「为什么这次没说话」的直接答案在这里。
       </div>
     </v-card>
@@ -238,24 +238,24 @@ onBeforeUnmount(() => {
     >
       <div v-if="replay" class="pa-4">
         <div class="d-flex align-center mb-2">
-          <div class="text-h6">单条消息回放</div>
+          <div class="text-title-large">单条消息回放</div>
           <v-spacer />
           <v-btn icon="mdi-close" size="small" variant="text" @click="replay = null" />
         </div>
         <v-card variant="tonal" class="pa-3 mb-3">
-          <div class="text-body-2">
+          <div class="text-body-medium">
             <b>用户输入</b>：{{ replay.message }}
           </div>
-          <div class="text-caption text-medium-emphasis mt-1">
+          <div class="text-body-small text-medium-emphasis mt-1">
             {{ replay.ts }} · 触发 {{ replay.trigger }} · 模式 {{ replay.mode || '—' }} ·
             群 {{ replay.group_id }}（空间 {{ replay.group_shared_space || '—' }}）
           </div>
         </v-card>
 
-        <div class="text-subtitle-2 mb-1">回复</div>
-        <v-card variant="outlined" class="pa-3 mb-3 text-body-2">{{ replay.output || '(无)' }}</v-card>
+        <div class="text-title-small mb-1">回复</div>
+        <v-card variant="outlined" class="pa-3 mb-3 text-body-medium">{{ replay.output || '(无)' }}</v-card>
 
-        <div class="text-subtitle-2 mb-1">记忆链</div>
+        <div class="text-title-small mb-1">记忆链</div>
         <div
           v-for="section in [
             ['final', '最终采纳'],
@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
           :key="section[0]"
           class="mb-2"
         >
-          <div class="text-caption text-medium-emphasis">
+          <div class="text-body-small text-medium-emphasis">
             {{ section[1] }}（{{ replay.memories[section[0]].length }}）
           </div>
           <v-chip
@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
           </v-chip>
           <span
             v-if="!replay.memories[section[0]].length"
-            class="text-caption text-disabled"
+            class="text-body-small text-disabled"
           >
             无
           </span>
@@ -297,7 +297,7 @@ onBeforeUnmount(() => {
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
-        <div class="text-caption text-disabled mt-3">
+        <div class="text-body-small text-disabled mt-3">
           Router 命中、工具调用与预算分配目前记录在 thought 日志（Markdown），暂不在回放中。
         </div>
       </div>
@@ -306,6 +306,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .trace-row {
   cursor: pointer;
 }
@@ -315,5 +317,6 @@ onBeforeUnmount(() => {
   font-size: 0.72rem;
   max-height: 300px;
   overflow-y: auto;
+}
 }
 </style>

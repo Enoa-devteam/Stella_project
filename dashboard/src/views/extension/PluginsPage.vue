@@ -67,10 +67,10 @@ function toolSummary(cap: CapabilityItem): string {
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-1">
-      <h1 class="text-h5 font-weight-bold">扩展 · 插件</h1>
+      <h1 class="text-headline-small font-weight-bold">扩展 · 插件</h1>
       <v-chip size="small" variant="tonal" color="secondary" class="ml-3">M1 · 只读清单</v-chip>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       AstrBot 兼容插件（data/plugins/）的加载状态与能力声明。启停 / 重载 / 配置 / 安装在 M3 上线。
     </p>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-3">{{ error }}</v-alert>
@@ -97,8 +97,8 @@ function toolSummary(cap: CapabilityItem): string {
         <tbody>
           <tr v-for="p in data.plugins" :key="p.plugin_id">
             <td>
-              <div class="text-body-2">{{ p.display_name || p.name }}</div>
-              <div class="text-caption text-medium-emphasis">{{ p.desc }}</div>
+              <div class="text-body-medium">{{ p.display_name || p.name }}</div>
+              <div class="text-body-small text-medium-emphasis">{{ p.desc }}</div>
             </td>
             <td>{{ p.version || '—' }}</td>
             <td>{{ p.author || '—' }}</td>
@@ -109,17 +109,17 @@ function toolSummary(cap: CapabilityItem): string {
               </v-chip>
             </td>
             <td>{{ p.reserved ? '是' : '否' }}</td>
-            <td class="text-caption">{{ p.root_dir_name }}</td>
+            <td class="text-body-small">{{ p.root_dir_name }}</td>
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis pa-4">
+      <div v-else class="text-body-medium text-medium-emphasis pa-4">
         没有已加载的插件。把 AstrBot 插件放进数据目录的 data/plugins/ 后重启即可。
       </div>
     </v-card>
 
     <v-card class="pa-4">
-      <div class="text-subtitle-1 font-weight-medium mb-2">能力声明（Router 路由视角）</div>
+      <div class="text-body-large font-weight-medium mb-2">能力声明（Router 路由视角）</div>
       <v-alert
         v-if="missingTools.length"
         type="warning"
@@ -152,11 +152,11 @@ function toolSummary(cap: CapabilityItem): string {
                 {{ cap.routable ? '可路由' : '否' }}
               </v-chip>
             </td>
-            <td class="text-caption">{{ toolSummary(cap) }}</td>
+            <td class="text-body-small">{{ toolSummary(cap) }}</td>
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis">
+      <div v-else class="text-body-medium text-medium-emphasis">
         没有能力声明（config/capabilities/ 或插件自带 capability.toml）。
       </div>
     </v-card>

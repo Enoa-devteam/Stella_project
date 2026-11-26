@@ -202,7 +202,7 @@ Stella_project/
 ├── release_assets/                 # Release artifact templates and release verification (quick-start READMEs, release-notes template, SHA256SUMS/manifest semantics, VM validation matrix)
 │
 ├── stella-installer/               # v1 desktop installer (Tauri 2 + Rust, native HTML/JS; frozen at tag gui-v1-final)
-├── dashboard/                      # v2 control-plane frontend (Vue 3 + Vuetify 3 + TS; shared by browser and desktop shell)
+├── dashboard/                      # v2 control-plane frontend (Vue 3 + Vuetify 4 + TS; shared by browser and desktop shell)
 ├── webui/                          # v2 control-plane backend (FastAPI sub-app on the same NoneBot port; serves dashboard/dist)
 ├── desktop/                        # v2 desktop shell (Tauri 2; embeds the panel + narrow-contract start/doctor)
 ├── openspec/                       # WebUI API contract (openapi-v1.yaml)

@@ -1,3 +1,11 @@
+## 2026-11-26 — Dashboard 迁移到 Vuetify 4（#211）
+
+- Scope：#211，替代 Dependabot #201（vuetify 3.13.4 → 4.3.4）。分支 `fix/issue-211-vuetify4`（worktree `E:/stella/stella_project-vuetify4`，基于 origin/main 6f01f53）。
+- What's Done：按官方 upgrade guide 处理。select `#item` 槽位的 `item` 现为原始对象，去掉 `.raw`（ConversationPolicyEditor、ConversationsPage；LogsPage 的 `raw` 是日志字段，与此无关）；VRow `dense` → `density="compact"`，`align` / `justify` → 工具类；BlankLayout `fill-height` 补 `d-flex align-center flex-wrap`；排版类按官方保守映射换 MD3 名（26 个文件）；elevation 8/6 → 3/2，VSnackbar 默认 6 → 2；`theme.global.name.value =` → `theme.change()`（v4 已标 deprecated）。CSS：index.html 先声明层序并把 17 个 `<style scoped>` 包进 `@layer stella-app`（位于组件之后、工具类之前，复现 v3「工具类 !important 优先」）；`src/styles/vuetify-compat.css` 收官方的部分 reset 与 grid legacy mode。侧栏折叠阈值固定为 1280px（v4 lg 降到 1145px，否则 1145–1279px 由 rail 变整栏）。按钮不再大写、断点与容器宽度采用 v4 新值（预编译 CSS，不引入 sass 无法回退）。文档 Vuetify 3 → 4，conventions 记 CSS 层约定。
+- Evidence：`pnpm --dir dashboard build`（含 vue-tsc）通过；`pnpm --dir dashboard test` 11 files / 118 passed；干净副本按 Dockerfile 用 pnpm@10 `install --frozen-lockfile` + build 通过；check_docs ok。浏览器对照：两个 worktree 各 `sync:webui` 后用 `scripts/dev_webui.py`（临时 STELLA_HOME）起 v3（main）/ v4 两个实例，Playwright + Edge 截图登录/setup、欢迎、平台、提供商、会话、日志、设置、扩展、人格、定时、流程、统计，light / dark × 1440 / 1200 / 900px，无 pageerror（两边相同的 3 个 503 来自需要 Bot 进程的端点）；1440 / 1200 像素差 0–6%（输入框略矮、MD3 阴影），版面一致。900px（840–959）md 栅格提前生效，部分卡片由单列变双列——v4 断点变化，预期内。bundle：index.js 701 → 827 KB，CSS 847 → 879 KB；>500 kB 警告 main 上已有。
+- 未验证 / NOT READY：桌面壳（Tauri WebView2）内实看未做；真实 Docker build 未跑（本机 Docker daemon 未启动），以 CI 为准；Bot 在线时的数据态页面（有会话、日志流）未看。
+- Next：PR 的 CI（Dashboard CI、test (3.11)、Docker build-push）通过后在桌面壳里过一遍主要页面；合并后关闭 #201，release 按惯例重新生成 `webui/dist` / `desktop/dashboard-dist`。
+
 ## 2026-11-26 — v6.4.5 发布与发布后验收
 
 - 发布：#219 合并（main 867d468）后 CI 与 Release cache warm 通过，annotated tag `v6.4.5`（→ 867d468，仅推此 tag）；release.yml 45771438561 成功；Release「stella v6.4.5」为 Latest，非 draft / 非预发布，12 个资产。

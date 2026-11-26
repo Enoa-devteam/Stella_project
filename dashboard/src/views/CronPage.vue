@@ -190,12 +190,12 @@ onMounted(() => {
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-4">
-      <h1 class="text-h5 font-weight-bold">定时任务</h1>
+      <h1 class="text-headline-small font-weight-bold">定时任务</h1>
       <v-spacer />
       <v-btn variant="text" @click="showAudit">审计记录</v-btn>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">新建任务</v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       与群内「定时」指令共用同一套校验：群内配额、主动发言闸门、审计全部照常。
     </p>
 
@@ -209,9 +209,9 @@ onMounted(() => {
             <td>{{ t.bot_id || '—' }}</td>
             <td>{{ t.group_id }}</td>
             <td><v-chip size="x-small" variant="tonal" :color="t.mode === 'agent' ? 'secondary' : 'primary'">{{ t.mode }}</v-chip></td>
-            <td class="text-body-2">{{ t.objective.slice(0, 40) }}</td>
-            <td><code class="text-caption">{{ t.cron_expr }}</code></td>
-            <td class="text-caption">{{ t.timezone }}</td>
+            <td class="text-body-medium">{{ t.objective.slice(0, 40) }}</td>
+            <td><code class="text-body-small">{{ t.cron_expr }}</code></td>
+            <td class="text-body-small">{{ t.timezone }}</td>
             <td><v-chip size="x-small" :color="statusColor(t.status)" variant="tonal">{{ t.status }}</v-chip></td>
             <td>{{ t.revision }}</td>
             <td class="d-flex ga-1">
@@ -224,7 +224,7 @@ onMounted(() => {
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis pa-4">
+      <div v-else class="text-body-medium text-medium-emphasis pa-4">
         没有定时任务。
       </div>
     </v-card>
@@ -239,11 +239,11 @@ onMounted(() => {
         <v-card-text>
           <v-list density="compact">
             <v-list-item v-for="r in history?.runs ?? []" :key="r.run_id">
-              <v-list-item-title class="text-body-2">{{ r.state }}</v-list-item-title>
+              <v-list-item-title class="text-body-medium">{{ r.state }}</v-list-item-title>
               <v-list-item-subtitle>{{ r.ts }} {{ r.note }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
-          <div v-if="!history?.runs?.length" class="text-caption">还没有运行记录。</div>
+          <div v-if="!history?.runs?.length" class="text-body-small">还没有运行记录。</div>
         </v-card-text>
         <v-card-actions><v-spacer /><v-btn @click="historyTask = ''">关闭</v-btn></v-card-actions>
       </v-card>
@@ -259,7 +259,7 @@ onMounted(() => {
         <v-card-text>
           <v-list density="compact">
             <v-list-item v-for="(e, i) in audit?.entries ?? []" :key="i">
-              <v-list-item-title class="text-body-2">{{ e.action }} · 群 {{ e.group_id }}</v-list-item-title>
+              <v-list-item-title class="text-body-medium">{{ e.action }} · 群 {{ e.group_id }}</v-list-item-title>
               <v-list-item-subtitle>{{ e.ts }} · 任务 {{ e.task_id.slice(0, 8) }} · 操作者 {{ e.actor_id }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
@@ -306,7 +306,7 @@ onMounted(() => {
                   class="text-medium-emphasis stella-tip-icon mt-3"
                 />
               </template>
-              <span class="text-body-2">
+              <span class="text-body-medium">
                 QQ 群来自 .env 白名单（群组页可维护）。类型：reminder 仅发提醒；
                 agent 会唤醒模型按目标执行，仅管理员可触发且消耗模型调用。
               </span>
@@ -321,7 +321,7 @@ onMounted(() => {
             hide-details
           />
 
-          <div class="text-caption text-medium-emphasis mt-4 mb-1">重复（星期几）</div>
+          <div class="text-body-small text-medium-emphasis mt-4 mb-1">重复（星期几）</div>
           <v-btn-toggle
             v-model="selectedDays"
             multiple
@@ -360,12 +360,12 @@ onMounted(() => {
                   class="text-medium-emphasis stella-tip-icon"
                 />
               </template>
-              <span class="text-body-2">时间与时区共同决定触发时刻；系统自动换算成 Cron 表达式，无需手写。</span>
+              <span class="text-body-medium">时间与时区共同决定触发时刻；系统自动换算成 Cron 表达式，无需手写。</span>
             </v-tooltip>
           </div>
 
           <div class="d-flex align-center ga-2 mt-4 flex-wrap">
-            <span class="text-caption text-medium-emphasis">快捷预设：</span>
+            <span class="text-body-small text-medium-emphasis">快捷预设：</span>
             <v-chip
               v-for="preset in PRESETS"
               :key="preset.label"
@@ -388,6 +388,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 /* 选中的星期按钮用星芒金（Stella logo 同色）：金底 + 深板岩字，高对比 */
 .stella-day-toggle :deep(.v-btn--active) {
   background-color: #e5ce9c !important;
@@ -400,5 +402,6 @@ onMounted(() => {
 
 .stella-tip-icon {
   cursor: help;
+}
 }
 </style>

@@ -56,12 +56,12 @@ async function runDoctor(): Promise<void> {
 
 <template>
   <v-container fluid class="pa-6">
-    <h1 class="text-h5 font-weight-bold mb-4">设置</h1>
+    <h1 class="text-headline-small font-weight-bold mb-4">设置</h1>
 
-    <v-row align="stretch">
+    <v-row class="align-stretch">
       <v-col cols="12" md="6" class="d-flex flex-column ga-4">
         <v-card class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-3">安全</div>
+          <div class="text-body-large font-weight-medium mb-3">安全</div>
           <v-text-field v-model="username" label="用户名" density="compact" disabled />
           <v-text-field v-model="oldPassword" label="当前密码" type="password" density="compact" />
           <v-text-field v-model="newPassword" label="新密码（≥8 位）" type="password" density="compact" />
@@ -71,8 +71,8 @@ async function runDoctor(): Promise<void> {
         </v-card>
 
         <v-card class="pa-4 mt-auto">
-          <div class="text-subtitle-1 font-weight-medium mb-3">关于</div>
-          <div class="text-body-2 text-medium-emphasis">
+          <div class="text-body-large font-weight-medium mb-3">关于</div>
+          <div class="text-body-medium text-medium-emphasis">
             Stella 控制台 · WebUI v2（设计文档见 design_docs）。AGPL-3.0。
             插件生态与 AstrBot 兼容。
           </div>
@@ -82,14 +82,14 @@ async function runDoctor(): Promise<void> {
       <v-col cols="12" md="6" class="d-flex">
         <v-card class="pa-4 flex-grow-1">
           <div class="d-flex align-center mb-3">
-            <div class="text-subtitle-1 font-weight-medium">环境自检（doctor）</div>
+            <div class="text-body-large font-weight-medium">环境自检（doctor）</div>
             <v-spacer />
             <v-btn size="small" :loading="doctorLoading" @click="runDoctor">运行</v-btn>
           </div>
-          <div v-if="!doctor && doctorLoading" class="text-body-2 text-medium-emphasis">
+          <div v-if="!doctor && doctorLoading" class="text-body-medium text-medium-emphasis">
             正在运行环境自检，请稍候…
           </div>
-          <div v-else-if="!doctor" class="text-body-2 text-medium-emphasis">
+          <div v-else-if="!doctor" class="text-body-medium text-medium-emphasis">
             运行环境自检（Python/依赖/目录/端口/NapCat 探活）。
           </div>
           <template v-else>
@@ -125,7 +125,7 @@ async function runDoctor(): Promise<void> {
             </v-alert>
             <v-alert v-if="doctor.error" type="error" variant="tonal" density="compact" class="mb-2">
               {{ doctor.error }}
-              <div v-if="doctor.output" class="text-caption mt-1">{{ doctor.output }}</div>
+              <div v-if="doctor.output" class="text-body-small mt-1">{{ doctor.output }}</div>
             </v-alert>
 
             <!-- 检查项列表 -->
@@ -149,7 +149,7 @@ async function runDoctor(): Promise<void> {
                     "
                   />
                 </template>
-                <v-list-item-title class="text-body-2">{{ item.title }}</v-list-item-title>
+                <v-list-item-title class="text-body-medium">{{ item.title }}</v-list-item-title>
                 <v-list-item-subtitle>
                   {{ item.detail }}
                   <code v-if="item.fix_hint" class="fix-hint mt-1">{{ item.fix_hint }}</code>
@@ -170,7 +170,7 @@ async function runDoctor(): Promise<void> {
     </v-row>
 
     <v-card class="mt-4">
-      <v-card-title class="text-subtitle-1 font-weight-medium">高级设置</v-card-title>
+      <v-card-title class="text-body-large font-weight-medium">高级设置</v-card-title>
       <v-card-text>
         <AdvancedConfigSettings />
       </v-card-text>
@@ -179,6 +179,8 @@ async function runDoctor(): Promise<void> {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .fix-hint {
   display: block;
   font-size: 0.72rem;
@@ -195,5 +197,6 @@ async function runDoctor(): Promise<void> {
   background: rgba(var(--v-theme-background), 0.6);
   border-radius: 8px;
   padding: 8px;
+}
 }
 </style>

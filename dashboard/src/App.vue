@@ -14,7 +14,7 @@ const theme = useTheme();
 watch(
   () => customizer.resolvedTheme,
   (name) => {
-    theme.global.name.value = name;
+    theme.change(name);
   },
   { immediate: true },
 );

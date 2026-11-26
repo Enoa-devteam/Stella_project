@@ -22,8 +22,11 @@ const doctor = useDoctorStore();
 const system = useSystemStore();
 const toast = useToast();
 const theme = useTheme();
-const { mdAndDown } = useDisplay();
-const isCompact = mdAndDown;
+// 侧栏折叠阈值固定为 1280px（Vuetify 3 的 lg 起点）。Vuetify 4 把 lg 下调到
+// 1145px，若继续用 mdAndDown，1145–1279px 窗口会从 72px rail 变成整栏（#211）。
+const COMPACT_MAX_WIDTH = 1280;
+const { width: displayWidth } = useDisplay();
+const isCompact = computed(() => displayWidth.value < COMPACT_MAX_WIDTH);
 const isCollapsed = ref(false);
 
 watch(isCompact, (compact) => {
@@ -134,7 +137,7 @@ function closeTemporaryDrawer(temporary: boolean): void {
         @click="toggleSidebar"
       />
       <v-icon icon="mdi-star-four-points" color="secondary" class="ml-4 mr-2" />
-      <span class="text-h6 font-weight-bold">Stella</span>
+      <span class="text-title-large font-weight-bold">Stella</span>
       <v-spacer />
       <v-btn
         :icon="isDark ? 'mdi-weather-night' : 'mdi-weather-sunny'"
@@ -143,7 +146,7 @@ function closeTemporaryDrawer(temporary: boolean): void {
       />
       <v-btn icon="mdi-logout" variant="text" @click="logout" />
       <v-avatar color="primary" size="32" class="mr-4">
-        <span class="text-subtitle-2">{{ auth.username.slice(0, 1).toUpperCase() }}</span>
+        <span class="text-title-small">{{ auth.username.slice(0, 1).toUpperCase() }}</span>
       </v-avatar>
     </v-app-bar>
 
@@ -208,6 +211,8 @@ function closeTemporaryDrawer(temporary: boolean): void {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .page-min-height {
   min-height: 100vh;
 }
@@ -240,5 +245,6 @@ function closeTemporaryDrawer(temporary: boolean): void {
 .navigation-drawer--overlay {
   left: 0 !important;
   z-index: 1008 !important;
+}
 }
 </style>

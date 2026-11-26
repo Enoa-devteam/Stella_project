@@ -47,13 +47,13 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <v-row justify="center" align="center" class="fill-height">
+  <v-row class="fill-height justify-center align-center">
     <v-col cols="12" sm="8" md="5" lg="4">
-      <v-card elevation="8" class="pa-2">
+      <v-card elevation="3" class="pa-2">
         <v-card-item>
           <div class="d-flex align-center mb-2">
             <v-icon icon="mdi-star-four-points" color="secondary" class="mr-2" />
-            <v-card-title class="text-h5">{{ $t('features.auth.setupTitle') }}</v-card-title>
+            <v-card-title class="text-headline-small">{{ $t('features.auth.setupTitle') }}</v-card-title>
           </div>
           <v-card-subtitle>{{ $t('features.auth.setupHint') }}</v-card-subtitle>
         </v-card-item>

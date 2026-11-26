@@ -15,7 +15,7 @@ export default createVuetify({
   },
   defaults: {
     VCard: { rounded: 'lg' },
-    VSnackbar: { elevation: 6 },
+    VSnackbar: { elevation: 2 },
     VTooltip: { location: 'top' },
     VBtn: { color: 'primary' },
   },

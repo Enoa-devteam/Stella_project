@@ -112,7 +112,7 @@ onMounted(load);
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-4">
-      <h1 class="text-h5 font-weight-bold">知识库</h1>
+      <h1 class="text-headline-small font-weight-bold">知识库</h1>
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="createDialog = true">新建</v-btn>
     </div>
@@ -120,12 +120,12 @@ onMounted(load);
     <v-row v-if="!detail">
       <v-col v-for="kb in kbs" :key="kb.kb_id" cols="12" sm="6" md="4">
         <v-card class="pa-4" @click="openDetail(kb)">
-          <div class="text-subtitle-1 font-weight-medium">{{ kb.name }}</div>
-          <div class="text-caption text-medium-emphasis">{{ kb.mode }} · 我的角色 {{ kb.role }}</div>
+          <div class="text-body-large font-weight-medium">{{ kb.name }}</div>
+          <div class="text-body-small text-medium-emphasis">{{ kb.mode }} · 我的角色 {{ kb.role }}</div>
         </v-card>
       </v-col>
     </v-row>
-    <div v-if="!detail && !kbs.length" class="text-body-2 text-medium-emphasis pa-4">
+    <div v-if="!detail && !kbs.length" class="text-body-medium text-medium-emphasis pa-4">
       还没有知识库。知识库是「你主动上传的外部资料」，与个人长期记忆分库存储。
     </div>
 
@@ -134,7 +134,7 @@ onMounted(load);
         <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="detail = null; currentId = ''">
           返回
         </v-btn>
-        <div class="text-subtitle-1 font-weight-medium ml-2">{{ currentId }}</div>
+        <div class="text-body-large font-weight-medium ml-2">{{ currentId }}</div>
         <v-spacer />
         <v-btn size="small" color="primary" prepend-icon="mdi-upload" @click="importDialog = true">
           导入文档
@@ -144,7 +144,7 @@ onMounted(load);
         </v-btn>
       </div>
 
-      <div class="text-subtitle-2 mb-1">文档</div>
+      <div class="text-title-small mb-1">文档</div>
       <v-table density="compact" v-if="detail.documents?.length">
         <thead><tr><th>文档</th><th>状态</th><th>版本</th></tr></thead>
         <tbody>
@@ -155,20 +155,20 @@ onMounted(load);
           </tr>
         </tbody>
       </v-table>
-      <div v-else class="text-body-2 text-medium-emphasis">还没有文档。</div>
+      <div v-else class="text-body-medium text-medium-emphasis">还没有文档。</div>
 
-      <div class="text-subtitle-2 mt-4 mb-1">检索测试</div>
+      <div class="text-title-small mt-4 mb-1">检索测试</div>
       <div class="d-flex ga-2">
         <v-text-field v-model="retrieveQuery" label="查询" density="compact" hide-details />
         <v-btn color="primary" @click="retrieveNow">检索</v-btn>
       </div>
       <v-card v-for="(ev, i) in retrieveResults" :key="i" variant="outlined" class="pa-3 mt-2">
-        <div class="text-caption text-medium-emphasis">
+        <div class="text-body-small text-medium-emphasis">
           文档 {{ ev.doc_id }} · chunk {{ ev.chunk }} · 分数 {{ ev.score ?? '—' }}
         </div>
-        <div class="text-body-2">{{ ev.text }}</div>
+        <div class="text-body-medium">{{ ev.text }}</div>
       </v-card>
-      <div class="text-caption text-disabled mt-2">
+      <div class="text-body-small text-disabled mt-2">
         知识库内容不会成为 Stella 的长期记忆（隔离护栏）。
       </div>
     </v-card>

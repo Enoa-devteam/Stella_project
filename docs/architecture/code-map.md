@@ -202,7 +202,7 @@ Stella_project/
 ├── release_assets/                 # 发布产物模板与发布校验（快速开始 README、发布说明模板、SHA256SUMS/清单语义、VM 验证矩阵）
 │
 ├── stella-installer/               # v1 桌面安装器（Tauri 2 + Rust，原生 HTML/JS；已冻结，见 gui-v1-final）
-├── dashboard/                      # v2 控制面前端（Vue 3 + Vuetify 3 + TS，pnpm 构建；浏览器与桌面壳共用）
+├── dashboard/                      # v2 控制面前端（Vue 3 + Vuetify 4 + TS，pnpm 构建；浏览器与桌面壳共用）
 ├── webui/                          # v2 控制面后端（FastAPI 子应用挂 NoneBot 同端口；静态托管 dashboard/dist）
 ├── desktop/                        # v2 桌面壳（Tauri 2；内嵌面板 + 窄契约启动/自检，自 v1 移植）
 ├── openspec/                       # WebUI API 契约（openapi-v1.yaml）

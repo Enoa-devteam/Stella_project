@@ -840,12 +840,12 @@ onBeforeUnmount(() => {
 <template>
   <v-container fluid class="pa-6">
     <div class="d-flex align-center mb-1">
-      <h1 class="text-h5 font-weight-bold">{{ t('features.platforms.title') }}</h1>
+      <h1 class="text-headline-small font-weight-bold">{{ t('features.platforms.title') }}</h1>
       <v-chip size="small" variant="tonal" color="secondary" class="ml-3">
         {{ t('features.platforms.subtitle') }}
       </v-chip>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">
+    <p class="text-body-medium text-medium-emphasis mb-4">
       {{ system.managed ? t('features.platforms.introManaged') : t('features.platforms.intro') }}
     </p>
     <v-alert v-if="adapterLoadFailed" type="error" variant="tonal" class="mb-3">
@@ -867,7 +867,7 @@ onBeforeUnmount(() => {
 
     <v-card class="pa-4 mb-4" :loading="loadingAdapters">
       <div class="d-flex flex-wrap align-center ga-2 mb-1">
-        <div class="text-h6 font-weight-medium">{{ t('features.platforms.addedTitle') }}</div>
+        <div class="text-title-large font-weight-medium">{{ t('features.platforms.addedTitle') }}</div>
         <v-chip size="small" variant="tonal" color="primary">{{ selectedAdapterCards.length }}</v-chip>
         <v-tooltip :text="t('features.platforms.connectionStatusOpen')" location="top">
           <template #activator="{ props }">
@@ -890,7 +890,7 @@ onBeforeUnmount(() => {
           {{ t('features.platforms.addAdapter') }}
         </v-btn>
       </div>
-      <p class="text-body-2 text-medium-emphasis mt-1 mb-4">
+      <p class="text-body-medium text-medium-emphasis mt-1 mb-4">
         {{ t('features.platforms.addedHint') }}
       </p>
 
@@ -903,12 +903,12 @@ onBeforeUnmount(() => {
             <v-card-text class="pb-2">
               <div class="d-flex align-start ga-2">
                 <div class="min-width-0 flex-grow-1">
-                  <div class="text-subtitle-1 font-weight-medium">
+                  <div class="text-body-large font-weight-medium">
                     {{ moduleToPreset.has(adapter.module)
                       ? t(`features.platforms.cards.${moduleToPreset.get(adapter.module)}`)
                       : adapter.name }}
                   </div>
-                  <div class="text-caption text-medium-emphasis">{{ adapter.module }}</div>
+                  <div class="text-body-small text-medium-emphasis">{{ adapter.module }}</div>
                 </div>
                 <v-btn
                   icon="mdi-close"
@@ -918,7 +918,7 @@ onBeforeUnmount(() => {
                   @click="removeAdapterCard(adapter.module)"
                 />
               </div>
-              <div v-if="adapter.description" class="text-caption text-medium-emphasis mt-1">
+              <div v-if="adapter.description" class="text-body-small text-medium-emphasis mt-1">
                 {{ adapter.description }}
               </div>
               <v-alert
@@ -990,7 +990,7 @@ onBeforeUnmount(() => {
           </v-card>
         </v-col>
       </v-row>
-      <div v-else class="text-body-2 text-medium-emphasis py-4">
+      <div v-else class="text-body-medium text-medium-emphasis py-4">
         {{ t('features.platforms.noAdaptersAdded') }}
       </div>
 
@@ -1005,7 +1005,7 @@ onBeforeUnmount(() => {
             <v-btn icon="mdi-close" variant="text" :aria-label="t('features.platforms.closePicker')" @click="catalogDialog = false" />
           </v-card-title>
           <v-card-text>
-            <p class="text-body-2 text-medium-emphasis mb-3">{{ t('features.platforms.addDialogHint') }}</p>
+            <p class="text-body-medium text-medium-emphasis mb-3">{{ t('features.platforms.addDialogHint') }}</p>
             <v-row class="mb-3">
               <v-col cols="12">
                 <v-text-field
@@ -1039,14 +1039,14 @@ onBeforeUnmount(() => {
                       class="adapter-picker-card__checkbox"
                     />
                     <div class="adapter-picker-card__heading">
-                      <div class="text-subtitle-1 font-weight-medium adapter-picker-card__name">
+                      <div class="text-body-large font-weight-medium adapter-picker-card__name">
                         {{ moduleToPreset.has(adapter.module)
                           ? t(`features.platforms.cards.${moduleToPreset.get(adapter.module)}`)
                           : adapter.name }}
                       </div>
-                      <div class="text-caption text-medium-emphasis adapter-picker-card__module">{{ adapter.module }}</div>
+                      <div class="text-body-small text-medium-emphasis adapter-picker-card__module">{{ adapter.module }}</div>
                     </div>
-                    <div v-if="adapter.description" class="text-caption text-medium-emphasis mt-1 adapter-picker-card__description">
+                    <div v-if="adapter.description" class="text-body-small text-medium-emphasis mt-1 adapter-picker-card__description">
                       {{ adapter.description }}
                     </div>
                     <div class="d-flex align-center flex-wrap ga-2 mt-3 adapter-picker-card__meta">
@@ -1100,12 +1100,12 @@ onBeforeUnmount(() => {
                 >
                   <v-card-text class="adapter-picker-add-card__content">
                     <v-icon icon="mdi-plus-circle-outline" size="large" color="primary" aria-hidden="true" />
-                    <span class="text-body-1 font-weight-medium">{{ t('features.platforms.addCustomModule') }}</span>
+                    <span class="text-body-large font-weight-medium">{{ t('features.platforms.addCustomModule') }}</span>
                   </v-card-text>
                 </v-card>
               </v-col>
             </v-row>
-            <div v-if="!filteredCatalog.length" class="text-body-2 text-medium-emphasis py-4">
+            <div v-if="!filteredCatalog.length" class="text-body-medium text-medium-emphasis py-4">
               {{ t('features.platforms.noAdaptersFound') }}
             </div>
           </v-card-text>
@@ -1130,7 +1130,7 @@ onBeforeUnmount(() => {
           </v-card-title>
           <v-divider />
           <v-card-text>
-            <p class="text-body-2 text-medium-emphasis mb-3">
+            <p class="text-body-medium text-medium-emphasis mb-3">
               {{ t('features.platforms.customModulesHint') }}
             </p>
             <v-text-field
@@ -1165,8 +1165,8 @@ onBeforeUnmount(() => {
         <v-card v-if="configuringAdapter">
           <v-card-title class="d-flex align-start ga-3">
             <div class="min-width-0">
-              <div class="text-h6">{{ t('features.platforms.configureAdapterTitle', { name: adapterDisplayName(configuringModule) }) }}</div>
-              <div class="text-caption text-medium-emphasis text-break">{{ configuringModule }}</div>
+              <div class="text-title-large">{{ t('features.platforms.configureAdapterTitle', { name: adapterDisplayName(configuringModule) }) }}</div>
+              <div class="text-body-small text-medium-emphasis text-break">{{ configuringModule }}</div>
             </div>
             <v-spacer />
             <v-btn
@@ -1178,13 +1178,13 @@ onBeforeUnmount(() => {
           </v-card-title>
           <v-divider />
           <v-card-text>
-            <p class="text-body-2 text-medium-emphasis mb-4">{{ t('features.platforms.adapterConfigHint') }}</p>
+            <p class="text-body-medium text-medium-emphasis mb-4">{{ t('features.platforms.adapterConfigHint') }}</p>
             <v-card variant="tonal" class="mb-4 pa-3">
               <div class="d-flex align-center ga-2 mb-1">
                 <v-icon icon="mdi-web" size="small" />
-                <div class="text-subtitle-1 font-weight-medium">{{ t('features.platforms.driverTitle') }}</div>
+                <div class="text-body-large font-weight-medium">{{ t('features.platforms.driverTitle') }}</div>
               </div>
-              <div class="text-caption text-medium-emphasis mb-3">{{ t('features.platforms.driverSharedHint') }}</div>
+              <div class="text-body-small text-medium-emphasis mb-3">{{ t('features.platforms.driverSharedHint') }}</div>
               <v-text-field
                 v-model="driver"
                 label="DRIVER"
@@ -1213,8 +1213,8 @@ onBeforeUnmount(() => {
             </v-alert>
 
             <template v-if="configuringPreset === 'onebot'">
-              <div class="text-subtitle-1 font-weight-medium mb-2">{{ t('features.platforms.onebotConfig') }}</div>
-              <div class="text-caption text-medium-emphasis mb-3">{{ t('features.platforms.onebotGuide') }}</div>
+              <div class="text-body-large font-weight-medium mb-2">{{ t('features.platforms.onebotConfig') }}</div>
+              <div class="text-body-small text-medium-emphasis mb-3">{{ t('features.platforms.onebotGuide') }}</div>
               <v-select
                 v-model="onebot.mode"
                 :label="t('features.platforms.connectionMode')"
@@ -1249,7 +1249,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template v-else-if="configuringPreset === 'qq'">
-              <div class="text-subtitle-1 font-weight-medium mb-3">{{ t('features.platforms.cards.qq') }}</div>
+              <div class="text-body-large font-weight-medium mb-3">{{ t('features.platforms.cards.qq') }}</div>
               <v-text-field v-model="qq.appId" label="App ID" autocomplete="off" />
               <v-text-field
                 v-model="qq.appSecret"
@@ -1264,7 +1264,7 @@ onBeforeUnmount(() => {
                 color="primary"
                 hide-details
               />
-              <div class="text-caption text-medium-emphasis mt-3 mb-1">{{ t('features.platforms.qqIntents') }}</div>
+              <div class="text-body-small text-medium-emphasis mt-3 mb-1">{{ t('features.platforms.qqIntents') }}</div>
               <v-checkbox
                 v-for="name in ['guild_messages', 'direct_message', 'c2c_group_at_messages', 'at_messages']"
                 :key="name"
@@ -1276,7 +1276,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template v-else-if="configuringPreset === 'telegram'">
-              <div class="text-subtitle-1 font-weight-medium mb-3">{{ t('features.platforms.cards.telegram') }}</div>
+              <div class="text-body-large font-weight-medium mb-3">{{ t('features.platforms.cards.telegram') }}</div>
               <v-text-field
                 v-model="telegram.token"
                 :label="t('features.platforms.botToken')"
@@ -1308,7 +1308,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template v-else-if="configuringPreset === 'discord'">
-              <div class="text-subtitle-1 font-weight-medium mb-3">{{ t('features.platforms.cards.discord') }}</div>
+              <div class="text-body-large font-weight-medium mb-3">{{ t('features.platforms.cards.discord') }}</div>
               <v-text-field
                 v-model="discord.token"
                 :label="t('features.platforms.botToken')"
@@ -1316,7 +1316,7 @@ onBeforeUnmount(() => {
                 autocomplete="new-password"
                 :placeholder="discord.hasToken ? t('features.platforms.secretSaved') : ''"
               />
-              <div class="text-caption text-medium-emphasis mt-2 mb-1">{{ t('features.platforms.discordIntents') }}</div>
+              <div class="text-body-small text-medium-emphasis mt-2 mb-1">{{ t('features.platforms.discordIntents') }}</div>
               <v-checkbox
                 v-for="name in discordIntentNames"
                 :key="name"
@@ -1381,7 +1381,7 @@ onBeforeUnmount(() => {
                 class="mb-3 pa-3"
               >
                 <div class="d-flex flex-wrap align-center ga-2 mb-1">
-                  <div class="text-subtitle-1 font-weight-medium">{{ section.title }}</div>
+                  <div class="text-body-large font-weight-medium">{{ section.title }}</div>
                   <v-chip v-if="section.envKey" size="x-small" variant="outlined">{{ section.envKey }}</v-chip>
                   <v-spacer />
                   <v-btn
@@ -1394,7 +1394,7 @@ onBeforeUnmount(() => {
                     {{ t('features.platforms.addPresetBot') }}
                   </v-btn>
                 </div>
-                <div v-if="section.description" class="text-caption text-medium-emphasis mb-3">
+                <div v-if="section.description" class="text-body-small text-medium-emphasis mb-3">
                   {{ section.description }}
                 </div>
 
@@ -1406,7 +1406,7 @@ onBeforeUnmount(() => {
                     class="mb-3 pa-3"
                   >
                     <div class="d-flex align-center mb-2">
-                      <div class="text-body-2 font-weight-medium">
+                      <div class="text-body-medium font-weight-medium">
                         {{ t('features.platforms.presetBotNumber', { number: botIndex + 1 }) }}
                       </div>
                       <v-spacer />
@@ -1418,7 +1418,7 @@ onBeforeUnmount(() => {
                         @click="removePresetBot(section, botIndex)"
                       />
                     </div>
-                    <v-row dense>
+                    <v-row density="compact">
                       <v-col
                         v-for="field in section.fields"
                         :key="field.path"
@@ -1472,12 +1472,12 @@ onBeforeUnmount(() => {
                       </v-col>
                     </v-row>
                   </v-card>
-                  <div v-if="!parsePresetBotList(section).length" class="text-body-2 text-medium-emphasis py-2">
+                  <div v-if="!parsePresetBotList(section).length" class="text-body-medium text-medium-emphasis py-2">
                     {{ t('features.platforms.presetBotEmpty') }}
                   </div>
                 </template>
 
-                <v-row v-else dense>
+                <v-row v-else density="compact">
                   <v-col v-for="field in section.fields" :key="field.envKey" cols="12" md="6">
                     <v-switch
                       v-if="field.type === 'boolean'"
@@ -1531,14 +1531,14 @@ onBeforeUnmount(() => {
                   </v-expansion-panel-title>
                   <v-expansion-panel-text>
                     <div class="d-flex align-center mb-3">
-                      <div class="text-caption text-medium-emphasis">{{ t('features.platforms.adapterEnvHint') }}</div>
+                      <div class="text-body-small text-medium-emphasis">{{ t('features.platforms.adapterEnvHint') }}</div>
                       <v-spacer />
                       <v-btn size="small" prepend-icon="mdi-plus" variant="tonal" @click="addAdapterEnvEntry">
                         {{ t('features.platforms.adapterEnvAdd') }}
                       </v-btn>
                     </div>
                     <template v-if="advancedAdapterEnv.length">
-                      <v-row v-for="item in advancedAdapterEnv" :key="item.index" dense>
+                      <v-row v-for="item in advancedAdapterEnv" :key="item.index" density="compact">
                         <v-col cols="12" md="4">
                           <v-text-field v-model="item.entry.key" :label="t('features.platforms.adapterEnvKey')" autocomplete="off" hide-details />
                         </v-col>
@@ -1559,7 +1559,7 @@ onBeforeUnmount(() => {
                         </v-col>
                       </v-row>
                     </template>
-                    <div v-else class="text-body-2 text-medium-emphasis py-2">
+                    <div v-else class="text-body-medium text-medium-emphasis py-2">
                       {{ t('features.platforms.adapterEnvEmpty') }}
                     </div>
                   </v-expansion-panel-text>
@@ -1570,15 +1570,15 @@ onBeforeUnmount(() => {
             <template v-else>
               <v-divider class="my-4" />
               <div class="d-flex flex-wrap align-center ga-2 mb-1">
-                <div class="text-subtitle-1 font-weight-medium">{{ t('features.platforms.adapterEnvTitle') }}</div>
+                <div class="text-body-large font-weight-medium">{{ t('features.platforms.adapterEnvTitle') }}</div>
                 <v-spacer />
                 <v-btn size="small" prepend-icon="mdi-plus" variant="tonal" @click="addAdapterEnvEntry">
                   {{ t('features.platforms.adapterEnvAdd') }}
                 </v-btn>
               </div>
-              <div class="text-caption text-medium-emphasis mb-3">{{ t('features.platforms.adapterEnvHint') }}</div>
+              <div class="text-body-small text-medium-emphasis mb-3">{{ t('features.platforms.adapterEnvHint') }}</div>
               <template v-if="currentAdapterEnv.length">
-                <v-row v-for="item in currentAdapterEnv" :key="item.index" dense>
+                <v-row v-for="item in currentAdapterEnv" :key="item.index" density="compact">
                   <v-col cols="12" md="4">
                     <v-text-field v-model="item.entry.key" :label="t('features.platforms.adapterEnvKey')" autocomplete="off" hide-details />
                   </v-col>
@@ -1599,7 +1599,7 @@ onBeforeUnmount(() => {
                   </v-col>
                 </v-row>
               </template>
-              <div v-else class="text-body-2 text-medium-emphasis py-2">
+              <div v-else class="text-body-medium text-medium-emphasis py-2">
                 {{ t('features.platforms.adapterEnvEmpty') }}
               </div>
             </template>
@@ -1613,7 +1613,7 @@ onBeforeUnmount(() => {
                   <v-alert type="info" density="compact" variant="tonal" class="mb-3">
                     {{ t('features.platforms.adapterEnvUnassignedHint') }}
                   </v-alert>
-                  <v-row v-for="item in unassignedAdapterEnv" :key="item.index" dense>
+                  <v-row v-for="item in unassignedAdapterEnv" :key="item.index" density="compact">
                     <v-col cols="12" md="3">
                       <v-text-field
                         v-model="item.entry.key"
@@ -1688,7 +1688,7 @@ onBeforeUnmount(() => {
             :icon="healthy === true ? 'mdi-lan-connect' : healthy === false ? 'mdi-lan-disconnect' : 'mdi-lan'"
             :color="linkColor"
           />
-          <div class="text-h6">{{ t('features.platforms.connectionsTitle') }}</div>
+          <div class="text-title-large">{{ t('features.platforms.connectionsTitle') }}</div>
           <v-chip :color="linkColor" size="small" variant="tonal">
             {{ healthy === null
               ? (link?.unavailable ? t('features.platforms.healthUnknown') : t('features.platforms.notApplicable'))
@@ -1704,7 +1704,7 @@ onBeforeUnmount(() => {
         </v-card-title>
         <v-divider />
         <v-card-text>
-          <p class="text-body-2 text-medium-emphasis mb-4">{{ t('features.platforms.connectionStatusHint') }}</p>
+          <p class="text-body-medium text-medium-emphasis mb-4">{{ t('features.platforms.connectionStatusHint') }}</p>
           <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-3">
             {{ error }}
             <template #append>
@@ -1738,24 +1738,24 @@ onBeforeUnmount(() => {
               </tr>
             </tbody>
           </v-table>
-          <div v-else-if="link" class="text-body-2 text-medium-emphasis">
+          <div v-else-if="link" class="text-body-medium text-medium-emphasis">
             {{ t('features.platforms.noConnections') }}
           </div>
           <v-row v-if="link && link.applicable !== false" class="mt-2">
             <v-col cols="6" md="3">
-              <div class="text-caption text-medium-emphasis">{{ t('features.platforms.connected') }}</div>
+              <div class="text-body-small text-medium-emphasis">{{ t('features.platforms.connected') }}</div>
               <div>{{ link.connected === null ? '—' : link.connected ? t('features.platforms.yes') : t('features.platforms.no') }}</div>
             </v-col>
             <v-col cols="6" md="3">
-              <div class="text-caption text-medium-emphasis">{{ t('features.platforms.connectionDuration') }}</div>
+              <div class="text-body-small text-medium-emphasis">{{ t('features.platforms.connectionDuration') }}</div>
               <div>{{ fmtSeconds(link.connected_seconds) }}</div>
             </v-col>
             <v-col cols="6" md="3">
-              <div class="text-caption text-medium-emphasis">{{ t('features.platforms.lastEvent') }}</div>
+              <div class="text-body-small text-medium-emphasis">{{ t('features.platforms.lastEvent') }}</div>
               <div>{{ fmtSeconds(link.last_event_seconds_ago) }}</div>
             </v-col>
             <v-col cols="6" md="3">
-              <div class="text-caption text-medium-emphasis">{{ t('features.platforms.lastProbe') }}</div>
+              <div class="text-body-small text-medium-emphasis">{{ t('features.platforms.lastProbe') }}</div>
               <div>{{ link.last_probe_ok == null ? '—' : healthLabel(link.last_probe_ok) }}</div>
             </v-col>
           </v-row>
@@ -1770,6 +1770,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* v4 层序见 index.html：stella-app 位于 vuetify-components 之后、vuetify-utilities 之前 */
+@layer stella-app {
 .platform-card {
   transition: border-color 120ms ease, background-color 120ms ease;
 }
@@ -1888,5 +1890,6 @@ onBeforeUnmount(() => {
 
 .min-width-0 {
   min-width: 0;
+}
 }
 </style>
