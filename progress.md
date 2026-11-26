@@ -1,3 +1,11 @@
+## 2026-11-26 — v6.4.6 发布准备（PR #222）
+
+- Scope：#221（#211 Vuetify 4）合并后发布维护版 v6.4.6。分支 `chore/release-v6.4.6`（worktree `E:/stella/stella_project-release-646`，基于 main 77c2ec2）。
+- What's Done：版本 6.4.5 → 6.4.6（pyproject、cli、desktop Cargo.toml / tauri.conf.json 与 lock 自身条目）；RELEASE_NOTES_TEMPLATE 改为 v6.4.6（面板 Vuetify 4）；windows-install 中英文与迁移报告模板指向 6.4.6。
+- Evidence：main 77c2ec2 的 CI、Dashboard CI 通过，#221 的 Docker Publish 通过；ruff 通过；版本 / profile / 迁移 / webui mount 测试 49 passed（隔离 STELLA_HOME）；check_docs ok。测试构建 45829989762（workflow_dispatch，`overwrite_release=false`）全部 job 通过，含 4 个 install-test。下载其 `stella-dashboard-dist` 产物：Vuetify 4.3.4、层序声明与 `@layer stella-app` 均在，vuetify chunk 哈希与本地构建一致；用 `scripts/dev_webui.py`（空的临时 STELLA_HOME）托管后 Playwright + Edge 截 setup / 登录与 11 个页面，light / dark × 1440 / 1200px，无 pageerror，与合并前本地 v4 截图逐页差异 < 1%。
+- 未验证：桌面壳内实看（同一份 bundle）；Bot 在线时的数据态页面；Sandbox 完整安装。
+- Next：合并 #222 → main CI 与 Release cache warm 通过后打 `v6.4.6` → 核对 Release 资产与 SHA256SUMS。
+
 ## 2026-11-26 — Dashboard 迁移到 Vuetify 4（#211）
 
 - Scope：#211，替代 Dependabot #201（vuetify 3.13.4 → 4.3.4）。分支 `fix/issue-211-vuetify4`（worktree `E:/stella/stella_project-vuetify4`，基于 origin/main 6f01f53）。
