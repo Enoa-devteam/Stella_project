@@ -59,7 +59,7 @@ python-multipart>=0.0.9
 # Windows 没有系统级时区数据库，缺了它 ZoneInfo("Asia/Shanghai") 直接抛错，
 # 时区配置会静默回退服务器本地时间（见 proactive_gate._resolve_zone）。
 tzdata>=2024.1; sys_platform == "win32"
-httpx>=0.24.0
+httpx>=0.28.1
 pydantic>=1.10,<3
 pyyaml>=6.0
 packaging>=23.0
