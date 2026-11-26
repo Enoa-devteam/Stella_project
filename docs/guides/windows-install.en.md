@@ -6,9 +6,10 @@ This page covers **Windows desktop** deployment. For Linux / remote servers, see
 
 > **v2 control plane (current UI)**: point a browser at the bot's own port for the full management panel (auth / config / plugins / MCP / knowledge base / cron / live logs — see [WebUI management](webui.en.md)); the desktop shell (Tauri 2) embeds the same panel. The legacy native UI is retired, frozen at tag `gui-v1-final`.
 
-## Current release notes (6.4.5)
+## Current release notes (6.4.6)
 
-- 6.4.5: maintenance release. The installer and desktop shell move to the ureq 3 HTTP library (runtime download timeouts, resume and error messages on first start are unchanged), plus dependency updates; no feature or data-format changes.
+- 6.4.6: maintenance release. The management panel (WebUI and desktop shell) moves to Vuetify 4 with the same page layout; text uses the MD3 size scale, shadows are slightly softer, and button labels are no longer forced to upper case (#211).
+- Since 6.4.5: the installer and desktop shell move to the ureq 3 HTTP library (runtime download timeouts, resume and error messages on first start are unchanged), plus dependency updates; no feature or data-format changes.
 - Since 6.4.4: adds OneBot V12 (experimental, not yet tested against a real implementation; keep using V11 for QQ); the runtime installer rejects ZIP entries that would be written outside the runtime folder; rendering requires playwright 1.65.2 or newer (existing installations may download the rendering browser again, about 270 MB, when it is next needed).
 - Since 6.4.3: while an Online installer's first start downloads the runtime and components, the window shows the loading view (animated logo, live progress and elapsed time) instead of "backend not running" with a Retry button ([#145](https://github.com/Enoa-devteam/stella_project/issues/145)).
 - Since 6.4.2: fixes Online installers failing to download components on a clean Windows installation with `CERTIFICATE_VERIFY_FAILED` (v6.0.1–v6.4.1 are affected); an interrupted download now resumes.
