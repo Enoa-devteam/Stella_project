@@ -31,7 +31,6 @@ updates:
       - /cli
       - /desktop/launcher
       - /desktop/src-tauri
-      - /memory_rust/native
       - /runtime-manager
       - /stella-installer/src-tauri
     schedule:
@@ -41,6 +40,22 @@ updates:
     groups:
       cargo-minor-patch:
         update-types: [minor, patch]
+
+  # memory_rust/native 单列：它声明 rust-version = 1.88（abi3 wheel 的构建下限），
+  # Dependabot 不按 MSRV 选版本，ignore 又只能按 update 块生效。uuid 1.29 起要求
+  # Rust 1.89，CI 的 check_rust_msrv.py 会拦下（#191）。抬 rust-version 时一并删掉这条。
+  - package-ecosystem: cargo
+    directory: /memory_rust/native
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      memory-native-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: uuid
+        versions: [">=1.29"]
 
   # GitHub Actions：workflows 与 .github/actions 下的 composite action
   - package-ecosystem: github-actions
