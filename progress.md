@@ -1,3 +1,12 @@
+## 2026-11-26 — v6.4.5 发布与发布后验收
+
+- 发布：#219 合并（main 867d468）后 CI 与 Release cache warm 通过，annotated tag `v6.4.5`（→ 867d468，仅推此 tag）；release.yml 45771438561 成功；Release「stella v6.4.5」为 Latest，非 draft / 非预发布，12 个资产。
+- 发布后验收（**通过**）：公开 `Stella-OneClick-Python-v6.4.5-windows-amd64.exe` 对 SHA256SUMS 校验一致（2cd0c236…5c7a）；全新 Sandbox（Win11 26100，无 VC++，SAC 仅 guest 内关闭，联网）：t=6 静默安装 → t=26 运行时与 get-pip 经 ureq 3 下载校验（2397294/2397294 字节）→ t=84 装依赖 → t=258 装组件，t=316 llama-cpu 完成，qwen3-embedding-0.6b 在第二轮 bootstrap 中续装（界面保持加载视图、无错误卡），t=664 complete → t=706 status 6.4.5 / core_phase ready → t=1000 连续 6 次健康。结束画面为控制台首次初始化。#210 完成条件全部满足，结果已评论到 #210；Dependabot 已关闭 #200 / #202。
+- 观察：组件阶段出现一次 bootstrap 重入（progress 的 completed 由 [llama-cpu] 重置为 []、只剩 qwen3 待装），推测首轮在模型下载时失败或中断后由壳自动重跑；最终成功，未查明首轮原因（guest 内无法取 install_state 事件）。发布前测试构建 Sandbox 中 GitHub 组件下载为 TCP 超时（WinError 10060），主机同 URL 即时 404。
+- 环境：Sandbox WebView2 注册仍损坏，沿用 `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`；ms-gamingoverlay 系统弹窗照旧出现。
+- 未验证：Offline / Rust 安装器发布后实装（CI install-test 通过）、Standalone、Windows 10、QQ / OneBot 实连、对话模型。
+- Next：如需查明组件阶段的 bootstrap 重入，在 Sandbox 里保留 `StellaData/.stella` 的 install_state 事件再复现；#186 待第三方 V12 实现；#136 后续评测。
+
 ## 2026-11-26 — v6.4.5 发布准备（PR #219）
 
 - Scope：#218（#210 ureq 3）合并后发布维护版 v6.4.5。分支 `chore/release-v6.4.5`（worktree `E:/stella/stella_project-210`，基于 main 5b7c393）。
