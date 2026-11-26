@@ -1,3 +1,11 @@
+## 2026-11-26 — v6.4.5 发布准备（PR #219）
+
+- Scope：#218（#210 ureq 3）合并后发布维护版 v6.4.5。分支 `chore/release-v6.4.5`（worktree `E:/stella/stella_project-210`，基于 main 5b7c393）。
+- What's Done：版本 6.4.4 → 6.4.5（pyproject、cli、desktop Cargo.toml / tauri.conf.json 与 lock 自身条目）；RELEASE_NOTES_TEMPLATE 改为 v6.4.5（ureq 3、rusqlite 0.43 / Rust 1.89、依赖更新）；windows-install 中英文与迁移报告模板指向 6.4.5。#210 已由 PR #218 自动关闭，Sandbox 验收结果发布后补到 issue。
+- Evidence：ruff 通过；全量 pytest（uv 3.12 venv、隔离 STELLA_HOME）4537 passed / 3 failed / 36 skipped，3 项（g09 policy reader、managed_process、windows process_tree）在 v6.4.4 tag 上同样失败，属 Windows 本机既有问题（#185）；check_docs ok；detect-changes compare main low、0 流程。测试构建 45767610483（workflow_dispatch，`overwrite_release=false`）全部 job 通过，含 4 个 install-test。Sandbox（Win11 26100，无 VC++，SAC 仅 guest 内关闭）跑测试构建 Python Online：t=6 静默安装 → t=26 运行时与 get-pip 下载校验完成（ureq 3 路径）、装构建工具 → t=84 装依赖 → t=142 装组件 → t=316 组件下载失败并显示错误卡（v6.4.5 资产未发布；guest 内到 GitHub 为 TCP 超时 WinError 10060，主机同 URL 即时 404，判为 Sandbox 网络窗口）。
+- 未验证：发布后完整 Online 安装（组件、bot 在线）；Offline / Rust 安装器 Sandbox 实装；Windows 10；QQ 实连。
+- Next：维护者合并 #219 → main CI 与 Release cache warm 通过后打 `v6.4.5` → 公开 Python Online 安装器对 SHA256SUMS 校验并在全新 Sandbox 完整验收 → 结果写入 #210 与 progress。
+
 ## 2026-11-26 — Tauri 两壳迁移到 ureq 3（#210）
 
 - Scope：#210，替代 Dependabot #200（desktop/src-tauri）与 #202（stella-installer/src-tauri）。分支 `fix/issue-210-ureq3`（worktree `E:/stella/stella_project-210`，基于 origin/main ea6554a）。
