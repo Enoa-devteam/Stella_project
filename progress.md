@@ -1,3 +1,14 @@
+## 2026-11-26 — v6.4.4 发布与发布后验收
+
+- Scope：#189（含 #188 Tauri 2.12、#164 Codex 0.171.0 M0 复测、#168 playwright 下限）与 release PR #190 合并后打 `v6.4.4`；发布后用公开 Python Online 安装器在 Sandbox 验收。另处理剩余 Dependabot PR #159 / #191。
+- 发布前：测试构建 45652699615（workflow_dispatch，`overwrite_release=false`，未建 Release）全部 job 通过，确认 #162 的 Actions 升级后 release.yml 可正常触发。Sandbox（Win11 26100，无 VC++，SAC 仅 guest 内经 `CiTool --refresh` 关闭）：Python Offline 断网静默安装 → 控制台初始化页 → 随包组件完成 → t=96 status 6.4.4 / core_phase ready；Python Online 依赖阶段为加载视图，组件 404（未发布，预期）后显示错误卡。
+- 发布：main 70d3940 上 CI 与 Release cache warm 通过后，annotated tag `v6.4.4`（→ 70d3940，仅推此 tag）；release.yml 45727818668 成功；Release「stella v6.4.4」为 Latest，非 draft / 非预发布，12 个资产 + release-memory-rust 附上 `Stella-Rust_engine_version-v6.4.4-win64.zip`。
+- 发布后验收（**通过**）：公开 `Stella-OneClick-Python-v6.4.4-windows-amd64.exe` 对 SHA256SUMS 校验一致（bf092e10…a715ad）；全新 Sandbox 联网：t=6 静默安装完成 → t=26 装依赖 → t=85 组件 llama-cpu、qwen3-embedding-0.6b 完成 → t=185 status 6.4.4 / core_phase ready → t=476 连续 6 次健康。结束截图为控制台首次初始化（未填写）。
+- 环境：Sandbox WebView2 注册仍损坏，沿用 `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`；Sandbox 里出现「无法打开此 ms-gamingoverlay 链接」系统弹窗，公开 v6.4.3 安装器同样出现，非本版回归。SAC 需 `CiTool --refresh` 才生效（只改注册表时安装器被 Application Control 拦截）。
+- 未验证：Rust / Offline 安装器的发布后实装（CI install-test 通过）、Standalone、Windows 10、QQ / OneBot 实连、OneBot V12 真实实现（#186）、对话模型与打包内 Cometa 任务。
+- Dependabot：#159（现为 TS 6.0.3）因 `baseUrl` 弃用（TS5101）构建失败；#191 中 memory_rust/native 的 uuid 1.29.3 需 Rust 1.89 被 MSRV 门禁拦下。PR #192 替代两者：去掉 `baseUrl`、`paths` 改相对路径；cargo 组按 MSRV 取版本，memory_rust/native 单列 Dependabot 块并 ignore uuid >=1.29。CI 全绿。
+- Next：维护者审阅合并 #192；#186 待第三方 V12 实现；#136 后续评测。
+
 ## 2026-11-25 — Dependabot 遗留 PR 收尾（#182）
 
 - Scope：#182 中 11 个未合并 Dependabot PR 的代码阻断与相关缺口。分支 `fix/issue-182-dependabot-followup`（worktree `E:/stella/stella_project-182`）一次性替代 #171/#176/#173/#175/#172/#161。
