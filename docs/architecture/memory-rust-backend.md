@@ -55,9 +55,9 @@ Rust 不负责 embedding HTTP、LLM 整合、schema 迁移、Python 异步锁、
 ## 发布资产
 
 ```text
-Stella-OneClick-Rust-v6.1.0-windows-amd64.exe
-Stella-OneClick-Rust-Offline-v6.1.0-windows-amd64.exe
-Stella-Standalone-Rust-v6.1.0-windows-amd64.zip
+Stella-OneClick-Rust-v<version>-windows-amd64.exe
+Stella-OneClick-Rust-Offline-v<version>-windows-amd64.exe
+Stella-Standalone-Rust-v<version>-windows-amd64.zip
 ```
 
 Standalone-Rust 在 `wheels/` 内附带一个 wheel。`start.bat` 或 `Stella.exe`

@@ -39,7 +39,7 @@ Docker Healthcheck probes `/_corona/v1/health` first and keeps `/stella/status` 
 1. `python -m pytest tests -q` is fully green
 2. `ruff check .` reports no warnings
 3. The version in `pyproject.toml` has been updated (CI compares it with the tag and fails immediately if they differ)
-4. If configuration items changed, `.env.example` and `docs/configuration.en.md` are synchronized
+4. If configuration items changed, `.env.example` and `docs/reference/configuration.en.md` are synchronized
 5. `release_assets/RELEASE_NOTES_TEMPLATE.md` has been updated with this version's notes, and **breaking changes are listed explicitly** (for example, deprecating all `NAPCAT_*` configuration). Note that "make the user lose data" is no longer a valid upgrade strategy: every increment of the schema must include an automatic migration
 6. The Release exclusion list is maintained independently of `.gitignore` (see the comments in `release.yml`); when adding runtime artifacts or configuration files, update both the exclusion list and the sensitive-file-check regex
 7. **For every new top-level directory, determine whether it belongs in the Release**: development tools (such as `stella-installer/`, the independently distributed Tauri installer) and tool scripts must not be included in the user installation package. Add them to the rsync exclusion list in `release.yml` and the regex for "checking development directories", then run a manual packaging verification

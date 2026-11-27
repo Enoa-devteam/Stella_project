@@ -2,21 +2,20 @@
 
 ![Title Image](assets/pic/Title_Image(Second_Edition)_Compressed_version.jpg)
 
-
 # 🌟 Stella
 
-**A QQ group-chat bot for human-like conversation powered by a memory system**
+**A cross-platform, human-like group-chat bot built on OneBot V11/V12**
 
-*-- Designed for an 8K context window, with support for both local small models and online APIs*
+*-- Designed natively for small-context, locally deployed models, and compatible with online APIs*
 
-[![CI](https://github.com/Eternal-Wanderer-Vegetable/Stella_project/actions/workflows/ci.yml/badge.svg)](https://github.com/Eternal-Wanderer-Vegetable/Stella_project/actions/workflows/ci.yml)
+[![CI](https://github.com/Enoa-devteam/stella_project/actions/workflows/ci.yml/badge.svg)](https://github.com/Enoa-devteam/stella_project/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Enoa-devteam/stella_project)](https://github.com/Enoa-devteam/stella_project/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![NoneBot2](https://img.shields.io/badge/NoneBot-2-ea5252)](https://nonebot.dev/)
-[![OneBot V11](https://img.shields.io/badge/OneBot-V11-black)](https://onebot.dev/)
+[![OneBot](https://img.shields.io/badge/OneBot-V11%20%2F%20V12-black)](https://onebot.dev/)
 [![Rust](https://img.shields.io/badge/Rust-1.89%2B-dea584?logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/deployment-docker.en.md)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/guides/deployment-docker.en.md)
 
 [中文](README.md) | English
 
@@ -24,57 +23,100 @@
 
 ---
 
+Stella is designed natively for large language models that can be deployed on consumer hardware. It needs a model context window of only **8192 tokens** to run.
 
-Stella does more than send messages to a large model and return a reply. It turns scattered information from group chats into **searchable, verifiable, and forgetful memories**, and proactively speaks up to learn about you at the right time.
+You decide where the models come from:
+- **All local**: chat on the GPU and memory consolidation on the CPU are scheduled separately, so they do not compete for resources, and no chat data leaves your machine.
+- **All online**: provide any OpenAI-compatible API and run without a local graphics card.
+- **Hybrid**: hand difficult conversational reasoning to an online model, and keep frequent tasks such as memory consolidation and session compression local.
 
-Stella is designed around a small context window: the baseline limit is **8192 tokens**. Personality, memories, conversation history, and tool results all have to coexist within that small budget, so simply piling on prompts is not viable. The budget is therefore divided: memories are filtered in the database before being injected, tools run outside the chat context and return only a single conclusion, and conversations that roll out of the window are automatically compressed into a recap. **No matter how many plugins you install, they do not consume the conversation window.** A small window works, and a larger one naturally gives you more room; the reverse is not true: an architecture that assumes an unlimited window will fall apart on 8K.
+> In all-local mode, routing decisions, summary compression, and plugin card rendering all happen locally. Only networked plugins (such as weather or anime lookups) send external requests while they run.
 
-You decide where the models come from.
-- **All local**: the chat model runs on your GPU and a small model handles memory consolidation on your CPU. They do not compete for resources, and no group-chat content leaves your machine.
-- **All online**: provide an OpenAI-compatible API and run without a graphics card.
-- **Hybrid**: delegate conversation generation to an online model, keep frequent, low-difficulty work such as memory consolidation and session compression local, and send only the step requiring strong reasoning online.
-
-> Note: With the all-local deployment mode, the data truly stays off the network. Networked tools (such as weather and anime lookups) send requests and return actual data themselves, while deciding whether to use a tool, compressing its result into a summary, and rendering plugin cards as images all happen locally.
+> **OneBot V12 is an experimental feature.** V12 support is available by default and is meant for platforms other than QQ, but it has not yet been verified end to end against a real protocol implementation ([#186](https://github.com/Enoa-devteam/stella_project/issues/186)), and it covers less than V11. Use OneBot V11 for QQ and in production. See [Platform adapters · OneBot V12](docs/guides/platforms.en.md#onebot-v12).
 
 ## ✨ Features
 
-### Works within an **8192-token** context budget
+### 🪶 Runs in a small window
 
-- **🧰 Capabilities are decoupled from personality** -- The Router first determines what capability a message needs. Tools execute **outside the chat context** and return only one compressed conclusion to Stella. Tool descriptions and raw results never enter the personality prompt, so installing more plugins cannot crowd out the conversation window.
+- **🧰 Tools are decoupled from personality** -- Capability routing first decides which tool a message needs. Tools run outside the chat context and hand back a single conclusion to Stella, so installing more plugins never eats into the conversation window. → [Capability system](docs/architecture/capability-system.en.md)
+- **🗜 Long conversations stay connected** -- Early conversation that rolls out of the window is compressed into a recap automatically. The session summary, recent raw messages, and topic summary never overlap, and each has its own adjustable budget. → [Budget split](docs/reference/configuration.en.md#budget-split-of-the-8192-working-window)
+- **🎯 Memories are injected on demand** -- Only a few filtered memories relevant to the current conversation are injected. Boundaries, dietary restrictions, and similar information only constrain behavior and are never brought up as topics. → [Memory system](docs/architecture/memory-system.en.md)
 
-- **🗜 Long conversations stay connected** -- Earlier conversations that roll out of the context window are automatically compressed into a recap. The three context layers (session summary / raw tail / topic summary) are divided by message ID and never overlap, with independently adjustable budgets.
+### 🧠 Remembers, and forgets
 
-- **🎯 Memories are injected by partition** -- Chat material and behavioral constraints are strictly separated. Sensitive information (boundaries, dietary restrictions, conflicts) is never brought up as a chat topic. Only the filtered memories are injected; the entire memory store is not dumped into the prompt.
+- **🔍 Memories need evidence** -- Candidates come in easily, but promotion is strict: confidence accumulates only when the same thing is mentioned repeatedly, something a user tells the Bot directly can be accepted after one mention, and candidates without new evidence for a long time are discarded. Filtering happens in an auditable, reversible database and does not use the conversation budget.
+- **🔎 Hybrid search** -- SQLite FTS5 full-text indexing with multidimensional weighted ranking, plus optional local embedding semantic search that falls back automatically when the service is unavailable.
+- **♻️ It forgets** -- Lifetimes are set per memory type, low-value memories are archived automatically, and long memories are split into atomic facts.
+- **📚 Standalone knowledge base** -- A document library kept separate from personal memories. It imports Markdown / TXT / PDF / DOCX / URLs and has a review-and-publish workflow and citation-style injection. → [Knowledge base](docs/architecture/knowledge-base.en.md)
 
-- **🧠 Two-layer memory filtering** -- Capture is permissive (uncertain information may enter the candidate pool), while promotion is strict (confidence tiers + cross-validation + per-user quotas). Filtering happens at the data-backed, auditable, and reversible layer rather than in the prompt: only after filtering in the database does it consume context, and candidates and confidence do not use the conversation budget.
+### 💬 Gets along like a group member
 
-- **🔄 Models are replaceable** -- You can independently choose endpoints for the seven roles: conversation, capability routing, plugin borrowing, session compression, memory consolidation, memory extraction, and image captioning. Local and online endpoints can be combined freely; vector search remains local. Changing models does not touch memories, and changing modes does not require rebuilding the database.
+- **🙋 Starts conversations** -- Information picked up passively in group chats is sparse, so Stella @-mentions active members to chat or confirm memories, within daily quotas, per-user cooldowns, and back-off after repeated non-responses.
+- **🏠 Shared spaces across groups** -- Several groups can belong to one space and share user profiles, long-term memories, and personality, while message history, topic state, and mute switches stay isolated per group.
+- **🎭 Expression evolves with the group** (off by default) -- Learns from reply outcomes which phrasings are worth reusing and what the group's slang means, starting in a shadow mode that only records and never intervenes. → [Configuration reference](docs/reference/configuration.en.md)
+- **🖼 It can see images** (off by default) -- Once a vision model endpoint is bound, images in @-mentioned messages are captioned into text before entering the conversation. Without a binding, behavior is unchanged.
+- **⏰ Scheduled tasks** (off by default) -- Group members can schedule cron reminders, and admins can set up bounded scheduled Agent tasks. → [Scheduling](docs/guides/scheduling.en.md)
 
-- **🖼 It can see images** -- An optional image-captioning role: when an @-mentioned message contains images, a vision model first turns each image into a one-line description that joins the conversation. Consumer-grade local models rarely offer usable image captioning, so the feature is **off by default** — bind a vision-capable endpoint (a local multimodal model or an online vision API) to enable it; when unbound, behavior is identical to a build without image support.
+### 🛠 Deployment and operations
 
-- **💰 Spending is visible** -- Online token usage is logged daily by role, endpoint, and model. The GUI and `deploy status` show today's usage, **the provider's prefix-cache hit rate** (the only way to verify that the money-saving measure is actually working), and remaining budget. You can set a daily budget; when it is exceeded, memory consolidation is paused by default while **the bot keeps talking in the group as usual**.
+- **🔄 Seven model roles, mixed freely** -- Conversation, capability routing, plugin borrowing, session compression, memory consolidation, memory extraction, and image captioning each choose their own endpoint, combining local and online freely. Changing models or deployment modes does not require rebuilding the memory database. → [Endpoints and roles](docs/reference/configuration.en.md#endpoint-and-role-two-layer-configuration)
+- **💰 Usage and budget are visible** -- Online token usage is logged daily by role, endpoint, and model, and you can see the provider's prefix-cache hit rate. When the daily budget is exceeded, only memory consolidation pauses by default; the group chat continues as usual. → [LLM budget](docs/architecture/llm-budget.en.md)
+- **🖥 WebUI and desktop app** -- The browser and the Windows desktop app share one admin panel, covering configuration, environment checks, runtime status, and management of the knowledge base, Skills, scheduled tasks, and more. → [WebUI](docs/guides/webui.en.md)
 
-### Memory System
+### 🔌 Platforms and ecosystem
 
-- **🔍 Memories need evidence** -- Confidence accumulates only when the same fact is mentioned repeatedly. Statements a user says directly to the Bot count as high-density evidence and can be accepted after a single occurrence. Candidates without new evidence for a long time are automatically discarded.
+- **🔗 OneBot V11 / V12** -- QQ connects through a OneBot V11 implementation (such as NapCat). OneBot V12 targets other platforms and is currently **experimental** (see the note above). → [Platform adapters](docs/guides/platforms.en.md)
+- **🧩 AstrBot plugin compatibility** -- Drop existing AstrBot plugins into `data/plugins/` and they run without source changes. Plugin cards are rendered by local Chromium. → [Installing plugins](docs/guides/plugins.en.md)
+- **🤖 Skills and external Agents** -- Supports Anthropic-style Skills whose scripts run in a controlled sandbox, and can delegate long tasks such as coding and research to OpenAI Codex (Cometa). → [Skills](docs/guides/skills.en.md) · [Cometa](docs/guides/cometa.en.md)
+- **🧪 Extensible and verifiable** -- Pipeline pre/post Hooks and automatic loading from the extensions directory. Unit, integration, and vendor-neutral contract tests cover memory promotion, cross-user isolation, and routing fallback, with probe regressions against real models. → [Development guide](docs/development/README.en.md)
 
-- **💬 Proactively gather information** -- Information passively ingested from group chats has very low density, so Stella proactively @mentions active users to start a conversation or confirm a memory. Daily quotas, per-user cooldowns, and protection that backs off after consecutive non-responses are provided.
+## 🚀 Installation
 
-- **🎭 Expression evolves with the group (off by default)** -- The social learning loop: delivery receipts and reply-effect observations distill "which phrasing is worth reusing" and "what this group's slang means". A shadow mode records without intervening first; promoted entries are injected through a budget-controlled prompt slot, and later observations feed back to refine them. Off by default, enabled gradually (`SOCIAL_ENABLED` / `SOCIAL_MODE` — see the [configuration guide](docs/reference/configuration.en.md)).
+Stella needs two things: a OneBot protocol implementation ([NapCat](https://github.com/NapNeko/NapCatQQ) is recommended for QQ) and at least one model service (local [LM Studio](https://lmstudio.ai/) / `llama.cpp`, or any OpenAI-compatible API).
 
-- **🏠 Shared spaces across groups** -- Multiple QQ groups can belong to one space and share user profiles, long-term memories, and personality. Message tails, topic state, and mute switches remain isolated per group, so Stella will not answer a conversation from group B in group A.
+### Windows (recommended)
 
-- **🔎 Hybrid search** -- SQLite FTS5 full-text indexing plus multidimensionally weighted ranking, with optional local embedding semantic search and automatic fallback when the service is unavailable.
+Download one of these from [Releases](https://github.com/Enoa-devteam/stella_project/releases):
 
-- **♻️ It forgets** -- Lifetimes are configured by memory type, low-value memories are automatically archived, and long memories are split into atomic facts.
+| Package | Best for |
+|---|---|
+| `Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe` | Most users. On first launch it prepares Python, the `llama.cpp` CPU backend, and the embedding model (needs access to GitHub and Hugging Face) |
+| `Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe` | Restricted networks or intranets. The runtime and models are bundled, about 1.2 GB |
+| `Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip` | You already have Python 3.10+ and only need Stella itself |
 
-### Engineering
+For the Rust memory engine, download the matching package with `Rust` instead of `Python` in its name.
 
-- **🔗 AstrBot plugin compatibility** -- Existing AstrBot plugins can run by placing them in `data/plugins/`, without changing their source code. Plugin card templates are rendered by **local Chromium**, with no external rendering service required.
+1. Install NapCat and log in by scanning the QR code. In its WebUI, under Network Configuration, add a WebSocket Client with the address `ws://127.0.0.1:8080/onebot/v11/ws`.
+2. Open `Stella.exe` and fill in the listening port and group numbers. Under Model Services, choose a one-click preset (all local / all online / hybrid) and complete the endpoint address, API key, and model ID.
+3. Click Save and Check, then click Start on the Runtime Status page.
 
-- **🔌 Extensible** -- Pipeline pre- and post-processing Hooks, with automatic loading from the extension directory.
+> The installers are not code-signed yet: SmartScreen may warn about an unknown publisher, and you can verify files with the `SHA256SUMS.txt` attached to each Release. Windows 11 with Smart App Control enabled blocks them outright.
 
-- **🧪 Verifiable** -- Unit and integration tests cover memory promotion, cross-user isolation, two-layer ownership, anti-fabrication safeguards, routing fallback, and tool isolation. After connecting an online endpoint, there is also a layer of **vendor-neutral contract tests** (an extra field in the request body fails the test; parameter differences may adapt only to error wording and may not use a vendor whitelist) and a prefix-cache guard. Probe scripts also perform regression checks against real models (including a case specifically reproducing "missing information in a noisy environment"), along with a benchmark quantifying four types of routing errors.
+For the full steps, upgrades, and data locations, see [Windows install, upgrade, and start](docs/guides/windows-install.en.md).
+
+### Docker (Linux server)
+
+```bash
+git clone https://github.com/Enoa-devteam/stella_project.git
+cd stella_project
+# First pin the NapCat image digest in .env and prepare a writable StellaData directory, as described in the guide
+docker compose build
+docker compose run --rm stella python -m deploy init   # use 0.0.0.0 as the listen address
+docker compose up -d
+```
+
+For NapCat login, network configuration, and migrating from Windows, see the [Docker deployment guide](docs/guides/deployment-docker.en.md).
+
+### From source
+
+```bash
+pip install -r requirements.txt
+python -m deploy init    # generate the configuration
+python -m deploy doctor  # environment self-check
+python -m deploy start   # starts the Corona control plane and the managed bot process
+```
+
+Intended for development and debugging. See [Starting a development instance](docs/development/environment.en.md#starting-a-development-instance).
 
 ## 📖 Documentation
 

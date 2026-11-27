@@ -24,7 +24,7 @@
 
 `route` 的类型标注是 `Any` 而非 `Route`：`core` 是「与业务无关的编排骨架」，不该 import `capability`，反向依赖会成环。
 
-`tool_summaries` / `knowledge_evidence` / `memories_for_prompt` 是**三轨分离**的：工具摘要（压缩文本）、知识库证据（带编号引用的结构化摘录，独立预算 `KNOWLEDGE_EVIDENCE_*`，见 docs/knowledge-base.md）、记忆检索结果各自走各自的渲染与预算，互不挤占。知识证据**绝不**进入记忆整合——`knowledge/isolation.py` 是这条红线的运行时护栏。
+`tool_summaries` / `knowledge_evidence` / `memories_for_prompt` 是**三轨分离**的：工具摘要（压缩文本）、知识库证据（带编号引用的结构化摘录，独立预算 `KNOWLEDGE_EVIDENCE_*`，见 docs/architecture/knowledge-base.md）、记忆检索结果各自走各自的渲染与预算，互不挤占。知识证据**绝不**进入记忆整合——`knowledge/isolation.py` 是这条红线的运行时护栏。
 
 ### 主要数据表
 

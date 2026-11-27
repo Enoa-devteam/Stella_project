@@ -5,13 +5,17 @@
 ## 环境准备
 
 ```bash
-git clone https://github.com/Eternal-Wanderer-Vegetable/Stella_project.git
+git clone https://github.com/Enoa-devteam/Stella_project.git
 cd Stella_project
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
 `requirements-dev.txt` 包含 pytest、ruff、numpy 等开发期依赖。numpy 只被 embedding fixture 的向量计算用到，缺失时相关测试会跳过而非报错。
+
+工具链版本：Python `>=3.10,<4.0`（`pyproject.toml`；发布包内置 Python 版本锁在 `release_assets/toolchain.json`）；
+Dashboard 用 Node 24 + pnpm 10（`release_assets/toolchain.json`、`.github/workflows/dashboard_ci.yml`）；
+Rust 的 `rust-version`：`cli/` 与 `runtime-manager/` 为 1.85，`memory_rust/native/` 为 1.89（各自 `Cargo.toml`）。
 
 ### 开发机的用户数据放在 `StellaData/`
 
@@ -50,7 +54,7 @@ pnpm build          # vue-tsc 类型门禁 + vite 构建 → dist/
 python scripts/dev_webui.py --port 8091
 
 # 桌面壳（Tauri 2）：先填充内嵌面板，再编译
-cp -r dashboard/dist/* desktop/dashboard-dist/
+pnpm --dir dashboard sync:webui   # 在仓库根执行；把 dashboard/dist 镜像到 webui/dist 与 desktop/dashboard-dist
 cd desktop/src-tauri && cargo tauri build   # 或 cargo check 快速验证
 
 # 忘记面板管理员密码
@@ -73,7 +77,9 @@ python -m deploy init
 #    在 NapCat WebUI 的网络配置里添加「WebSocket 客户端」指向 Bot（反向 WS）：
 #    ws://127.0.0.1:8080/onebot/v11/ws
 #    （若用正向 WS 则改在 .env 里配 ONEBOT_WS_URLS）
-# 4. 启动 Stella（会先跑一遍 doctor 自检）
+# 4. 启动前自检
+python -m deploy doctor
+# 5. 启动 Corona 控制面与受管 Bot（不会自动跑 doctor）
 python -m deploy start
 ```
 

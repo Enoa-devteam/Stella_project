@@ -54,11 +54,13 @@
 
 主动 @ 与主动插话**互斥**：定时任务先尝试主动 @，命中即跳过插话，同一轮只发一次言。
 
-主动路径（主动 @ / 主动插话）的准入判定统一走 `memory/proactive_gate.py` 的 `can_speak(group_id, kind)`，按顺序检查六项：
+主动路径（主动 @ / 主动插话）的准入判定统一走 `aoede/gate.py` 的 `can_speak(group_id, kind)`（`memory/proactive_gate.py` 是指向它的兼容别名），按顺序检查六项：
 
 ```
-总开关 → 分路开关 → 运行时静音 → 睡眠时段 → 醒来缓冲 → 群级冷却 → 新消息门槛
+总开关 → 分路开关 → 运行时静音 → 睡眠时段 → 醒来缓冲 → 群级冷却
 ```
+
+固定的新消息门槛（`PROACTIVE_MIN_MESSAGES_SINCE_SPOKE`）已从 gate 退役，只在旧的掷骰路径 `aoede/controller.py` 的 `should_speak` 里生效。
 
 返回值带原因字符串，便于排查「为什么这次没说话」。收敛到单一入口是有原因的：这些条件原先散在 `proactive_speak_job` / `_proactive_at_user` / `should_speak` 三处，每加一个条件都要改三个调用点。
 
@@ -68,15 +70,21 @@ gate 之外还有一道零 token 的**回复必要性门控**（`core/reply_gate
 
 **@ 回复不经过 gate。** 睡眠或静音期间被 @ 照常回复。
 
-> 五个监听器的优先级关系（数字越小越先执行）：
+> `ai_gateway.py` 里九个监听器的优先级关系（数字越小越先执行）：
 >
 > | 监听器 | priority | block | 职责 |
 > |---|---|---|---|
 > | `group_silent_listener` | 0 | 否 | 落库（必须最先，见上文） |
 > | `toggle_handler` | 1 | 是 | 运行时开关命令 |
 > | `capability_handler` | 1 | 是 | 能力查询（「你能做什么」） |
+> | `addressing_handler` | 1 | 是 | 称呼设置请求（群内 @ 与私聊） |
+> | `reload_handler` | 1 | 是 | 插件 / 打分表重载命令 |
+> | `scheduling_handler` | 1 | 是 | 「定时*」定时任务指令 |
 > | `plugin_handler` | 2 | 否 | AstrBot 插件分发（见[兼容层](integrations.md#astrbot-插件兼容层)） |
 > | `chat_handler` | 3 | 是 | @ 回复主流程 |
+> | `private_chat_handler` | 3 | 是 | 私聊回复（受 `PRIVATE_CHAT_ENABLED` / 白名单约束） |
+>
+> OneBot V12 的入口另在 `onebot_v12_gateway.py`（`onebot_v12_handler`，priority 3、`block=False`）。
 >
 > `toggle_handler` 必须早于 `chat_handler`，否则「安静」这类命令会被当成普通对话交给 LLM。同理 `capability_handler`：不早于 `chat_handler`，「你能做什么」就会被当普通对话交给 LLM，答出来的是它**猜**自己有什么能力，而不是注册表里实际有什么。
 >
@@ -166,16 +174,17 @@ detect_mode(消息, 触发方式)                     ← 判定行为模式
 >
 > | 闸门（槽） | 并发度 | 使用者 |
 > |---|---|---|
-> | `LOCAL` | 1 | 聊天回复、会话压缩、候选提取、Comes 工具循环、Router Level 2、图片转述（`VISION` 绑定 LOCAL 时）、embedding 编码（`MEMORY_EMBEDDING_GATE=auto`） |
-> | `EXTRA` | 1 | 两阶段整合的阶段 1 |
+> | `CHAT` | 1 | 聊天回复、会话压缩、Comes 工具循环、Router Level 2、embedding 编码（`MEMORY_EMBEDDING_GATE=auto` 且 embedding 与 `CHAT` 同址时） |
+> | `MEMORY` | 1 | 两阶段整合的阶段 1 与阶段 2 候选提取 |
+> | `VISION` | 1 | 图片转述（`LLM_ROLE_VISION_ENDPOINT=VISION` 时；默认 `none`，不启用） |
 >
-> 同一资源内严格 FIFO（`asyncio.Lock` 的等待队列本就是 FIFO），不同资源之间可真正并行。把某个角色改绑到在线槽（例如 `LLM_ROLE_CHAT_ENDPOINT=ONLINE_CHAT`，默认并发度 4）后，它就从 `LOCAL` 那条队里出去了——这是在线化带来的吞吐收益的来源。配置方式见 [configuration.md · 端点与角色](../reference/configuration.md#端点与角色两层配置)。
+> 同一资源内严格 FIFO（`asyncio.Lock` 的等待队列本就是 FIFO），不同资源之间可真正并行。三个槽出厂并发度都是 1；把某个槽换成在线服务商（`KIND=online`）并按服务商限流调大它的 `CONCURRENCY` 后，绑在该槽上的角色就不再受本机单并发限制——这是在线化带来的吞吐收益的来源。配置方式见 [configuration.md · 端点与角色](../reference/configuration.md#端点与角色两层配置)。
 >
-> 这也是「Memory 与 Comes 并行」的边界：纯本地时两者的**模型调用**仍在同一把 `LOCAL` 闸门里 FIFO 串行，`gather` 换来的是 Memory 的 SQL/FTS 查询与 Comes 的 HTTP 等待互相重叠。不是假并行，但也不是两块 GPU；把 PLUGIN 角色挪到在线槽后这道串行才真正消失。
+> 这也是「Memory 与 Comes 并行」的边界：纯本地时两者的**模型调用**仍在同一把 `CHAT` 闸门里 FIFO 串行，`gather` 换来的是 Memory 的 SQL/FTS 查询与 Comes 的 HTTP 等待互相重叠。不是假并行，但也不是两块 GPU；把 `CHAT` 槽换成在线服务商（embedding 的 `auto` 不再解析到 `CHAT`）后这道串行才真正消失。
 >
-> `scheduler.py` 里的 `RESOURCE_CHAT` / `RESOURCE_CONSOLIDATION` 是旧资源名常量，项目内已无调用点，保留只为不破坏外部 import。用它们 acquire 会建出一把与任何端点都不对应的独立闸门，起不到串行保护作用。
+> `core/llm/scheduler.py` 里的 `RESOURCE_CHAT` / `RESOURCE_CONSOLIDATION` 是旧资源名常量，项目内已无调用点，保留只为不破坏外部 import。用它们 acquire 会建出一把与任何端点都不对应的独立闸门，起不到串行保护作用。
 >
-> **调用方绝不能同时持有两把闸门**：若先持 `EXTRA` 再等 `LOCAL`（或反之），会发生跨端点队头阻塞——一个资源空闲时却在等另一个资源的队头任务释放，把两条队一起堵死。这正是 `consolidate_group` 用独立的群级锁、把阶段 1 与阶段 2 拆成两个互不嵌套的持有窗口的原因。
+> **调用方绝不能同时持有两把闸门**：若先持 `MEMORY` 再等 `CHAT`（或反之），会发生跨端点队头阻塞——一个资源空闲时却在等另一个资源的队头任务释放，把两条队一起堵死。这正是 `consolidate_group` 用独立的群级锁、把阶段 1 与阶段 2 拆成两个互不嵌套的持有窗口的原因。
 >
 > 每次获取都记录等待时长、持有时长与队列深度，超阈值告警；`core.llm.snapshot()` 可导出各资源的累计统计。多群部署下这是判断「延迟来自哪个资源、谁在排队」的唯一手段。
 >

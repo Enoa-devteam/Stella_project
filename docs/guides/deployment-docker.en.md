@@ -54,7 +54,7 @@ Hence two ground rules: **upgrade = swap the image, data stays put**; **backup =
 ```bash
 # 1) Get the code (git clone, or upload from your machine; note that .env is not in git,
 #    it does not travel with the repository)
-git clone https://github.com/Eternal-Wanderer-Vegetable/Stella_project.git
+git clone https://github.com/Enoa-devteam/Stella_project.git
 cd Stella_project
 
 # 2) Create the compose-level .env in the repository root and pin the NapCat image
@@ -178,6 +178,7 @@ This release uses one Runtime status shape with shared `schema_version`, compone
 state, endpoint, error, and diagnostics fields. View the aggregate status with:
 
 ```bash
+# stellacli must be built from cli/ (CLI packages are not published since 6.4.0)
 stellacli --mode docker status --json
 docker compose exec stella python -m deploy runtime status
 ```

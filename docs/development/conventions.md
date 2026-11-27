@@ -45,9 +45,9 @@ else:
 - `ruff check .` 无警告
 - 改了 prompt → 跑过双向闸门（正例回归 + 真实窗口）
 - 改了 schema → `python -m memory.schema --dry-run` 输出符合预期
-- 改了配置项 → `.env.example` 同步（`deploy init` 基于它渲染，漏改会让新配置项不出现在生成的 `.env` 里），`docs/configuration.md` 同步
+- 改了配置项 → `.env.example` 同步（`deploy init` 基于它渲染，漏改会让新配置项不出现在生成的 `.env` 里），`docs/reference/configuration.md` 同步
 - 改了监听器 priority / 新增 block=True 的处理器 → 确认落库监听器仍是最高优先级，且发一条 @ 消息验证 `AT_MENTION` 入库
-- 改了记忆表的 SQL → 确认用的是 `group_shared_space` 而非 `group_id`（两层归属见 architecture.md）
+- 改了记忆表的 SQL → 确认用的是 `group_shared_space` 而非 `group_id`（两层归属见 [数据边界](../architecture/data-boundaries.md#两层归属的分界线)）
 - 改了 Router 规则 / 能力声明 → `python -m capability.router.benchmark --rules-only` 的记忆假阴与工具假阳仍为 0
 - 打算打开 `ROUTER_GATE_MEMORY` → 跑全链路 benchmark（需 embedding 服务）并确认退出码为 0；这是唯一能验证「不会悄悄丢记忆」的手段
 - 新增能力 Provider 类型（MCP / API / native）→ 在 `capability/comes/executor.py::resolve_tools` 里实现对应分支，别让它静默落进 `missing`

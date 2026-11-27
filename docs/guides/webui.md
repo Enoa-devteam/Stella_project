@@ -17,8 +17,8 @@
 > 「配置」页的环境变量表单由 `deploy/env_schema` 从 `settings.py` 的 `_env*` 调用自动生成、按键名前缀分组——新引入的配置节（如 `SOCIAL_*`）会作为原始字段自动出现，带服务端校验但没有定制文案；改动需重启 Bot 才生效。
 
 「平台」页（`/#/platforms`）可配置 Bot 适配器模块列表，并查看当前生效列表与
-进程环境变量覆盖状态。保存写入 `STELLA_HOME/.env`，需重启 Bot；适配器依赖由
-标准安装包预装目录中可用的适配器依赖，但不会自动启用平台；Walle-Q、NTChat 和 Mail
+进程环境变量覆盖状态。保存写入 `STELLA_HOME/.env`，需重启 Bot；核心只支持 OneBot V11 与
+OneBot V12（实验性），其他目录适配器不可添加（见 [#134](https://github.com/Enoa-devteam/stella_project/issues/134)），保存也不会自动启用平台；Walle-Q、NTChat 和 Mail
 因上游维护停滞、依赖冲突或未修复的安全依赖被屏蔽。OneBot V11 仍可配置多条正向 WS 地址；读取时只返回
 token 是否已设置，不返回 token 明文。其他适配器的
 连接健康度在当前探针不支持时显示为未知。相关 API 为

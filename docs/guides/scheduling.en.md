@@ -140,5 +140,5 @@ plugin/skill execution, and `@all` fan-out are outside this version's scope.
 WebUI → Scheduled Tasks (`/#/cron`) provides listing, creation, editing, run-now,
 history, and audit through `/api/v1/scheduling/tasks` in
 `webui/routers/manage.py` and `webui/services/sched.py`. WebUI and group commands
-share `scheduling/store.py`, validation, and quotas. Panel access uses the
+share `stella_project/plugins/bot_main/scheduling/store.py`, validation, and quotas. Panel access uses the
 existing administrator login.

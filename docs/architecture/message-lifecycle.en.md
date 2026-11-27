@@ -54,11 +54,13 @@ The threshold for plugin dispatch is deliberately much broader than for @ replie
 
 Proactive @ and proactive interjection are **mutually exclusive**: the scheduled task first attempts a proactive @, and skips the interjection if it hits; only one message is sent per round.
 
-Admission for proactive paths (proactive @ / proactive interjection) uniformly goes through `memory/proactive_gate.py`'s `can_speak(group_id, kind)`, which checks six items in order:
+Admission for proactive paths (proactive @ / proactive interjection) uniformly goes through `can_speak(group_id, kind)` in `aoede/gate.py` (`memory/proactive_gate.py` is a compatibility alias for it), which checks six items in order:
 
 ```
-Master switch → per-path switch → runtime mute → sleep period → wake-up buffer → group cooldown → new-message threshold
+Master switch → per-path switch → runtime mute → sleep period → wake-up buffer → group cooldown
 ```
+
+The fixed new-message threshold (`PROACTIVE_MIN_MESSAGES_SINCE_SPOKE`) has been retired from the gate; it applies only on the legacy dice path, `should_speak` in `aoede/controller.py`.
 
 The return value includes a reason string, making it possible to investigate “why did it not speak this time?” Consolidating this into a single entry point has a reason: these conditions were previously scattered across `proactive_speak_job`, `_proactive_at_user`, and `should_speak`, so every added condition required changes at three call sites.
 
@@ -68,15 +70,21 @@ The probability roll for topic interjections is **not inside the gate**. It is u
 
 **@ replies do not go through the gate.** They are answered normally when the Bot is @ mentioned during sleep or mute periods.
 
-> Priority relationship of the five listeners (smaller numbers execute first):
+> Priority relationship of the nine listeners in `ai_gateway.py` (smaller numbers execute first):
 >
 > | Listener | priority | block | Responsibility |
 > |---|---|---|---|
 > | `group_silent_listener` | 0 | No | Persistence (must be first, see above) |
 > | `toggle_handler` | 1 | Yes | Runtime toggle commands |
 > | `capability_handler` | 1 | Yes | Capability query (“what can you do”) |
+> | `addressing_handler` | 1 | Yes | Addressing (form-of-address) requests (group @ and private chat) |
+> | `reload_handler` | 1 | Yes | Plugin / scoring-table reload commands |
+> | `scheduling_handler` | 1 | Yes | “定时*” scheduled-task commands |
 > | `plugin_handler` | 2 | No | AstrBot plugin dispatch (see [compatibility layer](integrations.en.md#astrbot-plugin-compatibility-layer)) |
 > | `chat_handler` | 3 | Yes | Main @ reply flow |
+> | `private_chat_handler` | 3 | Yes | Private-chat replies (subject to `PRIVATE_CHAT_ENABLED` / allowlist) |
+>
+> The OneBot V12 entry lives separately in `onebot_v12_gateway.py` (`onebot_v12_handler`, priority 3, `block=False`).
 >
 > `toggle_handler` must precede `chat_handler`; otherwise a command such as “quiet” is treated as ordinary conversation and handed to the LLM. The same applies to `capability_handler`: unless it precedes `chat_handler`, “what can you do” is handed to the LLM, which answers with what it **guesses** its capabilities are rather than what the registry actually holds.
 >
@@ -166,16 +174,17 @@ The tool-results paragraph consumes only `ctx.tool_summaries` (one sentence afte
 >
 > | Gate (slot) | Concurrency | Users |
 > |---|---|---|
-> | `LOCAL` | 1 | Chat replies, session compaction, candidate extraction, Comes tool loop, Router Level 2, image captioning (when `VISION` is bound to `LOCAL`), embedding encoding (`MEMORY_EMBEDDING_GATE=auto`) |
-> | `EXTRA` | 1 | Phase 1 of two-phase consolidation |
+> | `CHAT` | 1 | Chat replies, session compaction, Comes tool loop, Router Level 2, embedding encoding (`MEMORY_EMBEDDING_GATE=auto` when embedding shares the `CHAT` address) |
+> | `MEMORY` | 1 | Phase 1 of two-phase consolidation and Phase 2 candidate extraction |
+> | `VISION` | 1 | Image captioning (when `LLM_ROLE_VISION_ENDPOINT=VISION`; default `none`, disabled) |
 >
-> Strict FIFO applies within one resource (`asyncio.Lock`'s wait queue is FIFO), while different resources can truly run concurrently. If a role is rebound to an online slot (for example, `LLM_ROLE_CHAT_ENDPOINT=ONLINE_CHAT`, with default concurrency 4), it leaves the `LOCAL` queue. This is the source of the throughput gain from going online. See [configuration.en.md · Endpoint and Role](../reference/configuration.en.md#endpoint-and-role-two-layer-configuration) for configuration.
+> Strict FIFO applies within one resource (`asyncio.Lock`'s wait queue is FIFO), while different resources can truly run concurrently. All three slots ship with concurrency 1; after a slot is switched to an online provider (`KIND=online`) and its `CONCURRENCY` raised to the provider's limit, roles bound to that slot are no longer limited by local single concurrency. This is the source of the throughput gain from going online. See [configuration.en.md · Endpoint and Role](../reference/configuration.en.md#endpoint-and-role-two-layer-configuration) for configuration.
 >
-> This is also the boundary of “Memory and Comes run concurrently”: in a pure-local setup, their **model calls** still serialize FIFO through the same `LOCAL` gate. `gather` overlaps Memory's SQL/FTS queries with Comes's HTTP wait. This is not fake concurrency, but it is not two GPUs either; only moving the PLUGIN role to an online slot makes this serialization truly disappear.
+> This is also the boundary of “Memory and Comes run concurrently”: in a pure-local setup, their **model calls** still serialize FIFO through the same `CHAT` gate. `gather` overlaps Memory's SQL/FTS queries with Comes's HTTP wait. This is not fake concurrency, but it is not two GPUs either; only switching the `CHAT` slot to an online provider (so embedding's `auto` no longer resolves to `CHAT`) makes this serialization truly disappear.
 >
-> `RESOURCE_CHAT` / `RESOURCE_CONSOLIDATION` in `scheduler.py` are legacy resource-name constants with no remaining call sites in the project; they are retained only to avoid breaking external imports. Acquiring them creates an independent gate corresponding to no endpoint and therefore provides no serialization protection.
+> `RESOURCE_CHAT` / `RESOURCE_CONSOLIDATION` in `core/llm/scheduler.py` are legacy resource-name constants with no remaining call sites in the project; they are retained only to avoid breaking external imports. Acquiring them creates an independent gate corresponding to no endpoint and therefore provides no serialization protection.
 >
-> **A caller must never hold two gates simultaneously**: if it holds `EXTRA` and then waits for `LOCAL` (or vice versa), cross-endpoint head-of-line blocking occurs. One resource may be idle while waiting for the head task in the other resource to release, blocking both queues. This is why `consolidate_group` uses an independent group-level lock and splits Phase 1 and Phase 2 into two non-nested holding windows.
+> **A caller must never hold two gates simultaneously**: if it holds `MEMORY` and then waits for `CHAT` (or vice versa), cross-endpoint head-of-line blocking occurs. One resource may be idle while waiting for the head task in the other resource to release, blocking both queues. This is why `consolidate_group` uses an independent group-level lock and splits Phase 1 and Phase 2 into two non-nested holding windows.
 >
 > Every acquisition records wait duration, hold duration, and queue depth, and warns when thresholds are exceeded; `core.llm.snapshot()` can export cumulative statistics for each resource. In a multi-group deployment, this is the only way to determine “which resource caused the latency and who is queued.”
 

@@ -26,8 +26,12 @@ imports the other.
 ## Assembly and compatibility
 
 - `ai_gateway` keeps scheduler registration, adapter discovery
-  (`_sole_timer_qq_bot`) and thin delegates; the timer tick body lives in
-  `aoede.service.proactive_timer_tick`.
+  (`_sole_timer_qq_bot`) and thin delegates. The registered timer job
+  (`proactive_speak_job`) runs the S2-02 announcements, opportunity recovery,
+  and fair verification-ASK submission inline in the assembly layer;
+  `aoede.service.proactive_timer_tick` still holds the legacy tick body
+  (proactive @ first, skipping the turn on success; dice + message-count path
+  when `PARTICIPATION_ENABLED=false`) but has no callers in the source tree.
 - Host dependencies are injected explicitly via `aoede.host.ProactiveHost`;
   test-replaceable symbols (`can_speak`, `get_proactive`, `pick_target`,
   `DB_PATH`, ...) are wired as lambdas that resolve gateway module

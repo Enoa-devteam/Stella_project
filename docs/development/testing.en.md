@@ -140,6 +140,6 @@ monkeypatch.setattr("memory.memory_manager.DB_PATH", tmp_path / "test.db")
 
 > Configuration in the capability and astrbot compatibility layers must patch attributes on **`config.settings`**, not `config.X`: `config/__init__.py` is `from .settings import *`, so names are bound at import time. Accordingly, these modules always use `_settings().X` to read values at call time rather than `from config import X`.
 >
-> The basename of every test file must be unique across the repository (`tests/` has no `__init__.py`); otherwise pytest reports a module-name conflict during collection. This is why the capability-layer loading test is named `test_capability_loader.py` rather than `test_loader.py`.
+> The basename of every test file must be unique across the repository: `tests/` itself has an `__init__.py`, but most subdirectories (such as `tests/capability/`) do not, so pytest's default `prepend` import mode imports tests in those subdirectories as top-level modules named by basename, and duplicate names cause a module-name conflict during collection. This is why the capability-layer loading test is named `test_capability_loader.py` rather than `test_loader.py`.
 
 **Constraint tests must have reverse cases.** Testing only that "something that should not happen did not happen" is insufficient: a condition written as always false would also pass, and the feature would silently stop working. Every "must not merge across users" case in `test_cross_user_isolation.py` is paired with a "must still merge for the same user" case.

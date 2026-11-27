@@ -6,6 +6,11 @@
 
 调度库由 `stella_project/plugins/bot_main/scheduling/migrations.py` 管理，当前 `SCHEMA_VERSION = 2`。迁移在调度服务初始化时按版本执行；测试迁移必须使用临时库。v1→v2 为 task/run/audit/quota 增加精确投递目标、主体与 scope。旧任务只有在可验证的 QQ Bot 与群号能够无歧义绑定时才迁移为可投递；无法证明目标的历史任务保留但不发送。历史 quota 留在独立 legacy scope，不折算进新连接的配额。执行器每次投递都再次解析 BotRef 并校验完整目标。
 
+### 记忆库迁移
+
+记忆库 schema 的实现在 `mneme/schema.py` 与 `mneme/migrations.py`；`memory/schema.py`、`memory/migrations.py`
+只是兼容别名（不放业务逻辑），`python -m memory.schema` 会转发到 `python -m mneme.schema`。
+
 ```bash
 python -m memory.schema --dry-run    # 预览待执行的迁移
 python -m memory.schema              # 执行迁移
@@ -16,7 +21,7 @@ python -m memory.schema --backup     # 仅备份
 
 ### 加字段的正确做法
 
-1. `memory/schema.py` 的 `SCHEMA_VERSION` +1
+1. `mneme/schema.py` 的 `SCHEMA_VERSION` +1
 2. `_ADDITIVE_COLUMNS` 追加 `(表名, 列名, ALTER 语句)`
 3. `_INDEXES` 追加需要的索引
 4. **同步更新所有手写该表的 `CREATE TABLE`**
@@ -27,7 +32,7 @@ SQLite 的 `ALTER TABLE ADD COLUMN` **不接受非常量默认值**，`DEFAULT C
 
 ### 改列名/主键的做法
 
-**新规矩（2026-08-27）：`SCHEMA_VERSION` 每 +1，必须同时提交 `memory/migrations.py` 里的
+**新规矩（2026-08-27）：`SCHEMA_VERSION` 每 +1，必须同时提交 `mneme/migrations.py` 里的
 `migrate_vN` 与一个旧库夹具回归测试。禁止再出现「本版不做数据迁移、归档旧库重建」。**
 
 此前 v7（画像分群）与 v8（记忆表改按空间归属）都声明不迁移，理由是「库内数据量很小」。
@@ -38,8 +43,8 @@ SQLite 的 `ALTER TABLE ADD COLUMN` **不接受非常量默认值**，`DEFAULT C
 
 | 模块 | 负责 |
 |---|---|
-| `memory/schema.py` 的 `_migrate()` | 加列 + 建表 + 建索引。幂等、与版本号无关，作为每次迁移的收尾步骤 |
-| `memory/migrations.py` | 改结构 + 改数据。每版一个函数、一个事务，成功后才推进 `schema_meta.version` |
+| `mneme/schema.py` 的 `_migrate()` | 加列 + 建表 + 建索引。幂等、与版本号无关，作为每次迁移的收尾步骤 |
+| `mneme/migrations.py` | 改结构 + 改数据。每版一个函数、一个事务，成功后才推进 `schema_meta.version` |
 
 写迁移时必须知道的三件事：
 

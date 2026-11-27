@@ -24,6 +24,8 @@ The runtime carrier for one processing operation and the only channel through wh
 
 The type annotation for `route` is `Any` rather than `Route`: `core` is a “business-independent orchestration skeleton” and should not import `capability`; a reverse dependency would create a cycle.
 
+`tool_summaries` / `knowledge_evidence` / `memories_for_prompt` are **three separate tracks**: tool summaries (compressed text), knowledge-base evidence (structured excerpts with numbered citations and their own `KNOWLEDGE_EVIDENCE_*` budget, see docs/architecture/knowledge-base.en.md), and memory retrieval results each use their own rendering and budget and never crowd each other out. Knowledge evidence **never** enters memory consolidation; `knowledge/isolation.py` is the runtime guardrail for that red line.
+
 ### Main Data Tables
 
 **Conversation and memory ownership are separate**. The tables below retain historical group-field names; message, short-context, and consolidation storage also supports private/WebChat conversations. SPACE memory can be shared across configured groups; PERSON memory additionally requires matching owner, subject, and audience. Shared spaces never merge conversation tails.

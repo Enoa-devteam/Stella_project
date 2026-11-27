@@ -5,13 +5,15 @@
 ## Environment Setup
 
 ```bash
-git clone https://github.com/Eternal-Wanderer-Vegetable/Stella_project.git
+git clone https://github.com/Enoa-devteam/Stella_project.git
 cd Stella_project
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
 `requirements-dev.txt` contains development dependencies such as pytest, ruff, and numpy. numpy is used only for vector calculations in the embedding fixture; when it is missing, the relevant tests are skipped rather than failing.
+
+Toolchain versions: Python `>=3.10,<4.0` (`pyproject.toml`; the Python bundled in release packages is pinned in `release_assets/toolchain.json`); the Dashboard uses Node 24 + pnpm 10 (`release_assets/toolchain.json`, `.github/workflows/dashboard_ci.yml`); Rust `rust-version` is 1.85 for `cli/` and `runtime-manager/` and 1.89 for `memory_rust/native/` (their respective `Cargo.toml`).
 
 ### Developer machine user data lives in `StellaData/`
 
@@ -49,7 +51,7 @@ pnpm build          # vue-tsc type gate + vite build → dist/
 python scripts/dev_webui.py --port 8091
 
 # Desktop shell (Tauri 2): fill the embedded panel first, then compile
-cp -r dashboard/dist/* desktop/dashboard-dist/
+pnpm --dir dashboard sync:webui   # run from the repo root; mirrors dashboard/dist to webui/dist and desktop/dashboard-dist
 cd desktop/src-tauri && cargo tauri build   # or cargo check for a quick gate
 
 # Forgot the panel admin password
@@ -74,7 +76,9 @@ python -m deploy init
 #    then add a "WebSocket client" in NapCat WebUI's network settings pointing to the Bot (reverse WS):
 #    ws://127.0.0.1:8080/onebot/v11/ws
 #    (For forward WS, configure ONEBOT_WS_URLS in .env instead.)
-# 4. Start stella (it first runs the doctor check)
+# 4. Pre-start self-check
+python -m deploy doctor
+# 5. Start the Corona control plane and the managed Bot (does not run doctor automatically)
 python -m deploy start
 ```
 

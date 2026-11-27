@@ -140,6 +140,6 @@ monkeypatch.setattr("memory.memory_manager.DB_PATH", tmp_path / "test.db")
 
 > 能力层与 astrbot 兼容层的配置要 patch **`config.settings` 的属性**，不能 patch `config.X`：`config/__init__.py` 是 `from .settings import *`，名字在 import 时就绑死了。相应地这些模块内部一律用 `_settings().X` 在调用时取值，而不是 `from config import X`。
 >
-> 测试文件的 basename 必须全仓唯一（`tests/` 下没有 `__init__.py`），否则 pytest 收集时报模块名冲突——这就是能力层的加载测试叫 `test_capability_loader.py` 而不是 `test_loader.py` 的原因。
+> 测试文件的 basename 必须全仓唯一：`tests/` 根有 `__init__.py`，但大多数子目录（如 `tests/capability/`）没有，pytest 默认的 `prepend` 导入模式会把这些子目录里的测试按 basename 当作顶层模块导入，重名时收集报模块名冲突——这就是能力层的加载测试叫 `test_capability_loader.py` 而不是 `test_loader.py` 的原因。
 
 **约束型测试必须配反向用例。** 只测「不该发生的没发生」是不够的——把条件写成永假也能通过，功能会静默失效。`test_cross_user_isolation.py` 的每条「不得跨用户合并」都配了一条「同用户仍要合并」。

@@ -66,9 +66,9 @@ Windows VM, or install/rollback acceptance.
 ## Release assets
 
 ```text
-Stella-OneClick-Rust-v6.1.0-windows-amd64.exe
-Stella-OneClick-Rust-Offline-v6.1.0-windows-amd64.exe
-Stella-Standalone-Rust-v6.1.0-windows-amd64.zip
+Stella-OneClick-Rust-v<version>-windows-amd64.exe
+Stella-OneClick-Rust-Offline-v<version>-windows-amd64.exe
+Stella-Standalone-Rust-v<version>-windows-amd64.zip
 ```
 
 Standalone-Rust bundles one wheel under `wheels/`. `start.bat` or `Stella.exe`

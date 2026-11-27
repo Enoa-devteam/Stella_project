@@ -443,7 +443,7 @@ stella:
 | `StarTools.get_config` | 没有上游那份全局配置对象 |
 | `StarTools.register_web_api` / `Context.register_web_api` | Stella 没有对外 HTTP 服务（状态接口只回环、只读） |
 | `Context.kb_manager` / `subagent_orchestrator` / `knowledge_db_manager` | 知识库与子 agent 编排未实现 |
-| `astrbot.api.platform.Platform` / `register_platform_adapter` | 只支持 OneBot V11 一个平台 |
+| `astrbot.api.platform.Platform` / `register_platform_adapter` | 兼容层只支持 OneBot V11（核心另可接入实验性的 OneBot V12，但 AstrBot 插件不在其上运行） |
 | `astrbot.api.html_renderer` / `astrbot.api.agent` | 用 `Star.html_render` / Comes 代替 |
 | `Node` / `Nodes` 作为普通消息段发送 | 合并转发要走 `send_group_forward_msg`，不是消息段 |
 | 组件的 `convert_to_file_path()`（来源无法解析时） | 拿不到源文件就没有路径可返回 |
@@ -533,7 +533,7 @@ python -m capability.router.benchmark          # 路由基准，确认四类路�
 
 - **群里问**「你能做什么」「有什么功能」——按域分组列出可路由的能力，末尾一行说明有多少插件工具因为没配声明而不会被自动触发。普通群友可查；来源层、provider 健康度、未声明工具的具体名单属于排查信息，只对管理员显示；
 - **`python -m deploy capabilities [--json]`**——表格形式：哪些能被聊天触发、哪些不能、各自来自哪一层、哪个 provider 正在退避；
-- **GUI**「插件」页——按**插件**重新索引的同一份 payload：左边列出装了哪些插件（每项一个圆点与一句结论：加载失败 / 已停用 / N 个工具未声明 / 正常），点进去才看这个插件的指令与工具。工具那一列直接回答「有没有被能力声明认领」——绿点＝已认领、聊天里会自动触发，灰点＝没有任何声明认领它，只能显式调用；工具不存在 / 已停用 / 正在退避也标在同一行。没解压的压缩包、只有 `capability.draft.toml`、`reviewed = false` 都会在对应插件上点名。「运行状态」页的「复制诊断信息」仍会带上「可路由 N / 共 M / 未声明工具」这三个数。
+- **GUI**「插件」页——按**插件**重新索引的同一份 payload：左边列出装了哪些插件（每项一个圆点与一句结论：加载失败 / 已停用 / N 个工具未声明 / 正常），点进去才看这个插件的指令与工具。工具那一列直接回答「有没有被能力声明认领」——绿点＝已认领、聊天里会自动触发，灰点＝没有任何声明认领它，只能显式调用；工具不存在 / 已停用 / 正在退避也标在同一行。没解压的压缩包、只有 `capability.toml.draft`、`reviewed = false` 都会在对应插件上点名。「运行状态」页的「复制诊断信息」仍会带上「可路由 N / 共 M / 未声明工具」这三个数。
 
 payload 只放结构化字段（id、domain、来源层、是否可路由、provider 工具名、工具是否真的存在、退避状态、examples 条数），**不含 `description` 与 `examples` 原文**——状态接口有「响应体不含凭据与聊天内容」的硬约束，而自由文本是唯一可能夹带 URL 或密钥的字段。原文在本地直接读那三层 TOML 就有。
 

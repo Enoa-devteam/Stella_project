@@ -46,9 +46,9 @@ Likewise, every path that "returns an empty result on failure and continues" mus
 - `ruff check .` reports no warnings
 - If a prompt changed, the two-way gate was run (positive regression + real windows)
 - If the schema changed, `python -m memory.schema --dry-run` output is as expected
-- If configuration items changed, `.env.example` is synchronized (`deploy init` renders from it; if it is missed, the new configuration item will not appear in the generated `.env`), and `docs/configuration.en.md` is synchronized
+- If configuration items changed, `.env.example` is synchronized (`deploy init` renders from it; if it is missed, the new configuration item will not appear in the generated `.env`), and `docs/reference/configuration.en.md` is synchronized
 - If listener priority changed or a handler with `block=True` was added, confirm that the persistence listener remains the highest priority and send one @ message to verify that `AT_MENTION` is persisted
-- If memory-table SQL changed, confirm that it uses `group_shared_space` rather than `group_id` (the two ownership layers are described in architecture.en.md)
+- If memory-table SQL changed, confirm that it uses `group_shared_space` rather than `group_id` (the two ownership layers are described in [Data Boundaries](../architecture/data-boundaries.en.md#boundary-between-the-two-ownership-levels))
 - If Router rules / capability declarations changed, `python -m capability.router.benchmark --rules-only` still reports 0 memory false negatives and 0 tool false positives
 - Before enabling `ROUTER_GATE_MEMORY`, run the full-pipeline benchmark (requires an embedding service) and confirm exit code 0; this is the only way to verify that it will not silently lose memories
 - When adding a new capability Provider type (MCP / API / native), implement its branch in `capability/comes/executor.py::resolve_tools`; do not let it silently fall into `missing`

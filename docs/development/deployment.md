@@ -9,9 +9,9 @@
 |---|---|
 | `python -m deploy doctor [--json]` | 环境自检；`--json` 输出结构化结果（id/level/title/detail/fix_hint），供 GUI 做图标与本地化映射 |
 | `python -m deploy init [--answers PATH] [--force] [--dry-run]` | 交互式生成 `.env`（基于 `.env.example` 逐行替换，模型 ID 从 LM Studio 拉列表选编号）；`--answers` 复用上次的 `deploy.answers.toml`，换机器重装 / CI 冒烟 / GUI（`save_config`）复用同一份答案 |
-| `python -m deploy start [--force] [--detach]` | 先跑 doctor，无阻塞问题（或 `--force`）后启动 `bot.py`；`--detach` 后台启动并写 PID 到 `logs/stella.pid`（GUI 用） |
+| `python -m deploy start [--force] [--detach]` | 启动本实例的 Corona 控制面与受管 Nucleus（Bot）；已有 Corona 在跑时不重复启动。`--force` 仅为兼容旧命令而保留，已被忽略，不会绕过 Corona ownership / 协议校验；`--detach` 后台启动 Corona 并返回。启动前自检请单独跑 `deploy doctor`。实例 PID 文件位于 `STELLA_HOME/.stella/instances/<id>/stella.pid` |
 | `python -m deploy status [--json]` | 通过状态接口优先判断进程是否存活，并汇总链路健康度、调度器排队、今日用量与能力清单；接口不可达时再用 PID 文件兜底，并读取最近 JSON 日志 |
-| `python -m deploy stop` | 优雅停止：写停止哨兵 → 轮询等待 → 降级信号 → 硬杀兜底（见下）；Tauri 安装器与 `bot.py` 位于同一发布目录 |
+| `python -m deploy stop` | 经 Corona 的鉴权本机控制接口停止本实例 Corona 与整棵受管进程树，并等待控制器退出获确认；Tauri 安装器与 `bot.py` 位于同一发布目录 |
 | `python -m deploy config-schema --json` | 输出 `settings.py` 的配置 schema（分组、默认值、注释），GUI 的「高级选项」表单据此生成 |
 | `python -m deploy migrate [--from 旧目录] [--dry-run] [--fresh-runtime]` | 从旧版本安装目录导入用户数据并升级数据库；只读旧目录，报告同时返回 Markdown 原文并写入当前 `STELLA_HOME/migration_report.md` |
 | `python -m deploy space-merge --from a,b --to c [--dry-run]` | 合并共享空间（记忆 + 画像 + FTS + 账本），替代过去要用户手搓的一串 UPDATE |
@@ -51,11 +51,15 @@ python -m deploy doctor --json > stella-installer/src/mock/doctor-clean.json
 
 ### 停止链路（哨兵优先）
 
+`deploy stop` 走 Corona 控制接口（见上表）；下面的文件哨兵链路是 Bot 进程一侧的停止契约，
+仍用于 WebUI 重启（`webui/services/system.py`）与 `deploy/process.py` 停止直接启动的 Bot 实例。
+
 1. **Windows 下 GUI 与 Bot 不共享控制台**：安装器用 `CREATE_NO_WINDOW(0x08000000)` 启动
    Bot，子进程根本没有控制台，`GenerateConsoleCtrlEvent` 发的 `CTRL_BREAK` 永远送不到
    （实测）。任何依赖控制台事件的停止方案在 GUI 场景必然失效——停止链路的唯一可靠入口是
-   文件哨兵（`core/stop_signal.py`，默认路径项目根 `.stella-stop-request`）。
-2. **哨兵文件的三方契约**：deploy 写（`deploy/process.py` 的 `stop()`）→ Bot 读并自杀
+   文件哨兵（`core/stop_signal.py`，默认路径 `STELLA_HOME/.stella/instances/<id>/stop-request.json`，
+   即 `config.STELLA_STOP_SENTINEL`；设置 `STELLA_STOP_SENTINEL` 时按实例 ID 派生文件名）。
+2. **哨兵文件的三方契约**：写入方调用 `core.stop_signal.request_stop()`（`deploy/process.py` 的停止链、WebUI 重启）→ Bot 读并自杀
    （`ai_gateway.watch_stop_request()` 观察到后触发 uvicorn 优雅关闭）→ Bot 启动时先清残留
    （`_start_stop_watcher` 里最早执行）。三者缺一则要么停不了，要么一启动就自杀。
 3. **deploy 侧等待 = grace + 缓冲**：Bot 侧 `_graceful_shutdown()` 最长等

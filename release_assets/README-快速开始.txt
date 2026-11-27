@@ -51,7 +51,7 @@
  出问题了？
 ----------------------------------------------------
 双击 doctor.bat 运行环境自检，把输出复制下来提交 issue：
-  https://github.com/Eternal-Wanderer-Vegetable/Stella_project/issues
+  https://github.com/Enoa-devteam/Stella_project/issues
 提交时请附上 start.bat 窗口里出现的报错信息。
 
 ----------------------------------------------------

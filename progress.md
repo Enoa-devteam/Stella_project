@@ -1,3 +1,11 @@
+## 2026-11-27 — README 重写与全量文档对账
+
+- Scope：按维护者草稿重写 README（中英），并核对 docs 全部现行正文与当前源码是否一致。分支 `docs/readme-refresh`（worktree `E:/stella/stella_project-readme`，基于 origin/main 4cccd78）。
+- What's Done：README 中英——新标语与徽章（OneBot V11/V12，V12 标注实验性并链接 #186）、特性分五组并逐条链接文档、新增「安装」（Windows / Docker / 源码）。文档对账修正：端点模型改为 CHAT / MEMORY / VISION 三槽（旧槽名为别名）、`deploy start/stop` 经 Corona、适配器范围（只有 `nonebot-adapter-onebot`）、NapCat 不再随包、CI job 与 pip-audit 无豁免、`mneme/` / `aoede/` 为规范实现、schema 24 / API 4、监听器与闸门表、旧 owner 链接改为 Enoa-devteam。
+- Evidence：`python scripts/check_docs.py` ok（131 files，0 errors）；GitNexus detect-changes（scope all）52 files / 194 symbols（均为文档 Section），0 processes，risk low。只改文档，未改代码、未跑测试。
+- 未处理（代码 / 配置）：`stella-installer/src/settings.html` 仍是旧五槽，「混合」预设的整合在新模型下落到 CHAT；`product-profiles/oneclick-*.json` 的 `catalog_url` 仍指向旧 owner；`aoede/service.py::proactive_timer_tick` 已无调用方；`core/llm/registry.py` docstring 仍提自定义 EXTRA 槽；AGENTS.md 的 GitNexus 生成块硬编码计数；`docs/architecture*.md` 旧壳链接文字仍含 6.1.0。
+- Next：合并后在主页仓库运行 `npm run sync-docs` 刷新文档快照（主页 PR 已单独提交）。
+
 ## 2026-11-26 — Dashboard 升级到 Vite 8（替代 Dependabot #214，#182 收尾）
 
 - Scope：#214（vite 6.4.3 → 8.3.8）build 失败，是 #182 最后一项。分支 `fix/vite-8`（worktree `E:/stella/stella_project-vite8`，基于 main 339d253）。

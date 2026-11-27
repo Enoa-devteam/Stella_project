@@ -6,6 +6,10 @@
 
 The scheduling database is managed by `stella_project/plugins/bot_main/scheduling/migrations.py` and currently uses `SCHEMA_VERSION = 2`. The service applies migrations by version; migration tests must use temporary databases. The v1→v2 migration adds exact delivery target, subject, and scope fields to task/run/audit/quota records. A legacy task becomes sendable only when its QQ Bot and group destination can be bound without ambiguity; unverifiable historical tasks are retained but never sent. Historical quota stays in an isolated legacy scope and is not counted against a new connection. The executor resolves BotRef and validates the complete target again before every delivery.
 
+### Memory Database Migrations
+
+The memory schema is implemented in `mneme/schema.py` and `mneme/migrations.py`; `memory/schema.py` and `memory/migrations.py` are compatibility aliases only (no business logic), and `python -m memory.schema` forwards to `python -m mneme.schema`.
+
 ```bash
 python -m memory.schema --dry-run    # Preview pending migrations
 python -m memory.schema              # Run migrations
@@ -16,7 +20,7 @@ python -m memory.schema --backup     # Back up only
 
 ### Correct Way to Add a Column
 
-1. Increment `SCHEMA_VERSION` in `memory/schema.py` by 1
+1. Increment `SCHEMA_VERSION` in `mneme/schema.py` by 1
 2. Append `(table name, column name, ALTER statement)` to `_ADDITIVE_COLUMNS`
 3. Append required indexes to `_INDEXES`
 4. **Synchronously update every hand-written `CREATE TABLE` for that table**
@@ -27,7 +31,7 @@ SQLite's `ALTER TABLE ADD COLUMN` **does not accept a non-constant default**. `D
 
 ### How to Change a Column Name / Primary Key
 
-**New rule (2026-08-27): every increment of `SCHEMA_VERSION` must also include a `migrate_vN` in `memory/migrations.py` and a regression test using an old-database fixture. Never again use "no data migration in this release; archive the old database and rebuild".**
+**New rule (2026-08-27): every increment of `SCHEMA_VERSION` must also include a `migrate_vN` in `mneme/migrations.py` and a regression test using an old-database fixture. Never again use "no data migration in this release; archive the old database and rebuild".**
 
 Previously, v7 (profile grouping) and v8 (changing the memory table to use space ownership) both declared that they would not migrate, on the grounds that "the amount of data in the database is small".
 However, every publicly released 2.x version used schema v2/v5 (with a `group_id` column), so upgrading existing users meant telling them that all their memories would be lost. This was the most expensive decision mistake in this project. v5 -> the latest version is now fully automatic.
@@ -36,8 +40,8 @@ Division of responsibility:
 
 | Module | Responsibility |
 |---|---|
-| `_migrate()` in `memory/schema.py` | Add columns + create tables + create indexes. Idempotent and independent of the version number; runs as the final step of every migration |
-| `memory/migrations.py` | Change structure + transform data. One function and one transaction per version; advance `schema_meta.version` only after success |
+| `_migrate()` in `mneme/schema.py` | Add columns + create tables + create indexes. Idempotent and independent of the version number; runs as the final step of every migration |
+| `mneme/migrations.py` | Change structure + transform data. One function and one transaction per version; advance `schema_meta.version` only after success |
 
 Three things you must know when writing a migration:
 

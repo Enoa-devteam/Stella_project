@@ -16,7 +16,7 @@
 - 6.4.1 起：没有 Visual C++ 运行库的 Windows 上桌面程序与随包 llama.cpp 后端可以启动，全新安装首次启动不再失败。
 - Online 安装器从 GitHub 与 Hugging Face 下载组件，尚无镜像；无法稳定访问时请使用 Offline 安装器（约 1.2 GB）。
 - 安装器未经代码签名：开启「智能应用控制」的 Windows 11 会直接拦截。
-- 自 6.4.0 起：记忆 schema 为 24（回退须恢复迁移前备份）、不再内置 NapCat、不再发布 stella CLI 包、暂时只安装 OneBot V11 适配器。
+- 自 6.4.0 起：记忆 schema 为 24（回退须恢复迁移前备份）、不再内置 NapCat、不再发布 stella CLI 包、只安装 `nonebot-adapter-onebot`（OneBot V11；6.4.4 起另含实验性 V12）。
 
 升级前备份完整数据根；从旧目录导入时先运行 `python -m deploy migrate --from <旧目录> --dry-run`。完整变更见 [发布说明](../../release_assets/RELEASE_NOTES_TEMPLATE.md)。
 
@@ -32,10 +32,10 @@
 
 ## 📦 下载与安装
 
-- 第一步：到 [Releases](https://github.com/Eternal-Wanderer-Vegetable/stella_project/releases) 选一种 Windows 产品下载。按「要不要帮你把运行环境装好」分两条产品线：
+- 第一步：到 [Releases](https://github.com/Enoa-devteam/stella_project/releases) 选一种 Windows 产品下载。按「要不要帮你把运行环境装好」分两条产品线：
 
   - **OneClick 一键安装（推荐）**：`Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`，单文件安装程序，双击安装。首次启动会自动准备嵌入式 Python、`llama.cpp` CPU 后端与 `qwen3-embedding-0.6b` 向量模型。**自 2026-11 起安装包不再内置 NapCat**（上游安装包下载源已失效），QQ 协议端需自行安装（见下方「接入 QQ」）。想用 Rust 记忆引擎就下载 `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe`，引擎在安装阶段一并就绪。
-  - **OneClick 一键安装·离线版**：`Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe`（Rust 版为 `Stella-OneClick-Rust-Offline-*`）。安装流程与在线版完全相同，但嵌入式 Python、全部 Python 依赖、`llama.cpp` CPU 后端、NapCat、向量模型与浏览器渲染内核**全部随包内置，安装与渲染全程不需要联网**——适合国内网络受限或内网环境。代价是安装包体积约 1GB。
+  - **OneClick 一键安装·离线版**：`Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe`（Rust 版为 `Stella-OneClick-Rust-Offline-*`）。安装流程与在线版完全相同，但嵌入式 Python、全部 Python 依赖、`llama.cpp` CPU 后端、向量模型与浏览器渲染内核**全部随包内置，安装与渲染全程不需要联网**——适合国内网络受限或内网环境。代价是安装包体积约 1.2 GB。
   - **Standalone 解压版**：`Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip`，解压即用，**只包含 stella 本体**——需要自备 Python 3.10+ 与 NapCat，也不会自动下载 `llama.cpp` 或任何模型。Rust 版（`Stella-Standalone-Rust-*.zip`）额外附带 Rust 记忆引擎 wheel，首次启动自动离线安装并启用。
 
   两类产品都提供 `Stella.exe` 图形界面（推荐）与 `start.bat` 命令行两种启动方式。`Stella.exe` 启动时自动跑一遍环境自检——尚未配置会打开「配置」页，有阻塞问题会打开「环境自检」页，一切正常则直接进入「运行状态」页；`start.bat` 则进入命令行配置向导并启动 Bot。**请勿把两类产品装进同一个目录。**
