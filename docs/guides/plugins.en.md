@@ -30,7 +30,7 @@ Writing a plugin, or unsure whether a declaration is right? Run `python -m deplo
 
 ## Confirming a plugin reached routing
 
-To see whether it actually made it into the routing set, three places print the same list: @-mention the bot in a group and ask "what can you do", run `python -m deploy capabilities`, or open the "Plugins" page of `Stella.exe` and click the plugin (a green dot means a declaration has claimed that tool, so chat can trigger it automatically). All of them show which capabilities chat can trigger automatically, which cannot, and why not (no declaration / misspelled tool name / claimed by a higher tier / implementation backing off). Quicker than reading the boot log.
+To see whether it actually made it into the routing set, three places print the same list: @-mention the bot in a group and ask "what can you do", run `python -m deploy capabilities`, or open the "Extensions" page of `Stella.exe` and click the plugin (a green dot means a declaration has claimed that tool, so chat can trigger it automatically). All of them show which capabilities chat can trigger automatically, which cannot, and why not (no declaration / misspelled tool name / claimed by a higher tier / implementation backing off). Quicker than reading the boot log.
 
 ## Hot reload and card rendering
 

@@ -40,7 +40,7 @@ Stella_project/
 │       ├── facade.py               # RuntimeFacade: unified entry owner and turn execution (the legacy STELLA_RUNTIME dual-path switch is retired; migration records in docs/migration/cortico/)
 │       └── turn_service.py         # Per-turn execution service: evidence injection and prompt assembly (the knowledge-evidence section renders here)
 │
-├── capability/                     # Capability layer (see docs/capability-system.en.md)
+├── capability/                     # Capability layer (see docs/architecture/capability-system.en.md)
 │   ├── registry.py                 # Capability / Provider / registry singleton + health-based backoff
 │   ├── loader.py                   # config/capabilities/*.toml → registry
 │   ├── hooks.py                    # activate_capabilities pre-hook (pipeline integration point)
@@ -59,7 +59,7 @@ Stella_project/
 │       ├── knowledge.py            # knowledge.search capability wiring (when KNOWLEDGE_ENABLED)
 │       └── mcp.py                  # MCP Manager start/stop + Provider Runtime wiring
 │
-├── knowledge/                      # Standalone knowledge-base subsystem (see docs/knowledge-base.md)
+├── knowledge/                      # Standalone knowledge-base subsystem (see docs/architecture/knowledge-base.en.md)
 │   ├── domain.py                   # Domain model: libraries/documents/versions/grants + citation value objects
 │   ├── acl.py                      # The single ACL decision entry (user/group/space tri-state subjects)
 │   ├── lifecycle.py                # Document lifecycle state machine (draft→review→published→archived)
@@ -74,16 +74,15 @@ Stella_project/
 │   ├── service.py                  # Facade: role APIs / publication flow / ACL-enforced retrieval / status surface
 │   └── isolation.py                # Memory isolation guard (evidence must never become a memory candidate)
 │
-├── skills/                         # Anthropic-style task skill layer (SKILL.md; see docs/skills.md, SKILLS_ENABLED off by default)
+├── skills/                         # Anthropic-style task skill layer (SKILL.md; see docs/guides/skills.en.md, SKILLS_ENABLED off by default)
 │   ├── catalog.py                  # Skill catalog: discovery / quarantine / plugin-scoped refresh
 │   ├── orchestrator.py             # Selection and invocation orchestration (budgets / timeouts / output truncation)
 │   ├── runtime.py                  # Runtime assembly (wired during bot.py startup)
 │   ├── audit.py                    # Audit events (logs/skills_audit.jsonl)
 │   └── runners/                    # Controlled execution backends (docker sandbox runner)
 │
-├── memory/                         # Memory system core
-│   ├── SYSTEM.md                   # Bot system prompt
-│   ├── schema.py                   # Schema migrations (versioned, currently v19) + source enum
+├── mneme/                          # Memory system (Mneme) canonical implementation
+│   ├── schema.py                   # Schema migrations (versioned, see SCHEMA_VERSION) + source enum
 │   ├── migrations.py               # Versioned structural and data migrations
 │   ├── space_merge.py              # Space merging: fold several spaces' memories/profiles into one (deploy space-merge)
 │   ├── timeutil.py                 # Parse DB timestamps uniformly as UTC
@@ -109,37 +108,49 @@ Stella_project/
 │   ├── retriever.py                # FTS5 retrieval + weighted fallback ranking
 │   ├── embeddings.py               # Local embedding client (optional semantic scoring)
 │   │
-│   ├── proactive.py                # Activity statistics and speaking-probability curve
-│   ├── proactive_state.py          # Persistent proactive-speaking state (quota/cooldown/backoff)
-│   ├── proactive_gate.py           # Unified proactive-speaking admission gate (six conditions)
-│   ├── proactive_target.py         # Target selection and quota decisions for proactive @ mentions
-│   ├── proactive_prompt.py         # Task instruction template for proactive @ mentions
 │   ├── addressing.py               # User addressing preferences: normalization, validation, persistence (v14 table)
 │   ├── addressing_intent.py        # Addressing-intent recognition: rule pre-screening + embedding semantics (returns structured requests only)
 │   ├── expression_learning.py      # Expression and interjection-outcome learning: async settlement after a reply is sent (zero LLM)
 │   ├── expression_store.py         # Separate storage for expression learning (“how to say it well”, apart from the memory system)
-│   ├── participation/              # Proactive interjection Participation Decision Layer
-│   │   ├── decision.py             # Participation decisions and modes
-│   │   ├── signals.py              # Group-chat signal extraction
-│   │   ├── scorer.py               # Participation scoring
-│   │   ├── state.py                # Topic and group state
-│   │   ├── tables.py               # External TOML scoring-table loader
-│   │   └── observability.py        # Decision logs and observability
 │   │
 │   ├── trace.py                    # Memory decision tracing
-│   ├── benchmark.py                # Memory Benchmark runner
-│   ├── benchmark/                  # Retrieval-layer cases + _fixtures (including positive consolidation benchmarks)
+│   ├── benchmark.py                # Memory Benchmark runner (case data lives in memory/benchmark/)
 │   └── db_cleaner.py               # Dirty-data cleanup + scheduled message-table pruning
 │
-├── memory_rust/                    # Rust retrieval backend for MEMORY_BACKEND=rust (published as a separate wheel, see docs/memory-rust-backend.md)
+├── aoede/                          # Proactive participation subsystem (Aoede): whether, when, and to whom to speak
+│   ├── controller.py               # Activity, recent speech, and temporary skip state (was memory/proactive.py)
+│   ├── gate.py                     # Hard proactive-speaking gate can_speak (was memory/proactive_gate.py)
+│   ├── storage/                    # Legacy quota/mute/announce persistent state (was memory/proactive_state.py)
+│   ├── verification/               # Proactive @ target selection orchestration (was memory/proactive_target.py)
+│   ├── prompts.py                  # Proactive expression, SKIP, and question-variant templates (was memory/proactive_prompt.py)
+│   ├── service.py                  # Proactive interjection orchestration and timer tick (was the ai_gateway proactive section)
+│   └── participation/              # Proactive interjection Participation Decision Layer (was memory/participation)
+│       ├── buffer.py               # Per-group short-term message buffer
+│       ├── decision.py             # Participation decisions and modes
+│       ├── signals.py              # Group-chat signal extraction
+│       ├── scorer.py               # Participation scoring
+│       ├── state.py                # Topic and group state
+│       ├── tables.py               # External TOML scoring-table loader
+│       └── observability.py        # Decision logs and observability
+│
+├── memory/                         # Compatibility alias layer: each module replaces itself with the same mneme.* / aoede.* object on import
+│   ├── SYSTEM.md                   # Shipped default persona prompt (program directory, read-only)
+│   └── benchmark/                  # Retrieval-layer cases + _fixtures (including positive consolidation benchmarks)
+│
+├── memory_rust/                    # Rust retrieval backend for MEMORY_BACKEND=rust (published as a separate wheel, see docs/architecture/memory-rust-backend.en.md)
 │   ├── backend.py                  # Python-side wrapper (BACKEND_API_VERSION negotiation)
 │   ├── selector.py                 # Engine selection (wheel probing + legacy shadow/strict switch compatibility)
 │   └── native/                     # PyO3/maturin sources (schema.rs embeds the SQL)
+│
+├── memory_eval/                    # End-to-end evaluation of public datasets × the real memory pipeline (python -m memory_eval)
+├── proactive_eval/                 # Proactive-behavior and memory evaluation contracts: frozen datasets/protocols, isolated runner, scoring
 │
 ├── corona/                         # Independent control process: auth, config recovery, WebUI proxy, Nucleus supervision
 ├── nucleus/                        # Managed business-process entry: Bot, business routes, bounded lifecycle
 ├── stella_bootstrap/               # Shared home, identity, environment, and configuration-revision parsing
 ├── stella_contracts/               # Versioned Corona/Nucleus control, route-catalog, and local IPC contracts
+├── cometa/                         # Cross-turn external Agent long-task layer (admission, leases, workers, artifacts, notifications)
+├── gravitas/                       # Deterministic runtime-safety layer (resource-pressure admission, deadlines, recovery; off / shadow / enforce modes)
 │
 ├── extensions/                     # Automatically loaded extensions (scan setup(pipeline))
 │   ├── __init__.py                 # Extension loader
@@ -198,6 +209,10 @@ Stella_project/
 │   ├── sample_windows.py           # Stratified sampling of message windows from the real database
 │   ├── probe_embedding.py          # Embedding service probe
 │   └── build_embedding_fixture.py  # Build benchmark vector fixture
+│
+├── tools/                          # Data-maintenance CLIs: source-driven data repair, historical personal-memory backfill (preview/apply/revoke)
+├── system_prompts/                 # Shipped persona prompts (default.md is the SYSTEM_PROMPT_PATH default; space_*.md are space personas)
+├── assets/                         # Static assets: logo/title images, 3D model source, bundled skill resources (with LICENSE.assets.txt)
 │
 ├── release_assets/                 # Release artifact templates and release verification (quick-start READMEs, release-notes template, SHA256SUMS/manifest semantics, VM validation matrix)
 │

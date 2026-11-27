@@ -52,7 +52,7 @@
 
 ```bash
 # 1) 拿到代码（git clone 或从本地上传；注意 .env 不进 git，不会跟着仓库走）
-git clone https://github.com/Eternal-Wanderer-Vegetable/Stella_project.git
+git clone https://github.com/Enoa-devteam/Stella_project.git
 cd Stella_project
 
 # 2) 仓库根目录建 compose 用的 .env，固定 NapCat 镜像引用（见 §2；不设 up 会拒绝启动）
@@ -162,6 +162,7 @@ Docker 镜像在构建期生成 Dashboard 资源，Windows 发布包由 Release 
 错误和诊断字段。查看聚合状态：
 
 ```bash
+# 需要从源码 cli/ 自行构建 stellacli（6.4.0 起不再发布 CLI 包）
 stellacli --mode docker status --json
 docker compose exec stella python -m deploy runtime status
 ```

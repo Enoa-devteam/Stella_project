@@ -10,5 +10,5 @@ if not exist "runtime\python.exe" (
 runtime\python.exe -m deploy doctor
 echo.
 echo 把上面的输出复制下来，可以提交 issue：
-echo   https://github.com/Eternal-Wanderer-Vegetable/Stella_project/issues
+echo   https://github.com/Enoa-devteam/Stella_project/issues
 pause

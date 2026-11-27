@@ -49,7 +49,7 @@ Docker Healthcheck 优先访问 `/_corona/v1/health`，旧 `/stella/status` 作�
 1. `python -m pytest tests -q` 全绿
 2. `ruff check .` 无警告
 3. `pyproject.toml` 版本号已更新（CI 会把 tag 与它比对，不一致直接 fail）
-4. 改过配置项 → `.env.example` 与 `docs/configuration.md` 已同步
+4. 改过配置项 → `.env.example` 与 `docs/reference/configuration.md` 已同步
 5. `release_assets/RELEASE_NOTES_TEMPLATE.md` 已更新为本版本说明，**破坏性变更必须列明**（例如废弃全部 `NAPCAT_*` 配置）。注意「让用户丢数据」不再是一种合法的升级方式：schema 每 +1 都必须带自动迁移
 6. Release 的排除清单独立于 `.gitignore` 维护（见 `release.yml` 的注释）；新增运行期产物或配置文件时，需同时更新排除清单与敏感文件校验的正则
 7. **新增顶层目录必须判断该不该进 Release**：开发工具（如 `stella-installer/`，独立分发的 Tauri 安装器）、工具脚本等不能打进用户安装包，需加进 `release.yml` 的 rsync 排除清单与「校验开发目录」的正则，并跑一次手工打包验证

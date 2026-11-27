@@ -16,7 +16,7 @@ This page covers **Windows desktop** deployment. For Linux / remote servers, see
 - Since 6.4.1: the desktop app and the bundled llama.cpp backend start on Windows without the Visual C++ runtime, and the first start of a new installation no longer fails.
 - Online installers download components from GitHub and Hugging Face, with no mirror yet; where they are not reliably reachable, use an Offline installer (about 1.2 GB).
 - Installers are not code-signed: Windows 11 with Smart App Control on blocks them.
-- Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only the OneBot V11 adapter for now.
+- Since 6.4.0: memory schema 24 (rollback requires restoring the pre-migration backup), no bundled NapCat, no CLI packages, and only `nonebot-adapter-onebot` (OneBot V11; experimental V12 since 6.4.4).
 
 Back up the complete data root before upgrading; when importing from an old directory, first run `python -m deploy migrate --from <old-install> --dry-run`. See the [release notes](../../release_assets/RELEASE_NOTES_TEMPLATE.md).
 
@@ -32,10 +32,10 @@ Back up the complete data root before upgrading; when importing from an old dire
 
 ## 📦 Download & Install
 
-- Step 1: Choose a Windows product from [Releases](https://github.com/Eternal-Wanderer-Vegetable/stella_project/releases). They come in two product lines, split by "does it set up the runtime for you":
+- Step 1: Choose a Windows product from [Releases](https://github.com/Enoa-devteam/stella_project/releases). They come in two product lines, split by "does it set up the runtime for you":
 
   - **OneClick installer (recommended)**: `Stella-OneClick-Python-vX.Y.Z-windows-amd64.exe`, a single-file installer — double-click to install. On first launch it automatically prepares the embedded Python, the `llama.cpp` CPU backend, and the `qwen3-embedding-0.6b` embedding model. **Since 2026-11 the installers no longer bundle NapCat** (its upstream download source is gone); install a QQ protocol endpoint yourself (see "Connecting QQ" below). To use the Rust memory engine, download `Stella-OneClick-Rust-vX.Y.Z-windows-amd64.exe` instead; the engine is prepared during installation.
-  - **OneClick installer (offline)**: `Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe` (Rust variant: `Stella-OneClick-Rust-Offline-*`). The installation flow is identical to the online installer, but the embedded Python, all Python dependencies, the `llama.cpp` CPU backend, NapCat, the embedding model, and the browser rendering kernel **are all bundled — installation and rendering require no network access at all** — ideal for restricted or offline networks. The trade-off is a download size of roughly 1 GB.
+  - **OneClick installer (offline)**: `Stella-OneClick-Python-Offline-vX.Y.Z-windows-amd64.exe` (Rust variant: `Stella-OneClick-Rust-Offline-*`). The installation flow is identical to the online installer, but the embedded Python, all Python dependencies, the `llama.cpp` CPU backend, the embedding model, and the browser rendering kernel **are all bundled — installation and rendering require no network access at all** — ideal for restricted or offline networks. The trade-off is a download size of about 1.2 GB.
   - **Standalone archive**: `Stella-Standalone-Python-vX.Y.Z-windows-amd64.zip`, extract and run. It contains **only stella itself** — you provide Python 3.10+ and NapCat yourself, and it does not auto-download `llama.cpp` or any model. The Rust variant (`Stella-Standalone-Rust-*.zip`) additionally bundles the Rust memory-engine wheel, which is installed offline automatically on first launch.
 
   Both product lines offer a `Stella.exe` graphical interface (recommended) and a `start.bat` command-line flow. `Stella.exe` runs an environment check on launch: if not configured, it opens the Configuration page; if there are blocking issues, it opens the Environment Check page; if everything is normal, it goes directly to the Run Status page. `start.bat` opens the command-line configuration wizard and starts the Bot. **Do not install both product lines into the same directory.**

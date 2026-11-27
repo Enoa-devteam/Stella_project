@@ -6,15 +6,13 @@ Stella uses NoneBot adapters to connect to chat platforms. NoneBot separates ins
 
 ## Catalog and installation
 
-> **Core support scope:** Stella core supports only OneBot V11 and OneBot V12 (V12 is an **experimental feature**; it enters through the transport-neutral ingress and needs an explicitly registered connection; see [OneBot V12](#onebot-v12) below). The other catalog adapters are short-circuited in core: their packages are not shipped with the installers, the Platforms page shows them as unavailable, and boot skips them with a warning. Adapters for other platforms are planned as a separately maintained project. See [#134](https://github.com/Enoa-devteam/stella_project/issues/134) for the decision. The notes below about bundling the other adapters no longer apply.
+> **Core support scope:** Stella core supports only OneBot V11 and OneBot V12 (V12 is an **experimental feature**; it enters through the transport-neutral ingress and needs an explicitly registered connection; see [OneBot V12](#onebot-v12) below). The other catalog adapters are short-circuited in core: their packages are not shipped with the installers, the Platforms page shows them as unavailable, and boot skips them with a warning. Adapters for other platforms are planned as a separately maintained project. See [#134](https://github.com/Enoa-devteam/stella_project/issues/134) for the decision.
 >
 > **Protocol direction:** OneBot V12 will become Stella's primary adaptation protocol, covering broad cross-platform connection needs. The existing OneBot V11 implementation is kept for now.
 
-The catalog snapshot in the Platforms page follows the [official NoneBot adapter directory](https://raw.githubusercontent.com/nonebot/nonebot2/master/assets/adapters.json5) and contains 32 entries. OneBot V11 and V12 share `nonebot-adapter-onebot`. Stella bundles 28 distributions for the 29 selectable entries in its standard installers. Walle-Q, NTChat, and Mail are unavailable; see the table below.
+The catalog snapshot in the Platforms page follows the [official NoneBot adapter directory](https://raw.githubusercontent.com/nonebot/nonebot2/master/assets/adapters.json5) and contains 32 entries, but only OneBot V11 and OneBot V12 can be selected. Both use `nonebot-adapter-onebot`, the only adapter distribution declared in `requirements.txt` and `pyproject.toml`; it is installed with Docker, the online/offline Windows installers, and source installations. Other catalog entries are shown as unavailable on the Platforms page; Walle-Q, NTChat, and Mail are additionally blocked by dependency conflicts, see the table below.
 
-These dependencies are declared in `requirements.txt` and `pyproject.toml`, so they are included in Docker, online/offline Windows installers, and source installations. Adapter credentials, platform permissions, and callback URLs remain adapter-specific. NoneBot's `DRIVER` is global; edit it from any selected adapter's **Runtime settings** dialog and it applies to all selected adapters. The installer does not create platform accounts or enable adapters automatically. Use **Runtime settings** on a custom adapter card to enter variables documented by its project.
-
-The Heybox adapter requires Python 3.11 or newer. The project still supports Python 3.10, so that environment skips this distribution; the bundled Windows installer uses Python 3.12.
+Protocol-implementation addresses, access tokens, and platform-side permissions remain defined by each implementation's docs. NoneBot's `DRIVER` is global; edit it from any selected adapter's **Runtime settings** dialog and it applies to all selected adapters. The installer does not create platform accounts or enable adapters automatically.
 
 ## Blocked adapters
 
@@ -30,14 +28,12 @@ These packages are not installed by Stella's installers. The runtime registrar s
 
 1. Search for a platform in **Platforms → Add adapter** and select one or more available entries.
 2. Choose **Runtime settings** on a selected card. The floating dialog contains fields prefilled from that adapter project's docs. Adapters that support multiple accounts let you add multiple bot entries; less common settings remain under **Advanced environment variables**. Legacy variables without an adapter stay in an unassigned section until you choose a card for them.
-3. Follow the adapter project's instructions for accounts, credentials, and platform-side permissions. Supported catalog dependencies are already included in the installer; Heybox requires Python 3.11+.
+3. Follow the protocol implementation's instructions for accounts, credentials, and platform-side permissions.
 4. Close the dialog to return to the page draft, use the page-level Save button to write settings to the local `.env`, and restart Stella. Startup logs list registered adapters. Missing packages, import failures, and Driver registration errors identify the relevant module path.
 
-Catalog inclusion and bundled dependencies mean an adapter is selectable and can be assembled; they do not certify behavior compatibility, live platform delivery, or account acceptance. Adapter docs and platform version requirements can change, so review the project page linked from each catalog card.
+Catalog inclusion only means an adapter is selectable and can be assembled; it does not certify behavior compatibility, live platform delivery, or account acceptance. See below for OneBot V12's acceptance status. Implementation docs and version requirements can change, so review the project page linked from each catalog card.
 
-Preset fields are based on each adapter's docs or configuration model. See the [adapter form research note](../reports/2026-10-23-nonebot-adapter-config-research.md). The Heybox upstream only provides an incomplete configuration example, so its fields are not marked required. The pinned Minecraft package is 1.8.2; RCON is not prefilled because older and newer upstream documentation conflict. Catalog entries do not mean that every field has been runtime-verified against the pinned package.
-
-Some adapters use documented multi-account JSON forms. Matrix exposes static-token, password, and OAuth login fields plus sync, invitation, and end-to-end encryption settings. Villa stores the bot ID, secret, public key, and connection mode on each bot entry. WxClaw includes both account fields and the channel defaults documented by its project. Secret fields are redacted on read, and submitting them blank preserves their stored values.
+Secret fields are redacted on read, and submitting them blank preserves their stored values.
 
 ## OneBot V12
 

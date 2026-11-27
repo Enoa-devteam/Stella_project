@@ -17,7 +17,6 @@
 | Link disconnected / messages not received | `[LinkMonitor]` alerts in the logs (including troubleshooting steps); NapCatQQ Desktop logs to confirm whether the account disconnected |
 | Consolidation output truncated | `finish_reason=length` alert in the logs |
 | @ conversations learn nothing at all | `SELECT source_kind, COUNT(*) FROM group_messages GROUP BY source_kind`; `AT_MENTION` at 0 means the persistence listener was intercepted by `block=True` (`priority` must be 0) |
-| Proactive @ always uses cold start | `mode=coldstart` remains constant in the logs, or `[ProactiveTarget] failed to read candidates`; indicates that the space column name in the candidate query does not match |
 | A model has severe queueing / replies are slow | Wait/hold/queue-depth alerts under `[Scheduler]` in the logs; `core.llm.snapshot()` exports cumulative statistics |
 | Memory reads/writes silently do nothing | Run `python -m deploy paths` to confirm `STELLA_HOME` and the database location; then inspect migration results in the startup log and check whether `PRAGMA table_info(memories)` contains `group_shared_space` |
 | GUI cannot display link status | Check `STELLA_STATUS_API_ENABLED`, and verify directly with `curl http://127.0.0.1:8080/stella/status`; if the process is running but the endpoint returns 403, the route was incorrectly exposed or restricted; if it cannot connect, uvicorn did not start |

@@ -40,7 +40,7 @@ Stella_project/
 │       ├── facade.py               # RuntimeFacade：统一入口 owner 与轮次执行（旧 STELLA_RUNTIME 双路开关已退役；迁移记录见 docs/migration/cortico/）
 │       └── turn_service.py         # 单轮执行服务：证据注入与 prompt 拼装的落地层（知识证据段在此渲染）
 │
-├── capability/                     # 能力层（详见 docs/capability-system.md）
+├── capability/                     # 能力层（详见 docs/architecture/capability-system.md）
 │   ├── registry.py                 # Capability / Provider / 注册表单例 + 健康度退避
 │   ├── loader.py                   # config/capabilities/*.toml → 注册表
 │   ├── hooks.py                    # activate_capabilities 前置钩子（管线接入点）
@@ -59,7 +59,7 @@ Stella_project/
 │       ├── knowledge.py            # knowledge.search 能力装配（KNOWLEDGE_ENABLED 时）
 │       └── mcp.py                  # MCP Manager 启停 + Provider Runtime 接线
 │
-├── knowledge/                      # 独立知识库子系统（详见 docs/knowledge-base.md）
+├── knowledge/                      # 独立知识库子系统（详见 docs/architecture/knowledge-base.md）
 │   ├── domain.py                   # 领域模型：库/文档/版本/授权 + 引用值对象
 │   ├── acl.py                      # ACL 判定唯一入口（user/group/space 三态主体）
 │   ├── lifecycle.py                # 文档生命周期状态机（draft→review→published→archived）
@@ -74,16 +74,15 @@ Stella_project/
 │   ├── service.py                  # 门面：角色 API / 发布流 / ACL 强制检索 / 状态面
 │   └── isolation.py                # 记忆隔离护栏（证据不得成为记忆候选）
 │
-├── skills/                         # Anthropic 风格任务技能层（SKILL.md；详见 docs/skills.md，SKILLS_ENABLED 默认关）
+├── skills/                         # Anthropic 风格任务技能层（SKILL.md；详见 docs/guides/skills.md，SKILLS_ENABLED 默认关）
 │   ├── catalog.py                  # 技能目录：发现 / 隔离 / 插件局部刷新
 │   ├── orchestrator.py             # 选择与调用编排（预算 / 超时 / 输出截断）
 │   ├── runtime.py                  # 运行时装配（bot.py 启动期接线）
 │   ├── audit.py                    # 审计事件（logs/skills_audit.jsonl）
 │   └── runners/                    # 受控执行后端（docker 沙盒 runner）
 │
-├── memory/                         # 记忆系统主体
-│   ├── SYSTEM.md                   # 机器人系统提示词
-│   ├── schema.py                   # Schema 迁移（版本化，当前 v19）+ 来源枚举
+├── mneme/                          # 记忆系统（Mneme）正式实现
+│   ├── schema.py                   # Schema 迁移（版本化，见 SCHEMA_VERSION）+ 来源枚举
 │   ├── migrations.py               # 按版本执行结构与数据迁移
 │   ├── space_merge.py              # 空间合并：把若干空间的记忆/画像并进一个（deploy space-merge）
 │   ├── timeutil.py                 # DB 时间戳统一按 UTC 解析
@@ -109,37 +108,49 @@ Stella_project/
 │   ├── retriever.py                # FTS5 检索 + 加权回退排序
 │   ├── embeddings.py               # 本地 embedding 客户端（可选语义分）
 │   │
-│   ├── proactive.py                # 活跃度统计与发言概率曲线
-│   ├── proactive_state.py          # 主动发言的持久化状态（配额/冷却/退避）
-│   ├── proactive_gate.py           # 主动发言的统一准入闸门（六道条件）
-│   ├── proactive_target.py         # 主动 @ 的目标选择与配额判定
-│   ├── proactive_prompt.py         # 主动 @ 的任务指令模板
 │   ├── addressing.py               # 用户个性化称呼偏好：规范化、校验、持久化（v14 表）
 │   ├── addressing_intent.py        # 称呼意图识别：规则预筛 + embedding 语义判定（只返回结构化请求）
 │   ├── expression_learning.py      # 表达与插话效果学习：回复发出后的异步结算（零 LLM）
 │   ├── expression_store.py         # 表达学习的独立存储（「怎么说效果好」，与记忆系统分离）
-│   ├── participation/              # 主动插话 Participation Decision Layer
-│   │   ├── decision.py             # 参与决策与模式
-│   │   ├── signals.py              # 群聊信号提取
-│   │   ├── scorer.py               # 参与评分
-│   │   ├── state.py                # 话题与群状态
-│   │   ├── tables.py               # 外置 TOML 打分表加载
-│   │   └── observability.py        # 决策日志与可观测性
 │   │
 │   ├── trace.py                    # 记忆决策追踪
-│   ├── benchmark.py                # Memory Benchmark 运行器
-│   ├── benchmark/                  # 检索层用例 + _fixtures（含整合正例基准）
+│   ├── benchmark.py                # Memory Benchmark 运行器（用例数据在 memory/benchmark/）
 │   └── db_cleaner.py               # 脏数据清理 + 消息表定时裁剪
 │
-├── memory_rust/                    # MEMORY_BACKEND=rust 的 Rust 检索后端（独立 wheel 发布，见 docs/memory-rust-backend.md）
+├── aoede/                          # 主动参与子系统（Aoede）：是否、何时、对谁开口
+│   ├── controller.py               # 活跃度、近期发言与临时 skip 状态（原 memory/proactive.py）
+│   ├── gate.py                     # 主动发言硬闸门 can_speak（原 memory/proactive_gate.py）
+│   ├── storage/                    # 旧 quota/mute/announce 持久状态（原 memory/proactive_state.py）
+│   ├── verification/               # 主动 @ 选人编排（原 memory/proactive_target.py）
+│   ├── prompts.py                  # 主动表达、SKIP 与问题变体模板（原 memory/proactive_prompt.py）
+│   ├── service.py                  # 主动插话编排与定时 tick（原 ai_gateway 主动区）
+│   └── participation/              # 主动插话 Participation Decision Layer（原 memory/participation）
+│       ├── buffer.py               # 每群短期消息缓冲区
+│       ├── decision.py             # 参与决策与模式
+│       ├── signals.py              # 群聊信号提取
+│       ├── scorer.py               # 参与评分
+│       ├── state.py                # 话题与群状态
+│       ├── tables.py               # 外置 TOML 打分表加载
+│       └── observability.py        # 决策日志与可观测性
+│
+├── memory/                         # 兼容别名层：各模块导入时自替换为 mneme.* / aoede.* 的同一对象
+│   ├── SYSTEM.md                   # 出厂默认人格提示词（程序目录，只读）
+│   └── benchmark/                  # 检索层用例 + _fixtures（含整合正例基准）
+│
+├── memory_rust/                    # MEMORY_BACKEND=rust 的 Rust 检索后端（独立 wheel 发布，见 docs/architecture/memory-rust-backend.md）
 │   ├── backend.py                  # Python 侧封装（BACKEND_API_VERSION 协商）
 │   ├── selector.py                 # 引擎选择（wheel 探测 + 旧 shadow/strict 开关兼容）
 │   └── native/                     # PyO3/maturin 源码（schema.rs 内嵌 SQL）
+│
+├── memory_eval/                    # 公开数据集 × 真实记忆链路的端到端评测（python -m memory_eval）
+├── proactive_eval/                 # 主动行为与记忆评测合同：冻结数据集/协议、隔离 runner 与打分
 │
 ├── corona/                         # 独立控制进程：认证、配置恢复、WebUI 代理、Nucleus 监督
 ├── nucleus/                        # 受管业务进程入口：Bot、业务路由与有界生命周期
 ├── stella_bootstrap/               # 进程共享的 home、身份、环境与配置 revision 解析
 ├── stella_contracts/               # Corona/Nucleus 控制、路由目录与本机 IPC 的版本合同
+├── cometa/                         # 跨轮次外部 Agent 长任务运行层（受理、租约、worker、产物与通知）
+├── gravitas/                       # 确定性运行保障层（资源压力准入、期限与恢复；off / shadow / enforce 三种模式）
 │
 ├── extensions/                     # 自动加载的扩展（扫描 setup(pipeline)）
 │   ├── __init__.py                 # 扩展加载器
@@ -198,6 +209,10 @@ Stella_project/
 │   ├── sample_windows.py           # 从真实库分层采样消息窗口
 │   ├── probe_embedding.py          # embedding 服务探针
 │   └── build_embedding_fixture.py  # 构建 benchmark 向量 fixture
+│
+├── tools/                          # 数据维护 CLI：来源驱动的数据修复、历史个人记忆回填（preview/apply/revoke）
+├── system_prompts/                 # 出厂人格 prompt（default.md 为 SYSTEM_PROMPT_PATH 默认值，space_*.md 为空间人格）
+├── assets/                         # 静态素材：Logo/标题图、3D 模型源文件、内置技能资源（另附 LICENSE.assets.txt）
 │
 ├── release_assets/                 # 发布产物模板与发布校验（快速开始 README、发布说明模板、SHA256SUMS/清单语义、VM 验证矩阵）
 │

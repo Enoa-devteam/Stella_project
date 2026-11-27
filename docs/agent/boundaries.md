@@ -13,6 +13,6 @@
 | 执行入口 | 接入经 RuntimeFacade，单轮服务负责 prepare / generate / finalize；检查接线与回执后再报告运行结果 | `core/runtime/facade.py`、[消息链路](../architecture/message-lifecycle.md) |
 | WebUI | 叶子包通过 host injection 取得状态；新增包检查发布 payload，GUI 复用 Python 配置与路径合同 | `webui/status_source.py`、[环境](../development/environment.md) |
 | 能力与记忆 | Router、Comes、记忆和独立知识库保持各自职责；新 provider 同步工具解析和失败合同 | [能力](../architecture/capability-system.md)、[知识库](../architecture/knowledge-base.md) |
-| Compact | 保持 8192 tokens 上限；完整来源单元预规划批次，失败、无效引用或 length 输出不推进成功水位 | `stella_project/plugins/bot_main/session_compact.py`、[预算](../architecture/llm-budget.md) |
+| Compact | 保持 8192 tokens 上限；完整来源单元预规划批次，失败、无效引用或 length 输出不推进成功水位 | `mneme/session_compact.py`（`memory/session_compact.py` 为兼容别名）、[预算](../architecture/llm-budget.md) |
 
 凭据、原始聊天、生产库和本机配置不进入提交或公开证据。约束回归同时覆盖允许与禁止路径；语义问题增加 [模型探针](../development/probes.md) 和真实链路验收。

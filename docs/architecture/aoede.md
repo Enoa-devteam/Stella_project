@@ -24,7 +24,10 @@ Aoede 是「是否、何时、对谁开口」的主动参与子系统（2026-11-
 ## 装配与兼容
 
 - `ai_gateway` 保留 scheduler 注册、适配器发现（`_sole_timer_qq_bot`）与
-  薄委托；job 体在 `aoede.service.proactive_timer_tick`。
+  薄委托。当前注册的定时 job（`proactive_speak_job`）在装配层内直接执行
+  S2-02 的播报、机会恢复与验证 ASK 公平提交；`aoede.service.proactive_timer_tick`
+  仍保留旧的 tick 体（先试主动 @、命中则跳过本轮；`PARTICIPATION_ENABLED=false`
+  时走掷骰 + 消息数路径），但源码中已无调用方。
 - 宿主依赖经 `aoede.host.ProactiveHost` 显式注入：可被测试替换的符号
   （`can_speak`、`get_proactive`、`pick_target`、`DB_PATH` 等）以
   「调用时经 gateway 模块属性转发」的 lambda 注入，既有 monkeypatch
