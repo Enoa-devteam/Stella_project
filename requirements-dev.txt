@@ -10,7 +10,7 @@ pytest-xdist>=3.5.0
 # 后台下载进程而彻底挂住：既不报错也不通过，白等到 job 超时。
 pytest-timeout>=2.3.0
 numpy>=2.2.6,<3
-ruff>=0.3.0
+ruff>=0.17.6
 black>=26.10.1
 mypy>=2.4.1
 bandit>=1.7.0
